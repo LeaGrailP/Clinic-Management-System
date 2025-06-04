@@ -1,91 +1,148 @@
 <template>
-  <div class="e-nuxt-container">
-    <div class="e-nuxt-content">
-      <div class="e-nuxt-logo">
-        <img style="max-width: 100%;" src="~assets/electron-nuxt.png">
-      </div>
-      <div class="e-nuxt-system-info">
-        <system-information />
-      </div>
+  <div class="login-wrapper">
+    <!-- Left Side -->
+    <div class="left-side">
+      <h1>ACCOUNTING<br />SYSTEM<br />PROJECT</h1>
     </div>
-    <div class="e-nuxt-links">
-      <div class="e-nuxt-button" @click="openURL('https://github.com/michalzaq12/electron-nuxt')">
-        Github
-      </div>
-      <div class="e-nuxt-button" @click="openURL('https://nuxtjs.org/guide')">
-        Nuxt.js
-      </div>
-      <div class="e-nuxt-button" @click="openURL('https://electronjs.org/docs')">
-        Electron.js
+
+    <!-- Right Side -->
+    <div class="right-side">
+      <div class="login-box">
+        <div class="avatar">
+          <span class="icon">👤</span>
+        </div>
+        <h2>LOG IN</h2>
+        <p class="small-text">
+          Don’t have an account?
+          <NuxtLink to="/register" class="link">Create Now</NuxtLink>
+        </p>
+
+        <form @submit.prevent="login">
+          <label>Name</label>
+          <input v-model="name" type="text" required />
+
+          <label>Password</label>
+          <input v-model="password" type="password" required />
+
+          <div class="forgot">
+            <NuxtLink to="/forgot-password" class="link">Forgot Password?</NuxtLink>
+          </div>
+
+          <button type="submit" class="login-button">LOG IN</button>
+        </form>
       </div>
     </div>
   </div>
 </template>
 
 <script>
-import SystemInformation from '@/components/SystemInformation.vue'
-
 export default {
-  name: 'IndexPage',
-  components: {
-    SystemInformation
-  },
-  data () {
+  data() {
     return {
-      externalContent: ''
-    }
+      name: '',
+      password: ''
+    };
   },
   methods: {
-    openURL (url) {
-      window.open(url)
+    login() {
+      // Placeholder logic
+      alert(`Logging in as ${this.name}`);
     }
   }
-}
+};
 </script>
 
-<style>
-.e-nuxt-container {
-  min-height: calc(100vh - 50px);
-  background: linear-gradient(to right, #ece9e6, #ffffff);
-  font-family: Helvetica, sans-serif;
-}
-
-.e-nuxt-content {
+<style scoped>
+.login-wrapper {
   display: flex;
-  justify-content: space-around;
-  padding-top: 100px;
-  align-items: flex-start;
-  flex-wrap: wrap;
+  height: 100vh;
+  font-family: sans-serif;
 }
 
-.e-nuxt-logo{
-  width: 400px;
-}
-
-.e-nuxt-system-info {
-  padding: 20px;
-  border-top: 1px solid #397c6d;
-  border-bottom: 1px solid #397c6d;
-}
-
-.e-nuxt-links {
-  padding: 100px 0;
+.left-side {
+  flex: 1;
+  background-color: #801336; /* Maroon */
+  color: #fbd3e9;
   display: flex;
+  align-items: center;
   justify-content: center;
+  text-align: center;
 }
 
-.e-nuxt-button {
-  color: #364758;
-  padding: 5px 20px;
-  border: 1px solid #397c6d;
-  margin: 0 20px;
-  border-radius: 15px;
-  font-size: 1rem;
+.left-side h1 {
+  font-size: 2.5rem;
+  font-weight: bold;
+  line-height: 1.5;
 }
 
-.e-nuxt-button:hover{
-  cursor: pointer;
+.right-side {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #fff;
+}
+
+.login-box {
+  width: 100%;
+  max-width: 400px;
+  background-color: #ffd6ec;
+  padding: 2rem;
+  border-radius: 10px;
+  text-align: center;
+}
+
+.avatar {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 1rem;
+  border-radius: 50%;
+  background-color: #fcbce2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+}
+
+h2 {
+  margin-bottom: 0.5rem;
+}
+
+.small-text {
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
+}
+
+.link {
+  color: #333;
+  text-decoration: underline;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  text-align: left;
+}
+
+input {
+  padding: 0.5rem;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+}
+
+.forgot {
+  text-align: right;
+}
+
+.login-button {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background-color: #1f8a4c;
   color: white;
-  background-color: #397c6d;
+  font-weight: bold;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
 }
 </style>
