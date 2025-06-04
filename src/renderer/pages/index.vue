@@ -8,6 +8,7 @@
         <system-information />
       </div>
     </div>
+<<<<<<< Updated upstream
     <div class="e-nuxt-links">
       <div class="e-nuxt-button" @click="openURL('https://github.com/michalzaq12/electron-nuxt')">
         Github
@@ -17,7 +18,39 @@
       </div>
       <div class="e-nuxt-button" @click="openURL('https://electronjs.org/docs')">
         Electron.js
+=======
+
+    <!-- Right Side -->
+    <div class="right-side">
+      <div class="login-box">
+        <div class="avatar">
+          <span class="icon">👤</span>
+        </div>
+        <h2>LOG IN</h2>
+        <p class="small-text">
+          Don’t have an account?
+          <NuxtLink to="/register" class="link">Create Now</NuxtLink>
+        </p>
+
+        <form @submit.prevent="login">
+          <label>Name</label>
+          <input v-model="name" type="text" required />
+
+          <label>Password</label>
+          <input v-model="password" type="password" required />
+
+          <div class="forgot">
+            <NuxtLink to="/forgot-password" class="link">Forgot Password?</NuxtLink>
+          </div>
+
+          <button type="submit" class="login-button">LOG IN</button>
+        </form>
+              <div class="dashboard">
+            <NuxtLink to="/dashboard" class="dashboard">dashboard</NuxtLink>
+          </div>
+>>>>>>> Stashed changes
       </div>
+
     </div>
   </div>
 </template>
@@ -87,5 +120,16 @@ export default {
   cursor: pointer;
   color: white;
   background-color: #397c6d;
+}
+
+.dashboard {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background-color: #1f8a4c;
+  color: white;
+  font-weight: bold;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
 }
 </style>
