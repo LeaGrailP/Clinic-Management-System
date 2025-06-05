@@ -13,14 +13,21 @@ module.exports = {
     meta: [{ charset: "utf-8" }]
   },
   loading: false,
-  plugins: [
-    
-    
-    
-  ],
+  css: ['@/assets/css/tailwind.css'],
   buildModules: [
     
   ],
+  build: {
+    postcss: {
+      plugins: {
+        tailwindcss: {},
+        autoprefixer: {},
+      },
+    },
+    extend(config, ctx) {
+      config.resolve.alias['vue$'] = 'vue/dist/vue.esm.js'
+    },
+  },
   modules: [
     
   ],
