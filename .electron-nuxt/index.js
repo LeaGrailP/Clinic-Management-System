@@ -1,68 +1,59 @@
+const { app, BrowserWindow } = require('electron');
+const path = require('path');
 
-const path = require('path')
-const webpack = require('webpack')
-const electron = require('electron')
+let win;
 
-const { Pipeline, Logger } = require('@xpda-dev/core')
-const { ElectronLauncher } = require('@xpda-dev/electron-launcher')
-const { ElectronBuilder } = require('@xpda-dev/electron-builder')
-const { Webpack } = require('@xpda-dev/webpack-step')
-const resourcesPath = require('./resources-path-provider')
-const { DIST_DIR, MAIN_PROCESS_DIR, SERVER_HOST, SERVER_PORT } = require('./config')
-const NuxtApp = require('./renderer/NuxtApp')
+function createWindow () {
+  console.log('Creating window...');
 
-const isDev = process.env.NODE_ENV === 'development'
+  win = new BrowserWindow({
+    width: 1200,
+    height: 800,
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false,
+      webSecurity: false // Allow loading local dev server
+    }
+  });
 
-const electronLogger = new Logger('Electron', 'teal')
-electronLogger.ignore(text => text.includes('nhdogjmejiglipccpnnnanhbledajbpd')) // Clear vue devtools errors
+  // Load Nuxt dev server
+  win.loadURL('http://localhost:3000');
 
-const launcher = new ElectronLauncher({
-  logger: electronLogger,
-  electronPath: electron,
-  entryFile: path.join(DIST_DIR, 'main/index.js')
-})
+  // Open DevTools to debug white screen
+  win.webContents.openDevTools();
 
-function hasConfigArgument (array) {
-  for (const el of array) if (el === '--config' || el === '-c') return true
-  return false
+  // Log load failures
+  win.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL) => {
+    console.error(`Failed to load ${validatedURL}: ${errorDescription} (code: ${errorCode})`);
+  });
+
+  // Log renderer crashes
+  win.webContents.on('crashed', () => {
+    console.error('Electron window has crashed');
+  });
 }
-const argumentsArray = process.argv.slice(2)
-if (!hasConfigArgument(argumentsArray)) argumentsArray.push('--config', 'builder.config.js')
 
-const builder = new ElectronBuilder({
-  processArgv: argumentsArray
-})
+// Disable hardware acceleration (fixes certain white screen issues)
+app.disableHardwareAcceleration();
 
-const webpackConfig = Webpack.getBaseConfig({
-  entry: isDev
-    ? path.join(MAIN_PROCESS_DIR, 'boot/index.dev.js')
-    : path.join(MAIN_PROCESS_DIR, 'boot/index.prod.js'),
-  output: {
-    filename: 'index.js',
-    path: path.join(DIST_DIR, 'main')
-  },
-  plugins: [
-    new webpack.DefinePlugin({
-      'process.resourcesPath': resourcesPath.mainProcess(),
-      'process.env.DEV_SERVER_URL': `'${SERVER_HOST}:${SERVER_PORT}'`
-    })
-  ]
-})
+// App ready
+app.whenReady().then(() => {
+  console.log('App is ready');
+  createWindow();
+});
 
-const webpackMain = new Webpack({
-  logger: new Logger('Main', 'olive'),
-  webpackConfig,
-  launcher // need to restart launcher after compilation
-})
+// Quit when all windows are closed
+app.on('window-all-closed', () => {
+  console.log('All windows closed');
+  if (process.platform !== 'darwin') {
+    app.quit();
+  }
+});
 
-const nuxt = new NuxtApp(new Logger('Nuxt', 'green'))
-
-const pipe = new Pipeline({
-  title: 'Electron-nuxt',
-  isDevelopment: isDev,
-  steps: [webpackMain, nuxt],
-  launcher,
-  builder
-})
-
-pipe.run()
+// Re-create window on macOS
+app.on('activate', () => {
+  console.log('App activated');
+  if (BrowserWindow.getAllWindows().length === 0) {
+    createWindow();
+  }
+});
