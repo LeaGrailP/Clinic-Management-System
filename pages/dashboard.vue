@@ -8,7 +8,9 @@ import { toValue } from 'vue';
 <div class ="p-4">
 <h1 class="text-5xl font-bold mb-4">Dashboard</h1>
 
-   <!-- Header Inputs -->
+<!-- --------------------------------------------------------------------------------------- -->
+
+   <!-- Inputs -->
     <div class="grid grid-cols-4 gap-4">
 
   <!--Invoice Number-->
@@ -50,14 +52,17 @@ import { toValue } from 'vue';
       </div>
     </div>
 
-    <div class = "grid-flow-row">
+    <!-- --------------------------------------------------------------------------------------- -->
+
+    <!-- table and buttons-->
+    <div class = "flex flex-row p-4">
 
 <!-- Sales Table -->
-    <div class="flex flex-row mt-6">
-      <table class="border-gray-900">
+    <div class="grid-row ">
+      <table class="border-2 border-slate-800">
         <thead class="bg-sky-300">
           <tr>
-            <th class="p-2 border">Qty</th>
+            <th class="p-2 border">Quantity</th>
             <th class="p-2 border">Description</th>
             <th class="p-2 border">Price</th>
             <th class="p-2 border">Action</th>
@@ -78,34 +83,39 @@ import { toValue } from 'vue';
       </table>
     </div>
 
-    <!-- Right Side Controls -->
-    <div class="flex flex-cols-3 gap-4 mt-6">
-      <div></div>
-      <div class="space-y-2">
-        <div class="bg-white p-2 rounded shadow">
+    <!-- Right Side -->
+    <div class="flex flex-row ml-4">
+
+      <div class="space-y-4">
+    <!--DISCOUNTS-->
+        <div class="bg-white p-2 rounded shadow border-2">
           <div class="flex justify-between"><span>VAT Sales</span><span>₱0.00</span></div>
           <div class="flex justify-between"><span>VAT Exempt Sales</span><span>₱0.00</span></div>
           <div class="flex justify-between"><span>Zero-rated Sales</span><span>₱0.00</span></div>
           <div class="flex justify-between"><span>Discount</span><span>₱0.00</span></div>
         </div>
-        <div class="bg-white p-2 rounded shadow">
+
+    <!-- TOTAL-->
+        <div class="bg-white p-2 rounded shadow border-2">
           <div class="flex justify-between font-bold"><span>TOTAL</span><span>₱0.00</span></div>
           <div class="flex justify-between"><span>TENDERED</span><span>₱0.00</span></div>
           <div class="flex justify-between"><span>CHANGE</span><span>₱0.00</span></div>
         </div>
       </div>
-      <div class="space-y-2">
-        <button class="w-full bg-cyan-500 text-white py-2 rounded">SAVE</button>
-        <button class="w-full bg-cyan-500 text-white py-2 rounded">Reset Discount</button>
-        <button class="w-full bg-cyan-500 text-white py-2 rounded">Edit Sales</button>
-        <button class="w-full bg-cyan-500 text-white py-2 rounded">Cancel Transaction</button>
-        <button class="w-full bg-cyan-500 text-white py-2 rounded">Open Drawer</button>
-        <button class="w-full bg-cyan-500 text-white py-2 rounded">Print Receipt</button>
+
+      <!-- Save button and OTHERS-->
+      <div class="space-y-4 ml-4">
+        <button class="w-full bg-cyan-500 rounded text-wrap">SAVE</button>
+        <button class="w-full bg-cyan-500 rounded">Reset Discount</button>
+        <button class="w-full bg-cyan-500 rounded">Edit Sales</button>
+        <button class="w-full bg-cyan-500 rounded">Cancel Transaction</button>
+        <button class="w-full bg-cyan-500 rounded">Open Drawer</button>
+        <button class="w-full bg-cyan-500 rounded">Print Receipt</button>
       </div>
     </div>
     </div>
 
-  
+  <!-- --------------------------------------------------------------------------------------- -->
 
     <!-- Services -->
     <div class="mt-8">
@@ -145,6 +155,7 @@ import { toValue } from 'vue';
       </div>
       </div>
  </div>
+
     </div>
 </template>
 
