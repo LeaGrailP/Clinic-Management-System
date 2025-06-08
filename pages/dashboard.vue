@@ -6,7 +6,9 @@ import { toValue } from 'vue';
 <template>
 
 <div class ="p-4">
+  <NuxtLink to="/products" class="bg-gray-300 hover:bg-gray-400 text-black py-2 px-4 rounded-lg m-5">GO TO ADMIN for Products</NuxtLink>
 <h1 class="text-5xl font-bold mb-4">Dashboard</h1>
+
 
 <!-- --------------------------------------------------------------------------------------- -->
 
@@ -148,7 +150,8 @@ import { toValue } from 'vue';
           <input type="text" class="w-12 text-center border rounded" value="1" />
           <button class="px-3 py-1 bg-gray-300 rounded">+</button>
         </div>
-        <div class="gap-4 m-4">
+
+        <div class="ml-4">
           <button class="bg-red-400 px-4 py-2 text-white rounded ">CANCEL</button>
           <button class="bg-green-600 px-4 py-2 text-white rounded">Add to Order</button>
         </div>
