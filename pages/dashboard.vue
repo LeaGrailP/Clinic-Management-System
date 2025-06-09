@@ -57,10 +57,10 @@ import { toValue } from 'vue';
     <!-- --------------------------------------------------------------------------------------- -->
 
     <!-- table and buttons-->
-    <div class = "flex flex-row p-4">
+    <div class = "flex flex-row pt-6">
 
 <!-- Sales Table -->
-    <div class="grid-row ">
+    <div class="grid-row">
       <table class="border-2 border-slate-800">
         <thead class="bg-sky-300">
           <tr>
@@ -86,35 +86,46 @@ import { toValue } from 'vue';
     </div>
 
     <!-- Right Side -->
-    <div class="flex flex-row ml-4">
+      <div class="space-y-4 ml-4 basis-2/5">
 
-      <div class="space-y-4">
     <!--DISCOUNTS-->
-        <div class="bg-white p-2 rounded shadow border-2">
-          <div class="flex justify-between"><span>VAT Sales</span><span>₱0.00</span></div>
-          <div class="flex justify-between"><span>VAT Exempt Sales</span><span>₱0.00</span></div>
-          <div class="flex justify-between"><span>Zero-rated Sales</span><span>₱0.00</span></div>
-          <div class="flex justify-between"><span>Discount</span><span>₱0.00</span></div>
+        <div class="bg-white p-4 rounded shadow border-2">
+          <div class="flex justify-between mb-2 space-x-4"><span>VAT Sales</span><span>₱0.00</span></div>
+          <div class="flex justify-between mb-2 space-x-4"><span>VAT Exempt Sales</span><span>₱0.00</span></div>
+          <div class="flex justify-between mb-2 space-x-4"><span>Zero-rated Sales</span><span>₱0.00</span></div>
+          <div class="flex justify-between mb-2 space-x-4"><span>Discount</span><span>₱0.00</span></div>
         </div>
 
     <!-- TOTAL-->
-        <div class="bg-white p-2 rounded shadow border-2">
-          <div class="flex justify-between font-bold"><span>TOTAL</span><span>₱0.00</span></div>
-          <div class="flex justify-between"><span>TENDERED</span><span>₱0.00</span></div>
-          <div class="flex justify-between"><span>CHANGE</span><span>₱0.00</span></div>
+        <div class="bg-white p-4 rounded shadow border-2 ">
+          <div class="flex justify-between mb-2 space-x-4">
+            <h1 class="font-medium">TOTAL</h1> <!--total-->
+            <h2 class="font-medium">₱0.00</h2>
+          </div>
+
+          <div class="flex justify-between mb-2 space-x-4">
+            <h1 class="font-medium">TENDERED</h1> <!--tendered-->
+            <h2 class="font-medium">₱0.00</h2>
+          </div>
+
+          <div class="flex justify-between mb-2 space-x-4">
+            <h1 class="font-medium">CHANGE</h1> <!--change-->
+            <h2 class="font-medium">₱0.00</h2>
+          </div>
+
         </div>
+
       </div>
 
-      <!-- Save button and OTHERS-->
-      <div class="space-y-4 ml-4">
-        <button class="w-full bg-cyan-500 rounded text-wrap">SAVE</button>
-        <button class="w-full bg-cyan-500 rounded">Reset Discount</button>
-        <button class="w-full bg-cyan-500 rounded">Edit Sales</button>
-        <button class="w-full bg-cyan-500 rounded">Cancel Transaction</button>
-        <button class="w-full bg-cyan-500 rounded">Open Drawer</button>
-        <button class="w-full bg-cyan-500 rounded">Print Receipt</button>
+     <!-- Save button and OTHERS-->
+      <div class="space-y-4 ml-4 basis-1/5">
+        <button class="w-full bg-green-400 rounded text-wrap">SAVE</button>
+        <button class="w-full bg-green-400 rounded">Reset Discount</button>
+        <button class="w-full bg-green-400 rounded">Edit Sales</button>
+        <button class="w-full bg-green-400 rounded">Cancel Transaction</button>
+        <button class="w-full bg-green-400 rounded">Open Drawer</button>
+        <button class="w-full bg-green-400 rounded">Print Receipt</button>
       </div>
-    </div>
     </div>
 
   <!-- --------------------------------------------------------------------------------------- -->
