@@ -4,19 +4,8 @@ import { toValue } from 'vue';
 </script>
 
 <template>
-
-<div class ="p-4">
-  <NuxtLink to="/products" class="bg-gray-300 hover:bg-gray-400 text-black py-2 px-4 rounded-lg m-5">ADMIN for Products</NuxtLink>
-<NuxtLink to="/transactions" class="bg-gray-300 hover:bg-gray-400 text-black py-2 px-4 rounded-lg m-5">ADMIN for Transactions</NuxtLink>
-<NuxtLink to="/about" class="bg-gray-300 hover:bg-gray-400 text-black py-2 px-4 rounded-lg">Learn More</NuxtLink>
-
-
 <h1 class="text-5xl font-bold mb-4">Dashboard</h1>
 
-
-<!-- --------------------------------------------------------------------------------------- -->
-
-   <!-- Inputs -->
     <div class="grid grid-cols-4 gap-4">
 
   <!--Invoice Number-->
@@ -174,6 +163,5 @@ import { toValue } from 'vue';
       </div>
  </div>
 
-    </div>
 </template>
 
