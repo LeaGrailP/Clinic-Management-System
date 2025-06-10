@@ -1,10 +1,5 @@
 <template>
 <div class="flex flex-col p-4 ">
-    <div>
-<NuxtLink to="/dashboard" class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg">Back to dashboard</NuxtLink>
-    </div>
-
-
         <div class="flex flex-row justify-evenly my-4">
         <h1 class="font-bold">List of Products and Services</h1>
         <button class="bg-green-600 text-white rounded">New Product <span class="text-xl">+</span></button>

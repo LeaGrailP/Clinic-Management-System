@@ -1,10 +1,6 @@
 
 <template>
   <div class="p-6">
-        <div>
-<NuxtLink to="/dashboard" class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg">Back to dashboard</NuxtLink>
-    </div>
-
     <h1 class="text-2xl font-semibold mb-4">TRANSACTION HISTORY</h1>
 
     <!-- Filter/Search Bar -->
