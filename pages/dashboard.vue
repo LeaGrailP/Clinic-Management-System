@@ -138,19 +138,19 @@ import { toValue } from 'vue';
     <div class="mt-8">
       <div class="flex items-center space-x-2">
         <span class="font-semibold">SERVICES</span>
-        <input type="text" class="flex-1 p-2 border rounded" placeholder="Search services..." />
-        <button class="p-2">🔍</button>
+        <div >
+        <input type="text" class="flex p-2 border rounded" placeholder="Search services..." />
+        </div>
+        
       </div>
 
       <div class="flex flex-row p-4 justify-center ">
 
-     <div class="grid grid-cols-2 gap-4 p-4">
-        <button class="flex justify-between items-center bg-cyan-500 px-4 py-2 rounded shadow">Complete Blood Count <span class="text-xl">+</span></button>
-        <button class="flex justify-between items-center bg-cyan-500 px-4 py-2 rounded shadow">Complete Blood Count <span class="text-xl">+</span></button>
-        <button class="flex justify-between items-center bg-cyan-500 px-4 py-2 rounded shadow">Complete Blood Count <span class="text-xl">+</span></button>
-        <button class="flex justify-between items-center bg-cyan-500 px-4 py-2 rounded shadow">Complete Blood Count <span class="text-xl">+</span></button>
-        <button class="flex justify-between items-center bg-cyan-500 px-4 py-2 rounded shadow">Complete Blood Count <span class="text-xl">+</span></button>
-        <button class="flex justify-between items-center bg-cyan-500 px-4 py-2 rounded shadow">Complete Blood Count <span class="text-xl">+</span></button>
+     <div class="grid grid-cols-2 gap-4 justify-start">
+        <button class="flex justify-between bg-cyan-500 px-4 py-2 rounded shadow">Complete Blood Count <span class="text-xl">+</span></button>
+        <button class="flex justify-between bg-cyan-500 px-4 py-2 rounded shadow">Complete Blood Count <span class="text-xl">+</span></button>
+        <button class="flex justify-between bg-cyan-500 px-4 py-2 rounded shadow">Complete Blood Count <span class="text-xl">+</span></button>
+        <button class="flex justify-between bg-cyan-500 px-4 py-2 rounded shadow">Complete Blood Count <span class="text-xl">+</span></button>
       </div>
 
       <!-- Quantity Selection -->

@@ -58,11 +58,6 @@ const team = [
     name: 'Chillah_Lah',
     role: 'Full Stack Developer',
     image: 'https://plus.unsplash.com/premium_photo-1688045802023-60a42a082776?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8c3VuZmxvd2VyfGVufDB8fDB8fHww',
-  },
-  {
-    name: 'ChatGpt',
-    role: 'Full Stack Developer',
-    image: 'https://images.unsplash.com/photo-1674027444484-cf52149ea050?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTh8fGNoYXRncHR8ZW58MHx8MHx8fDA%3D',
   }
 ]
 </script>
