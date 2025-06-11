@@ -8,6 +8,13 @@
       </p>
     </section>
 
+    <section class="bg-sky-100 py-16 px-6 md:px-12 text-center shadow">
+      <h1 class="text-4xl font-bold mb-4">Point-Of-Sale</h1>
+      <p class="text-lg md:text-xl max-w-2xl mx-auto text-gray-600">
+        At [Your POS System Name], we are dedicated to transforming clinic operations through intelligent, user-friendly Point of Sale solutions. Designed specifically for healthcare settings, our system streamlines billing, inventory, patient transactions, and reporting — allowing medical professionals to focus more on patient care and less on paperwork.
+      </p>
+    </section>
+
     <!-- Our Story -->
     <section class="py-16 px-6 md:px-12">
       <div class="max-w-5xl mx-auto grid md:grid-cols-2 gap-12 items-center">
@@ -47,17 +54,17 @@ const team = [
   {
     name: 'Li_Yumzz',
     role: 'Full Stack Developer',
-    image: 'https://plus.unsplash.com/premium_photo-1688045802023-60a42a082776?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8c3VuZmxvd2VyfGVufDB8fDB8fHww',
+    image: 'https://plus.unsplash.com/premium_vector-1714076542617-9d2e5b8beca4?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwcm9maWxlLXBhZ2V8MTU1fHx8ZW58MHx8fHx8',
   },
   {
     name: 'Chillah_Lah',
     role: 'Full Stack Developer',
-    image: 'https://plus.unsplash.com/premium_photo-1688045802023-60a42a082776?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8c3VuZmxvd2VyfGVufDB8fDB8fHww',
+    image: 'https://plus.unsplash.com/premium_vector-1714076542305-03685ea47571?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwcm9maWxlLXBhZ2V8MTU4fHx8ZW58MHx8fHx8',
   },
   {
     name: 'ButterCup',
     role: 'Full Stack Developer',
-    image: 'https://images.unsplash.com/photo-1674027444484-cf52149ea050?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTh8fGNoYXRncHR8ZW58MHx8MHx8fDA%3D',
+    image: 'https://plus.unsplash.com/premium_vector-1713902747403-694707a5f6e9?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NXx8aG91c2V8ZW58MHx8MHx8fDA%3D',
   }
 ]
 </script>
