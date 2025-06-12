@@ -3,7 +3,7 @@
     <background />
     <div class="z-10 p-8 bg-white bg-opacity-10 backdrop-blur-md rounded-lg shadow-lg">
     <form @submit.prevent="handleLogin" class="p-8 rounded shadow-md w-full max-w-sm">
-      <h2 class="text-2xl font-bold mb-6 text-center">Clinic POS</h2>
+      <h2 class="text-2xl font-bold mb-6 text-center">Fethea POS</h2>
       <input
         v-model="username"
         type="text"
