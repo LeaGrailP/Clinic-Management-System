@@ -25,6 +25,7 @@ const emit = defineEmits(['toggle'])
 
     <!-- Navigation -->
     <nav class="flex-1 p-2 space-y-1">
+      
       <NuxtLink
         to="/products"
         class="flex items-center space-x-3 px-3 py-2 rounded-md text-gray-700 hover:bg-gray-200 hover:text-black"
