@@ -1,6 +1,24 @@
 <script setup lang="ts">
-import { toValue } from 'vue';
+import { toValue } from 'vue'
 
+async function testDatabaseConnection() {
+  try {
+    // Insert dummy data
+    await window.electron.insertTransaction({
+      date: new Date().toISOString(),
+      total: 123.45,
+      items: [{ id: 1, name: 'Dummy Service', qty: 1 }]
+    })
+
+    // Fetch and log
+    const transactions = await window.electron.getTransactions()
+    console.log('✅ Transactions:', transactions)
+    alert('Database connection successful. Check dev console.')
+  } catch (error) {
+    console.error('❌ DB error:', error)
+    alert('Database test failed.')
+  }
+}
 </script>
 
 <template>

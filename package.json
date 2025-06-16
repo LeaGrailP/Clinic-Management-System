@@ -6,9 +6,10 @@
   "scripts": {
     "dev": "nuxt dev --host",
     "build": "nuxt build",
+    "rebuild": "electron-rebuild -f -w better-sqlite3",
     "generate": "nuxt generate",
     "start": "nuxt start",
-    "electron": "electron .electron-nuxt/index.js",
+    "electron": "electron .electron-nuxt/main.js",
     "electron:dev": "concurrently \"yarn dev\" \"wait-on http://localhost:3000 && yarn electron\""
   },
   "keywords": [],
@@ -40,6 +41,7 @@
   },
   "dependencies": {
     "@pinia/nuxt": "^0.11.1",
+    "better-sqlite3": "^11.10.0",
     "lucide-vue-next": "^0.513.0"
   }
 }
