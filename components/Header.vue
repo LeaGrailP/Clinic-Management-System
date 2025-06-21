@@ -33,7 +33,7 @@ const emit = defineEmits(['toggle'])
         <LogIn class="w-4 h-4" />
       </NuxtLink>
       <NuxtLink
-        to="/user"
+        to="/profile"
         class="flex items-center space-x-1 px-2 py-1 rounded-md hover:bg-gray-200 hover:text-black"
         exact-active-class="bg-gray-200 text-black font-semibold"
       >

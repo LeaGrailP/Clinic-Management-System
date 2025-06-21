@@ -1,59 +1,50 @@
-const { app, BrowserWindow } = require('electron');
-const path = require('path');
+const { app, BrowserWindow, ipcMain } = require('electron')
+const path = require('path')
+const Database = require('better-sqlite3')
 
-let win;
+let db
+function createDatabase() {
+  db = new Database('my-database.db')
+  db.exec(`
+  CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    address TEXT,
+    age INTEGER
+  )
+`)
 
-function createWindow () {
-  console.log('Creating window...');
-
-  win = new BrowserWindow({
-    width: 1200,
-    height: 800,
-    webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false,
-      webSecurity: false // Allow loading local dev server
-    }
-  });
-
-  // Load Nuxt dev server
-  win.loadURL('http://localhost:3000');
-
-  // Open DevTools to debug white screen
-  win.webContents.openDevTools();
-
-  // Log load failures
-  win.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL) => {
-    console.error(`Failed to load ${validatedURL}: ${errorDescription} (code: ${errorCode})`);
-  });
-
-  // Log renderer crashes
-  win.webContents.on('crashed', () => {
-    console.error('Electron window has crashed');
-  });
 }
 
-// Disable hardware acceleration (fixes certain white screen issues)
-app.disableHardwareAcceleration();
+function createWindow() {
+  const win = new BrowserWindow({
+    width: 1000,
+    height: 700,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false
+    }
+  })
 
-// App ready
+  win.loadURL('http://localhost:3000')
+}
+
 app.whenReady().then(() => {
-  console.log('App is ready');
-  createWindow();
-});
+  createDatabase()
 
-// Quit when all windows are closed
-app.on('window-all-closed', () => {
-  console.log('All windows closed');
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
-});
+  ipcMain.handle('get-users', () => {
+    const stmt = db.prepare('SELECT * FROM users')
+    return stmt.all()
+  })
 
-// Re-create window on macOS
-app.on('activate', () => {
-  console.log('App activated');
-  if (BrowserWindow.getAllWindows().length === 0) {
-    createWindow();
-  }
-});
+ipcMain.handle('add-user', (event, user) => {
+  console.log('Received user:', user) // Debug log
+  const stmt = db.prepare('INSERT INTO users (name, address, age) VALUES (?, ?, ?)')
+  stmt.run(user.name, user.address, user.age)
+})
+
+
+
+  createWindow()
+})
