@@ -10,7 +10,8 @@
     "generate": "nuxt generate",
     "start": "nuxt start",
     "electron": "electron .electron-nuxt/main.js",
-    "electron:dev": "concurrently \"yarn dev\" \"wait-on http://localhost:3000 && yarn electron\""
+    "electron:dev": "concurrently \"yarn dev\" \"wait-on http://localhost:3000 && yarn electron\"",
+    "postinstall": "electron-rebuild"
   },
   "keywords": [],
   "author": "LeaGrail <161104051+LeaGrail@users.noreply.github.com>",
@@ -33,6 +34,7 @@
     "electron": "^36.4.0",
     "electron-builder": "^24.13.1",
     "electron-devtools-installer": "^3.2.0",
+    "electron-rebuild": "^3.2.9",
     "nuxt": "^3.12.0",
     "pinia": "^3.0.3",
     "postcss": "^8.5.4",
@@ -41,7 +43,7 @@
   },
   "dependencies": {
     "@pinia/nuxt": "^0.11.1",
-    "better-sqlite3": "^11.10.0",
+    "better-sqlite3": "^12.1.1",
     "lucide-vue-next": "^0.513.0"
   }
 }

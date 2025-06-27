@@ -1,61 +1,101 @@
 <template>
-<div class="flex flex-col p-4 ">
-        <div class="flex flex-row justify-evenly my-4">
-        <h1 class="font-bold">List of Products and Services</h1>
-        <button class="bg-green-600 text-white rounded">New Product <span class="text-xl">+</span></button>
-      </div>
-  
-      <div class="flex flex-row justify-center border my-4">
+  <div class="flex flex-col p-4">
+    <!-- Header -->
+    <div class="flex justify-between items-center my-4">
+      <h1 class="text-xl font-bold">List of Products and Services</h1>
+    </div>
 
-     <div class="grid grid-cols-2 gap-4 p-2 ">
-        <button class="flex justify-between items-center bg-cyan-300 px-4 py-2 rounded shadow">Complete Blood Count <span class="text-xl">+</span></button>
-        <button class="flex justify-between items-center bg-cyan-300 px-4 py-2 rounded shadow">Complete Blood Count <span class="text-xl">+</span></button>
-        <button class="flex justify-between items-center bg-cyan-300 px-4 py-2 rounded shadow">Complete Blood Count <span class="text-xl">+</span></button>
-        <button class="flex justify-between items-center bg-cyan-300 px-4 py-2 rounded shadow">Complete Blood Count <span class="text-xl">+</span></button>
-        <button class="flex justify-between items-center bg-cyan-300 px-4 py-2 rounded shadow">Complete Blood Count <span class="text-xl">+</span></button>
-        <button class="flex justify-between items-center bg-cyan-300 px-4 py-2 rounded shadow">Complete Blood Count <span class="text-xl">+</span></button>
-      </div>
+    <!-- Add Button -->
+    <div class="grid grid-cols-2 gap-4 p-2">
+      <button
+        @click="openModal"
+        class="flex justify-between items-center bg-cyan-300 px-4 py-2 rounded shadow">
+        Add Product
+        <span class="text-xl">+</span>
+      </button>
+    </div>
 
-      <!-- Quantity Selection -->
-      <div class="bg-white rounded shadow gap-4 p-2">
-        <button class="absolute top-2 right-2">✖</button>
-        <p class="mb-2 font-semibold">Select Quantity</p>
-        <div class="h-24 w-full bg-gray-200 mb-2 flex items-center justify-center">Image</div>
-        <p class="text-center font-semibold">Complete Blood Count</p>
-        <p class="text-center text-sm text-gray-600">PHP 200.00</p>
-        <div class="flex justify-center items-center space-x-2 mt-2">
-          <button class="px-3 py-1 bg-gray-300 rounded">-</button>
-          <input type="text" class="w-12 text-center border rounded" value="1" />
-          <button class="px-3 py-1 bg-gray-300 rounded">+</button>
+    <!-- Modal -->
+    <div
+      v-if="selectedProduct"
+      class="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50"
+    >
+      <div class="bg-white w-[400px] rounded-lg p-4 relative shadow-lg">
+        <button @click="selectedProduct = null" class="absolute top-2 right-2 text-xl">✖</button>
+
+        <div class="grid grid-cols-1 gap-2 mt-4">
+          <div>
+            <label class="block text-sm font-medium">Product Name</label>
+            <input type="text" class="w-full p-2 border rounded" v-model="selectedProduct.name" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium">Price</label>
+            <input type="number" step="0.01" class="w-full p-2 border rounded" v-model="selectedProduct.price" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium">VAT %</label>
+            <input type="number" step="0.01" class="w-full p-2 border rounded" v-model="selectedProduct.vat" />
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-2 mt-4">
+          <button @click="selectedProduct = null" class="bg-red-400 px-4 py-2 text-white rounded">CANCEL</button>
+          <button @click="addProduct" class="bg-green-600 px-4 py-2 text-white rounded">Add Product</button>
         </div>
       </div>
+    </div>
 
-       <div class="ml-4 justify-center p-2">
-          <button class="bg-red-400 px-4 py-2 text-white rounded ">CANCEL</button>
-          <button class="bg-green-600 px-4 py-2 text-white rounded">Add to Order</button>
-        </div>
-      </div>
-
-
- <div class="grid grid-cols-3 gap-4 border p-2 my-4">
-   <div>
-        <label class="block text-sm font-medium">Product Name</label>
-        <input type="text" class="w-full p-2 border rounded" value="Product" />
-      </div>
-
-   <div>
-        <label class="block text-sm font-medium">Price</label>
-        <input type="text" class="w-full p-2 border rounded" value="P" />
-      </div>
-
-   <div>
-        <label class="block text-sm font-medium">Status</label>
-        <select class="w-full p-2 border rounded">
-          <option>Active</option> 
-        </select>
-      </div>
-
- </div>
- </div>
-    
+    <!-- Products Table -->
+    <div>
+      <table class="border-separate border border-gray-400 mt-6">
+        <thead>
+          <tr>
+            <th class="border border-gray-300">Product</th>
+            <th class="border border-gray-300">Price</th>
+            <th class="border border-gray-300">VAT %</th>
+            <th class="border border-gray-300">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="prod in products" :key="prod.id">
+            <td class="border border-gray-300">{{ prod.name }}</td>
+            <td class="border border-gray-300">{{ prod.price }}</td>
+            <td class="border border-gray-300">{{ prod.vat }}</td>
+            <td class="border border-gray-300">{{ calculateTotal(prod.price, prod.vat) }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
 </template>
+
+<script setup>
+import { ref } from 'vue'
+
+const selectedProduct = ref(null)
+const products = ref([])
+
+function openModal() {
+  selectedProduct.value = {
+    name: '',
+    price: 0,
+    vat: 0
+  }
+}
+
+function addProduct() {
+  if (selectedProduct.value) {
+    products.value.push({ 
+      ...selectedProduct.value,
+      id: Date.now()
+    })
+    selectedProduct.value = null
+  }
+}
+
+function calculateTotal(price, vat) {
+  const numericPrice = parseFloat(price) || 0
+  const numericVAT = parseFloat(vat) || 0
+  return (numericPrice + (numericPrice * numericVAT / 100)).toFixed(2)
+}
+</script>

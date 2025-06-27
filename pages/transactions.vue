@@ -1,9 +1,13 @@
+<!--
+
 
 <template>
   <div class="p-6">
     <h1 class="text-2xl font-semibold mb-4">TRANSACTION HISTORY</h1>
 
-    <!-- Filter/Search Bar -->
+    <-- Filter/Search Bar ->
+
+
     <div class="flex flex-wrap justify-between items-center mb-4 bg-white p-4 rounded shadow">
       <div class="flex items-center gap-2 w-full md:w-auto mb-2 md:mb-0">
         <input
@@ -29,7 +33,9 @@
       </div>
     </div>
 
-    <!-- Table -->
+    <-- Table ->
+
+
     <div class="overflow-x-auto bg-white rounded shadow">
       <table class="min-w-full text-sm text-left text-gray-700">
         <thead class="border-b text-xs uppercase bg-gray-100 text-gray-600">
@@ -71,7 +77,9 @@
       </table>
     </div>
 
-    <!-- Pagination -->
+    <-- Pagination ->
+
+
     <div class="flex justify-between items-center mt-4 text-sm text-gray-600">
       <span>0 of 20 row(s) selected.</span>
       <template>
@@ -81,8 +89,12 @@
   </div>
 </template>
 
-<!--Retrieve Data Using Backend-->
-<!--Sample Data-->
+<--Retrieve Data Using Backend->
+
+
+<-Sample Data->
+
+
 <script setup>
 
 const page = ref(5)
@@ -114,3 +126,11 @@ const transactions = [
   // Add more entries as needed
 ]
 </script>
+
+
+-->
+
+<template>
+
+  Transactions
+</template>

@@ -1,59 +1,100 @@
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
+const Database = require('better-sqlite3');
+const fs = require('fs');
 
-let win;
 
-function createWindow () {
-  console.log('Creating window...');
+// 🔥 REMOVE THIS LINE in production!
+// if (fs.existsSync('my-database.db')) fs.unlinkSync('my-database.db');
 
-  win = new BrowserWindow({
-    width: 1200,
-    height: 800,
+let db;
+
+function createDatabase() {
+  console.log('📦 Using database at:', dbPath);
+
+  const dbPath = path.join(app.getPath('userData'), 'my-database.db');
+db = new Database(dbPath);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      address TEXT NOT NULL,
+      age INTEGER NOT NULL,
+      contact TEXT,
+      gender TEXT CHECK(gender IN ('Male', 'Female', 'Other')) NOT NULL
+    )
+  `);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS products (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      productname TEXT NOT NULL,
+      price REAL,
+      vat REAL
+    )
+  `);
+}
+
+
+function createWindow() {
+  const win = new BrowserWindow({
+    width: 1000,
+    height: 700,
     webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false,
-      webSecurity: false // Allow loading local dev server
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false
     }
   });
 
-  // Load Nuxt dev server
   win.loadURL('http://localhost:3000');
-
-  // Open DevTools to debug white screen
-  win.webContents.openDevTools();
-
-  // Log load failures
-  win.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL) => {
-    console.error(`Failed to load ${validatedURL}: ${errorDescription} (code: ${errorCode})`);
-  });
-
-  // Log renderer crashes
-  win.webContents.on('crashed', () => {
-    console.error('Electron window has crashed');
-  });
 }
 
-// Disable hardware acceleration (fixes certain white screen issues)
-app.disableHardwareAcceleration();
-
-// App ready
 app.whenReady().then(() => {
-  console.log('App is ready');
+  createDatabase();
+
+
+ipcMain.handle('get-products', () => {
+  try {
+    const stmt = db.prepare('SELECT * FROM products');
+    return stmt.all();
+  } catch (error) {
+    console.error('Error fetching products:', error);
+    return [];
+  }
+});
+
+
+ipcMain.handle('add-user', async (event, user) => {
+  try {
+    const stmt = db.prepare('INSERT INTO users (name, address, age, contact, gender) VALUES (?, ?, ?, ?, ?)');
+    stmt.run(user.name, user.address, user.age, user.contact, user.gender);
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+
+ipcMain.handle('get-users', () => {
+  const rows = db.prepare('SELECT * FROM users').all();
+  return rows;
+});
+
+
+  ipcMain.handle('add-products', (event, products) => {
+    try {
+      const stmt = db.prepare('INSERT INTO products (productname, price, vat) VALUES (?, ?, ?)');
+      stmt.run(products.productname, products.price, products.vat);
+      return { success: true};
+    }
+    catch (error) {
+      console.error('Error adding user:', error);
+      return { success: false, error };
+    }
+  });
+
   createWindow();
 });
 
-// Quit when all windows are closed
-app.on('window-all-closed', () => {
-  console.log('All windows closed');
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
-});
-
-// Re-create window on macOS
-app.on('activate', () => {
-  console.log('App activated');
-  if (BrowserWindow.getAllWindows().length === 0) {
-    createWindow();
-  }
-});
