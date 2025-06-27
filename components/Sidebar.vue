@@ -51,14 +51,7 @@ const emit = defineEmits(['toggle'])
         <span v-if="!props.collapsed">Customer</span>
       </NuxtLink>
 
-            <NuxtLink
-        to="/profile"
-        class="flex items-center space-x-3 px-3 py-2 rounded-md text-gray-700 hover:bg-gray-200 hover:text-black"
-        exact-active-class="bg-gray-200 text-black font-semibold"
-      >
-        <User class="w-5 h-5" />
-        <span v-if="!props.collapsed">Profile</span>
-      </NuxtLink>
+
       <NuxtLink
         to="/transactions"
         class="flex items-center space-x-3 px-3 py-2 rounded-md text-gray-700 hover:bg-gray-200 hover:text-black"

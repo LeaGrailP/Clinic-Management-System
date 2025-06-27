@@ -4,27 +4,11 @@ const Database = require('better-sqlite3');
 const fs = require('fs');
 
 
-// 🔥 REMOVE THIS LINE in production!
-// if (fs.existsSync('my-database.db')) fs.unlinkSync('my-database.db');
-
 let db;
 
 function createDatabase() {
-  console.log('📦 Using database at:', dbPath);
-
   const dbPath = path.join(app.getPath('userData'), 'my-database.db');
-db = new Database(dbPath);
-
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL,
-      address TEXT NOT NULL,
-      age INTEGER NOT NULL,
-      contact TEXT,
-      gender TEXT CHECK(gender IN ('Male', 'Female', 'Other')) NOT NULL
-    )
-  `);
+  db = new Database(dbPath);
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS products (
@@ -34,6 +18,7 @@ db = new Database(dbPath);
       vat REAL
     )
   `);
+  
 }
 
 
@@ -65,24 +50,6 @@ ipcMain.handle('get-products', () => {
   }
 });
 
-
-ipcMain.handle('add-user', async (event, user) => {
-  try {
-    const stmt = db.prepare('INSERT INTO users (name, address, age, contact, gender) VALUES (?, ?, ?, ?, ?)');
-    stmt.run(user.name, user.address, user.age, user.contact, user.gender);
-    return { success: true };
-  } catch (error) {
-    return { success: false, error: error.message };
-  }
-});
-
-
-ipcMain.handle('get-users', () => {
-  const rows = db.prepare('SELECT * FROM users').all();
-  return rows;
-});
-
-
   ipcMain.handle('add-products', (event, products) => {
     try {
       const stmt = db.prepare('INSERT INTO products (productname, price, vat) VALUES (?, ?, ?)');
@@ -90,7 +57,7 @@ ipcMain.handle('get-users', () => {
       return { success: true};
     }
     catch (error) {
-      console.error('Error adding user:', error);
+      console.error('Error adding products:', error);
       return { success: false, error };
     }
   });
