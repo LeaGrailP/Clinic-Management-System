@@ -10,7 +10,7 @@
     "generate": "nuxt generate",
     "start": "nuxt start",
     "electron": "electron .electron-nuxt/main.js",
-    "electron:dev": "concurrently \"yarn dev\" \"wait-on http://localhost:3000 && yarn electron\"",
+    "electron:dev": "concurrently \"yarn dev\" \"wait-on http://localhost:3000 && electron .electron-nuxt/",
     "postinstall": "electron-rebuild"
   },
   "keywords": [],

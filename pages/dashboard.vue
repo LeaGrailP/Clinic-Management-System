@@ -120,44 +120,42 @@
   <!-- --------------------------------------------------------------------------------------- -->
 
     <!-- Services -->
-    <div class="mt-8">
-      <div class="flex items-center space-x-2">
-        <span class="font-semibold">SERVICES</span>
-        <div >
-        <input type="text" class="flex p-2 border rounded" placeholder="Search services..." />
+  <div class="p-4">
+    <h2 class="text-xl font-bold mb-4">🧾 Product List</h2>
+    <button @click="fetchProducts" class="mb-4 bg-blue-600 text-white px-4 py-2 rounded">
+      Refresh
+    </button>
+
+    <div v-if="products.length === 0" class="text-gray-500">No products found.</div>
+      <div v-for="product in products" :key="product.id">
+        <div class="grid grid-cols-5">
+           <h1 class="border p-2">{{ product.productname }}</h1>
+        <p class="border p-2">{{ product.price }}</p>
+        <p class="border p-2">{{ product.vat }}</p>
         </div>
-        
+       
+
       </div>
-
-      <div class="flex flex-row p-4 justify-center ">
-
-     <div class="grid grid-cols-2 gap-4 justify-start">
-        <button class="flex justify-between bg-cyan-500 px-4 py-2 rounded shadow">Complete Blood Count <span class="text-xl">+</span></button>
-        <button class="flex justify-between bg-cyan-500 px-4 py-2 rounded shadow">Complete Blood Count <span class="text-xl">+</span></button>
-        <button class="flex justify-between bg-cyan-500 px-4 py-2 rounded shadow">Complete Blood Count <span class="text-xl">+</span></button>
-        <button class="flex justify-between bg-cyan-500 px-4 py-2 rounded shadow">Complete Blood Count <span class="text-xl">+</span></button>
-      </div>
-
-      <!-- Quantity Selection -->
-      <div class="max-w-sm bg-white rounded shadow gap-4 p-4">
-        <button class="absolute top-2 right-2">✖</button>
-        <p class="mb-2 font-semibold">Select Quantity</p>
-        <div class="h-24 w-full bg-gray-200 mb-2 flex items-center justify-center">Image</div>
-        <p class="text-center font-semibold">Complete Blood Count</p>
-        <p class="text-center text-sm text-gray-600">PHP 200.00</p>
-        <div class="flex justify-center items-center space-x-2 mt-2">
-          <button class="px-3 py-1 bg-gray-300 rounded">-</button>
-          <input type="text" class="w-12 text-center border rounded" value="1" />
-          <button class="px-3 py-1 bg-gray-300 rounded">+</button>
-        </div>
-
-        <div class="ml-4">
-          <button class="bg-red-400 px-4 py-2 text-white rounded ">CANCEL</button>
-          <button class="bg-green-600 px-4 py-2 text-white rounded">Add to Order</button>
-        </div>
-      </div>
-      </div>
- </div>
-
+  </div>
 </template>
+
+<script setup>
+import { ref, onMounted } from 'vue';
+
+const products = ref([]);
+
+async function fetchProducts() {
+  try {
+    const result = await window.electron.invoke('get-products');
+    products.value = result;
+  } catch (error) {
+    console.error('❌ Failed to fetch products:', error);
+  }
+}
+
+onMounted(() => {
+  fetchProducts();
+});
+</script>
+
 

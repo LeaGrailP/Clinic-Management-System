@@ -1,16 +1,14 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const Database = require('better-sqlite3');
-const fs = require('fs');
-
 
 let db;
 
 function createDatabase() {
-  const dbPath = path.join(app.getPath('userData'), 'my-database.db');
+  const dbPath = path.join(__dirname, '../userData/database.db');
   db = new Database(dbPath);
-
-  db.exec(`
+  
+db.exec(`
     CREATE TABLE IF NOT EXISTS products (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       productname TEXT NOT NULL,
@@ -43,24 +41,28 @@ app.whenReady().then(() => {
 ipcMain.handle('get-products', () => {
   try {
     const stmt = db.prepare('SELECT * FROM products');
-    return stmt.all();
+    return stmt.all(); // Returns an array of product objects
   } catch (error) {
     console.error('Error fetching products:', error);
     return [];
   }
 });
 
-  ipcMain.handle('add-products', (event, products) => {
-    try {
-      const stmt = db.prepare('INSERT INTO products (productname, price, vat) VALUES (?, ?, ?)');
-      stmt.run(products.productname, products.price, products.vat);
-      return { success: true};
-    }
-    catch (error) {
-      console.error('Error adding products:', error);
-      return { success: false, error };
-    }
-  });
+
+
+
+ipcMain.handle('add-products', (event, product) => {
+  try {
+    const stmt = db.prepare(
+      'INSERT INTO products (productname, price, vat) VALUES (?, ?, ?)'
+    );
+    stmt.run(product.productname, product.price, product.vat);
+    return { success: true };
+  } catch (error) {
+    console.error('Error adding product:', error);
+    return { success: false, error };
+  }
+});
 
   createWindow();
 });
