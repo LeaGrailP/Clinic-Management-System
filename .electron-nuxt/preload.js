@@ -1,7 +1,7 @@
 // preload.js
-const { contextBridge, ipcRenderer } = require('electron')
+// preload.js
+const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('electron', {
-  invoke: (channel, users) => ipcRenderer.invoke(channel, users),
-})
-
+  invoke: (channel, data) => ipcRenderer.invoke(channel, data)
+});

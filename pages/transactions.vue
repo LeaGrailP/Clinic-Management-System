@@ -1,4 +1,3 @@
-<!--
 
 
 <template>
@@ -126,11 +125,3 @@ const transactions = [
   // Add more entries as needed
 ]
 </script>
-
-
--->
-
-<template>
-
-  Transactions
-</template>

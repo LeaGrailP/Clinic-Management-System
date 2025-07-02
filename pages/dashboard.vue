@@ -29,20 +29,14 @@
         <label class="block text-sm font-medium">Invoice Date</label>
         <input type="date" class="w-full p-2 border rounded" value="2025-11-29" />
       </div>
-
-  <!-- Costumer Name -->
-      <div>
-        <label class="block text-sm font-medium">Buyer Name</label>
-        <input type="text" class="w-full p-2 border rounded" value="Anne Berlin" />
-      </div>
-
-  <!-- Costumer Address -->
-      <div>
-        <label class="block text-sm font-medium">Address</label>
-        <input type="text" class="w-full p-2 border rounded" value="Pico, La Trinidad" />
-      </div>
     </div>
 
+
+    <!--                 Costumer           -->
+      <div>
+        <h1> Register Patient </h1>
+
+      </div>
     <!-- --------------------------------------------------------------------------------------- -->
 
     <!-- table and buttons-->
@@ -119,7 +113,7 @@
 
   <!-- --------------------------------------------------------------------------------------- -->
 
-    <!-- Services -->
+    <!-- Services 
   <div class="p-4">
     <h2 class="text-xl font-bold mb-4">🧾 Product List</h2>
     <button @click="fetchProducts" class="mb-4 bg-blue-600 text-white px-4 py-2 rounded">
@@ -127,35 +121,19 @@
     </button>
 
     <div v-if="products.length === 0" class="text-gray-500">No products found.</div>
-      <div v-for="product in products" :key="product.id">
-        <div class="grid grid-cols-5">
+      <div v-for="product in products" :key="product.id" class="flex flex-row border-spacing-1">
+        <div>
            <h1 class="border p-2">{{ product.productname }}</h1>
         <p class="border p-2">{{ product.price }}</p>
-        <p class="border p-2">{{ product.vat }}</p>
+        <p class="border p-2">{{ product.total }}</p>
         </div>
+
        
 
       </div>
-  </div>
+      
+  </div>-->
 </template>
 
-<script setup>
-import { ref, onMounted } from 'vue';
-
-const products = ref([]);
-
-async function fetchProducts() {
-  try {
-    const result = await window.electron.invoke('get-products');
-    products.value = result;
-  } catch (error) {
-    console.error('❌ Failed to fetch products:', error);
-  }
-}
-
-onMounted(() => {
-  fetchProducts();
-});
-</script>
 
 

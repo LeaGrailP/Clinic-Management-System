@@ -13,9 +13,20 @@ db.exec(`
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       productname TEXT NOT NULL,
       price REAL,
-      vat REAL
+      vat REAL,
+      vatAmount REAL,
+      total REAL
     )
   `);
+
+  db.exec(`
+      CREATE TABLE IF NOT EXISTS transactions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    date TEXT,
+    total REAL,
+    items TEXT
+  )
+    `);
   
 }
 
@@ -37,32 +48,55 @@ function createWindow() {
 app.whenReady().then(() => {
   createDatabase();
 
-
-ipcMain.handle('get-products', () => {
-  try {
-    const stmt = db.prepare('SELECT * FROM products');
-    return stmt.all(); // Returns an array of product objects
-  } catch (error) {
-    console.error('Error fetching products:', error);
-    return [];
-  }
-});
-
+   ipcMain.handle('get-products', () => {
+    try {
+      const stmt = db.prepare('SELECT * FROM products');
+      return stmt.all();
+    } catch (error) {
+      console.error('Error fetching products:', error);
+      return [];
+    }
+  });
 
 
-
-ipcMain.handle('add-products', (event, product) => {
-  try {
-    const stmt = db.prepare(
-      'INSERT INTO products (productname, price, vat) VALUES (?, ?, ?)'
+  ipcMain.handle('add-products', (event, product) => {
+    const stmt = db.prepare(`
+      INSERT INTO products (productname, price, vat, vatAmount, total)
+      VALUES (?, ?, ?, ?, ?)
+    `);
+    stmt.run(
+      product.productname,
+      product.price,
+      product.vat,
+      product.vatAmount,
+      product.total
     );
-    stmt.run(product.productname, product.price, product.vat);
     return { success: true };
-  } catch (error) {
-    console.error('Error adding product:', error);
-    return { success: false, error };
-  }
-});
+  });
+
+  ipcMain.handle('update-product', (event, product) => {
+    const stmt = db.prepare(`
+      UPDATE products SET productname = ?, price = ?, vat = ?, vatAmount = ?, total = ?
+      WHERE id = ?
+    `);
+    stmt.run(
+      product.productname,
+      product.price,
+      product.vat,
+      product.vatAmount,
+      product.total,
+      product.id
+    );
+    return { success: true };
+  });
+
+  ipcMain.handle('delete-product', (event, id) => {
+    const stmt = db.prepare('DELETE FROM products WHERE id = ?');
+    stmt.run(id);
+    return { success: true };
+  });
+
+  console.log('✅ IPC handlers registered');
 
   createWindow();
 });
