@@ -31,12 +31,34 @@
       </div>
     </div>
 
-
     <!--                 Costumer           -->
-      <div>
-        <h1> Register Patient </h1>
 
+    <div class="p-6">
+    <button
+      @click="showModal = true"
+      class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+    >
+      Open Modal
+    </button>
+
+     <div v-if="showModal" class="fixed inset-0 bg-black bg-opacity-30 flex justify-center items-center">
+      <div class="bg-white p-6 rounded-lg w-full max-w-md">
+        <h2 class="text-xl font-semibold mb-4">New Patient</h2>
+        <form @submit.prevent="addPatient">
+          <input type="text" class="mb-2 w-full border px-3 py-2 rounded" placeholder="Name" />
+          <input type="text" class="mb-2 w-full border px-3 py-2 rounded" placeholder="Address" />
+          <input type="text" class="mb-4 w-full border px-3 py-2 rounded" placeholder="Number" />
+          <input type="text" class="mb-2 w-full border px-3 py-2 rounded" placeholder="Business Style" />
+          <input type="text" class="mb-4 w-full border px-3 py-2 rounded" placeholder="TIN" />
+
+          <div class="flex justify-end space-x-2">
+            <button type="button" @click="showModal = false" class="px-4 py-2 rounded border">Cancel</button>
+            <button type="submit" class="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700">Save</button>
+          </div>
+        </form>
       </div>
+    </div>
+  </div>
     <!-- --------------------------------------------------------------------------------------- -->
 
     <!-- table and buttons-->
@@ -112,28 +134,127 @@
     </div>
 
   <!-- --------------------------------------------------------------------------------------- -->
+   <div class="flex flex-row p-2">
+    <div v-for="product in products" :key="product.id" class="grid grid-rows-4 p-4 border-2 border-blue-500 rounded-lg">
+          <h1 class = "m-2">{{ product.productname }}</h1>
+          <p class="m-2">₱{{ Number(product.total || 0).toFixed(2) }}</p>
 
-    <!-- Services 
-  <div class="p-4">
-    <h2 class="text-xl font-bold mb-4">🧾 Product List</h2>
-    <button @click="fetchProducts" class="mb-4 bg-blue-600 text-white px-4 py-2 rounded">
-      Refresh
-    </button>
+    </div>
 
-    <div v-if="products.length === 0" class="text-gray-500">No products found.</div>
-      <div v-for="product in products" :key="product.id" class="flex flex-row border-spacing-1">
-        <div>
-           <h1 class="border p-2">{{ product.productname }}</h1>
-        <p class="border p-2">{{ product.price }}</p>
-        <p class="border p-2">{{ product.total }}</p>
-        </div>
+   </div>
 
-       
-
+    <!-- Services -->
+ <div class="bg-white p-4 rounded shadow">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-bold">📦 Product List</h2>
+        <button
+          @click="fetchProducts"
+          class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm"
+        >
+          🔄 Refresh
+        </button>
       </div>
-      
-  </div>-->
+
+      <table class="table-auto w-full border-collapse border border-gray-300 text-sm">
+        <thead>
+          <tr class="bg-gray-100 text-left">
+            <th class="border p-2">Name</th>
+            <th class="border p-2">Price</th>
+            <th class="border p-2">VAT</th>
+            <th class="border p-2">VAT Amount</th>
+            <th class="border p-2">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="product in products" :key="product.id">
+            <td class="border p-2">{{ product.productname }}</td>
+            <td class="border p-2">₱{{ Number(product.price || 0).toFixed(2) }}</td>
+            <td class="border p-2">{{ Number(product.vat || 0).toFixed(2) }}%</td>
+            <td class="border p-2">₱{{ Number(product.vatAmount || 0).toFixed(2) }}</td>
+            <td class="border p-2">₱{{ Number(product.total || 0).toFixed(2) }}</td>
+            <td class="border p-2 space-x-2">
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div v-if="products.length === 0" class="text-gray-500 text-sm mt-2">
+        No products found.
+      </div>
+      </div>
 </template>
 
+
+<script setup>
+import { ref, computed, onMounted } from 'vue';
+
+const showModal = ref(false)
+
+defineProps({
+  show: Boolean,
+})
+const emit = defineEmits(['close', 'save'])
+
+const form = reactive({
+  date: '',
+  name: '',
+  businessStyle: '',
+  address: '',
+  tin: ''
+})
+
+const save = () => {
+  emit('save', { ...form })
+  emit('close')
+}
+
+const productname = ref('');
+const price = ref(0);
+const vat = ref(0);
+const products = ref([]);
+const editingId = ref(null);
+
+const vatAmount = computed(() => {
+  const result = (price.value * vat.value) / 100;
+  return isNaN(result) ? 0 : result;
+});
+
+const total = computed(() => {
+  const result = price.value + vatAmount.value;
+  return isNaN(result) ? 0 : result;
+});
+
+async function fetchProducts() {
+  try {
+    products.value = await window.electron.invoke('get-products');
+  } catch (err) {
+    console.error('Error fetching products:', err);
+  }
+}
+
+async function handleSubmit() {
+  const payload = {
+    productname: productname.value,
+    price: price.value,
+    vat: vat.value,
+    vatAmount: vatAmount.value,
+    total: total.value
+  };
+
+  if (editingId.value) {
+    payload.id = editingId.value;
+    await window.electron.invoke('update-product', payload);
+    alert('✅ Product updated!');
+  } else {
+    await window.electron.invoke('add-products', payload);
+    alert('✅ Product added!');
+  }
+
+  clearForm();
+  fetchProducts();
+}
+
+onMounted(fetchProducts);
+</script>
 
 
