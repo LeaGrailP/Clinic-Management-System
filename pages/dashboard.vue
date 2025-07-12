@@ -34,31 +34,9 @@
     <!--                 Costumer           -->
 
     <div class="p-6">
-    <button
-      @click="showModal = true"
-      class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-    >
-      Open Modal
-    </button>
-
-     <div v-if="showModal" class="fixed inset-0 bg-black bg-opacity-30 flex justify-center items-center">
-      <div class="bg-white p-6 rounded-lg w-full max-w-md">
-        <h2 class="text-xl font-semibold mb-4">New Patient</h2>
-        <form @submit.prevent="addPatient">
-          <input type="text" class="mb-2 w-full border px-3 py-2 rounded" placeholder="Name" />
-          <input type="text" class="mb-2 w-full border px-3 py-2 rounded" placeholder="Address" />
-          <input type="text" class="mb-4 w-full border px-3 py-2 rounded" placeholder="Number" />
-          <input type="text" class="mb-2 w-full border px-3 py-2 rounded" placeholder="Business Style" />
-          <input type="text" class="mb-4 w-full border px-3 py-2 rounded" placeholder="TIN" />
-
-          <div class="flex justify-end space-x-2">
-            <button type="button" @click="showModal = false" class="px-4 py-2 rounded border">Cancel</button>
-            <button type="submit" class="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700">Save</button>
-          </div>
-        </form>
-      </div>
+      INSERT SEARCH INPUT FOR REGISTERED PATIENTS
+      <button class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Register New Patient</button>
     </div>
-  </div>
     <!-- --------------------------------------------------------------------------------------- -->
 
     <!-- table and buttons-->
@@ -187,8 +165,6 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-
-const showModal = ref(false)
 
 defineProps({
   show: Boolean,
