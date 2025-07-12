@@ -11,7 +11,19 @@ const resourcesPath = require('./resources-path-provider')
 const { DIST_DIR, MAIN_PROCESS_DIR, SERVER_HOST, SERVER_PORT } = require('./config')
 const NuxtApp = require('./renderer/NuxtApp')
 
+<<<<<<< Updated upstream
 const isDev = process.env.NODE_ENV === 'development'
+=======
+// DB for Dashboard
+db.exec(`
+  CREATE TABLE IF NOT EXISTS dashboard (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  invoice INTEGER PRIMARY KEY AUTOINCREMENT,
+  employee TEXT,
+  log_date TEXT DEFAULT (date('now', 'localtime')),     -- YYYY-MM-DD
+  log_time TEXT DEFAULT (time('now', 'localtime'))
+  )`)
+>>>>>>> Stashed changes
 
 const electronLogger = new Logger('Electron', 'teal')
 electronLogger.ignore(text => text.includes('nhdogjmejiglipccpnnnanhbledajbpd')) // Clear vue devtools errors
