@@ -43,24 +43,14 @@ import { ref } from 'vue'
 
 const username = ref('')
 const password = ref('')
-const error = ref('')
 const router = useRouter()
 
-async function handleLogin() {
-  try {
-    const result = await window.auth.login({ username: username.value, password: password.value })
+function handleLogin() {
+  // No real validation for now
+  console.log('Logging in with:', username.value, password.value)
 
-    if (result.success) {
-      localStorage.setItem('token', result.token)
-      localStorage.setItem('role', result.role)
-      router.push('/dashboard')
-    } else {
-      error.value = result.error
-      alert(result.error)
-    }
-  } catch (err) {
-    error.value = 'Something went wrong.'
-    alert('Error connecting to backend.')
-  }
+  // Redirect to dashboard page
+  router.push('/dashboard')
 }
+
 </script>

@@ -6,13 +6,6 @@
 
       <form @submit.prevent="register">
         <div class="space-y-4">
-        <div>
-        <label class="block text-sm font-medium text-white mb-1">Role</label>
-        <select v-model="role" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-400 outline-none">
-          <option value="cashier">Cashier</option>
-          <option value="admin">Admin</option>
-        </select>
-        </div>
           <div>
             <label class="block text-sm font-medium text-white mb-1">Full Name</label>
             <input v-model="name" type="text" placeholder="Admin" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-400 outline-none" />
@@ -50,45 +43,24 @@
 <script setup>
 import background from '~/components/background.vue'
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
 
 const name = ref('')
 const email = ref('')
 const password = ref('')
 const confirmPassword = ref('')
-const role = ref('admin') 
 
 definePageMeta({
-  middleware: 'admin',
   layout: 'default',
   hideHeader: true,
   hideSidebar: true
 })
 
-const router = useRouter()
-
-const register = async () => {
+const register = () => {
   if (password.value !== confirmPassword.value) {
     alert("Passwords do not match!")
     return
   }
-
-  try {
-    const res = await window.auth.register({
-      username: email.value,
-      password: password.value,
-      role: role.value
-    })
-
-    if (res.success) {
-      alert(`Account created successfully!`)
-      router.push('/')
-    } else {
-      alert(res.error || 'Registration failed.')
-    }
-  } catch (err) {
-    alert('Something went wrong during registration.')
-  }
+  // Simulate registration
+  alert(`Welcome, ${name.value}! Your account has been created.`)
 }
 </script>
-

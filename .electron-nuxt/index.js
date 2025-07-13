@@ -1,20 +1,14 @@
+const { app, BrowserWindow, ipcMain } = require('electron');
+const path = require('path');
+const Database = require('better-sqlite3');
 
-const path = require('path')
-const webpack = require('webpack')
-const electron = require('electron')
+let db;
 
-const { Pipeline, Logger } = require('@xpda-dev/core')
-const { ElectronLauncher } = require('@xpda-dev/electron-launcher')
-const { ElectronBuilder } = require('@xpda-dev/electron-builder')
-const { Webpack } = require('@xpda-dev/webpack-step')
-const resourcesPath = require('./resources-path-provider')
-const { DIST_DIR, MAIN_PROCESS_DIR, SERVER_HOST, SERVER_PORT } = require('./config')
-const NuxtApp = require('./renderer/NuxtApp')
+function createDatabase() {
+  const dbPath = path.join(__dirname, '../userData/database.db');
+  db = new Database(dbPath);
 
-<<<<<<< Updated upstream
-const isDev = process.env.NODE_ENV === 'development'
-=======
-// DB for Dashboard
+// DB for Daskboard
 db.exec(`
   CREATE TABLE IF NOT EXISTS dashboard (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -23,58 +17,139 @@ db.exec(`
   log_date TEXT DEFAULT (date('now', 'localtime')),     -- YYYY-MM-DD
   log_time TEXT DEFAULT (time('now', 'localtime'))
   )`)
->>>>>>> Stashed changes
 
-const electronLogger = new Logger('Electron', 'teal')
-electronLogger.ignore(text => text.includes('nhdogjmejiglipccpnnnanhbledajbpd')) // Clear vue devtools errors
 
-const launcher = new ElectronLauncher({
-  logger: electronLogger,
-  electronPath: electron,
-  entryFile: path.join(DIST_DIR, 'main/index.js')
-})
+// DB for Products
+db.exec(`
+    CREATE TABLE IF NOT EXISTS products (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      productname TEXT NOT NULL,
+      price REAL,
+      vat REAL,
+      vatAmount REAL,
+      total REAL
+    )
+  `);
 
-function hasConfigArgument (array) {
-  for (const el of array) if (el === '--config' || el === '-c') return true
-  return false
+// DB for Patients
+db.exec(`
+  CREATE TABLE IF NOT EXISTS patients(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  patientname TEXT NOT NULL,
+  business TEXT,
+  address TEXT,
+  tin REAL,
+  number REAL
+)
+  `)
+
+
+//
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS transactions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    date TEXT,
+    total REAL,
+    items TEXT
+  )
+    `);
+  
 }
-const argumentsArray = process.argv.slice(2)
-if (!hasConfigArgument(argumentsArray)) argumentsArray.push('--config', 'builder.config.js')
 
-const builder = new ElectronBuilder({
-  processArgv: argumentsArray
+
+function createWindow() {
+  const win = new BrowserWindow({
+    width: 1000,
+    height: 700,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false
+    }
+  });
+
+  win.loadURL('http://localhost:3000');
+}
+
+app.whenReady().then(() => {
+  createDatabase();
+
+
+  //---- IPCMain Products -----
+   ipcMain.handle('get-products', () => {
+    try {
+      const stmt = db.prepare('SELECT * FROM products');
+      return stmt.all();
+    } catch (error) {
+      console.error('Error fetching products:', error);
+      return [];
+    }
+  });
+
+
+  ipcMain.handle('add-products', (event, product) => {
+    const stmt = db.prepare(`
+      INSERT INTO products (productname, price, vat, vatAmount, total)
+      VALUES (?, ?, ?, ?, ?)
+    `);
+    stmt.run(
+      product.productname,
+      product.price,
+      product.vat,
+      product.vatAmount, 
+      product.total
+    );
+    return { success: true };
+  });
+
+  ipcMain.handle('update-product', (event, product) => {
+    const stmt = db.prepare(`
+      UPDATE products SET productname = ?, price = ?, vat = ?, vatAmount = ?, total = ?
+      WHERE id = ?
+    `);
+    stmt.run(
+      product.productname,
+      product.price,
+      product.vat,
+      product.vatAmount,
+      product.total,
+      product.id
+    );
+    return { success: true };
+  });
+
+  ipcMain.handle('delete-product', (event, id) => {
+    const stmt = db.prepare('DELETE FROM products WHERE id = ?');
+    stmt.run(id);
+    return { success: true };
+  });
+
+// ----- Patients ----
+
+ipcMain.handle('get-patients', () => {
+  return db.prepare('SELECT * FROM patients').all()
 })
 
-const webpackConfig = Webpack.getBaseConfig({
-  entry: isDev
-    ? path.join(MAIN_PROCESS_DIR, 'boot/index.dev.js')
-    : path.join(MAIN_PROCESS_DIR, 'boot/index.prod.js'),
-  output: {
-    filename: 'index.js',
-    path: path.join(DIST_DIR, 'main')
-  },
-  plugins: [
-    new webpack.DefinePlugin({
-      'process.resourcesPath': resourcesPath.mainProcess(),
-      'process.env.DEV_SERVER_URL': `'${SERVER_HOST}:${SERVER_PORT}'`
-    })
-  ]
+ipcMain.handle('add-patient', (event, patient) => {
+  db.prepare(`
+    INSERT INTO patients (patientname, address, number, business, tin)
+    VALUES (?, ?, ?, ?, ?)
+  `).run(patient.patientname, patient.address, patient.number, patient.business, patient.tin)
 })
 
-const webpackMain = new Webpack({
-  logger: new Logger('Main', 'olive'),
-  webpackConfig,
-  launcher // need to restart launcher after compilation
+ipcMain.handle('update-patient', (event, patient) => {
+  db.prepare(`
+    UPDATE patients SET patientname = ?, address = ?, number = ?, business = ?, tin = ?
+    WHERE id = ?
+  `).run(patient.patientname, patient.address, patient.number, patient.business, patient.tin, patient.id)
 })
 
-const nuxt = new NuxtApp(new Logger('Nuxt', 'green'))
-
-const pipe = new Pipeline({
-  title: 'Electron-nuxt',
-  isDevelopment: isDev,
-  steps: [webpackMain, nuxt],
-  launcher,
-  builder
+ipcMain.handle('delete-patient', (event, id) => {
+  db.prepare('DELETE FROM patients WHERE id = ?').run(id)
 })
 
-pipe.run()
+  console.log('✅ IPC handlers registered');
+
+  createWindow();
+});
+
