@@ -1,8 +1,8 @@
 import express from 'express'
 import cors from 'cors'
-import bcrypt from 'bcrypt'
+import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
-import { initDB } from './db.js'
+import { initDB } from '../.electron-nuxt/db.js'
 
 const app = express()
 const PORT = 3000
