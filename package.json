@@ -2,15 +2,15 @@
   "name": "clinic-pos",
   "version": "0.0.1",
   "description": "electron-nuxt project",
-  "main": ".output/server/index.mjs",
+  "main": "electron/main.js",
   "scripts": {
     "dev": "nuxt dev --host",
     "build": "nuxt build",
     "rebuild": "electron-rebuild -f -w better-sqlite3",
     "generate": "nuxt generate",
     "start": "nuxt start",
-    "electron": "electron .electron-nuxt/main.js",
-    "electron:dev": "concurrently \"yarn dev\" \"wait-on http://localhost:3000 && electron .electron-nuxt/",
+    "electron": "electron electron/main.js",
+    "electron:dev": "concurrently \"yarn dev\" \"wait-on http://localhost:3000 && electron electron/",
     "postinstall": "electron-rebuild"
   },
   "keywords": [],
@@ -31,7 +31,7 @@
     "concurrently": "^9.1.2",
     "cross-env": "^7.0.3",
     "deepmerge": "^4.2.2",
-    "electron": "^36.4.0",
+    "electron": "^37.2.1",
     "electron-builder": "^24.13.1",
     "electron-devtools-installer": "^3.2.0",
     "electron-rebuild": "^3.2.9",
@@ -43,7 +43,9 @@
   },
   "dependencies": {
     "@pinia/nuxt": "^0.11.1",
-    "better-sqlite3": "^12.1.1",
-    "lucide-vue-next": "^0.513.0"
+    "bcryptjs": "^3.0.2",
+    "better-sqlite3": "^12.2.0",
+    "lucide-vue-next": "^0.513.0",
+    "sqlite3": "^5.1.7"
   }
 }
