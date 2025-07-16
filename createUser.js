@@ -2,7 +2,7 @@ const sqlite3 = require('sqlite3').verbose();
 const bcrypt = require('bcryptjs');
 const path = require('path');
 
-const dbPath = path.join(__dirname, './userData/database.db');
+const dbPath = path.resolve('D:/Clinic-Management-System/electron/userdata/database.db');
 console.log('🧭 Using DB at:', dbPath);
 
 const db = new sqlite3.Database(dbPath);

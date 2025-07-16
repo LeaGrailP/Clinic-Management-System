@@ -12,9 +12,8 @@ function initDB() {
   const path = require('path');
   const Database = require('better-sqlite3');
 
-  const dbDir = path.join(__dirname, './userData');
-  const dbPath = path.join(dbDir, 'database.db');
-
+  const dbPath = path.resolve('D:/Clinic-Management-System/electron/userdata/database.db');
+  const dbDir = path.dirname(dbPath);
   console.log('📂 Electron is trying to open DB at:', dbPath); // << debug
 
   // Ensure folder exists

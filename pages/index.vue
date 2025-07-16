@@ -51,6 +51,7 @@ definePageMeta({
 
 const username = ref('')
 const password = ref('')
+const router = useRouter();
 const isAdmin = ref(false)
 
 onMounted(() => {
