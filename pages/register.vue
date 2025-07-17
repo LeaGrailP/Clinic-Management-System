@@ -42,25 +42,49 @@
 
 <script setup>
 import background from '~/components/background.vue'
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import { useUser } from '~/composables/useUser'
+
+const route = useRoute() // ✅ This fixes the error
+
+definePageMeta({
+  layout: 'default',
+  hideSidebar: true
+})
 
 const name = ref('')
 const email = ref('')
 const password = ref('')
 const confirmPassword = ref('')
 
-definePageMeta({
-  layout: 'default',
-  hideHeader: true,
-  hideSidebar: true
+const router = useRouter()
+const { isAdmin } = useUser()
+
+onMounted(() => {
+  if (!isAdmin.value) {
+    alert('Access denied. Admins only.')
+    router.push('/')
+  }
 })
 
-const register = () => {
+const register = async () => {
   if (password.value !== confirmPassword.value) {
     alert("Passwords do not match!")
     return
   }
-  // Simulate registration
-  alert(`Welcome, ${name.value}! Your account has been created.`)
+
+  const result = await window.auth.register({
+    username: email.value,
+    password: password.value,
+    role: 'admin'
+  })
+
+  if (result.success) {
+    alert("Account created!")
+    router.push('/dashboard')
+  } else {
+    alert(result.error || "Registration failed.")
+  }
 }
 </script>

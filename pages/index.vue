@@ -2,7 +2,7 @@
   <div class="min-h-screen flex items-center justify-center">
     <background />
     <div class="z-10 p-8 bg-white bg-opacity-10 backdrop-blur-md rounded-lg shadow-lg">
-      <form @submit.prevent="handleLogin" class="p-8 rounded shadow-md w-full max-w-sm">
+      <form @submit.prevent="handleLogin" class="p-8 rounded w-full max-w-sm">
         <h2 class="text-2xl font-bold mb-6 text-center text-white">Clinic POS</h2>
 
         <input
@@ -26,14 +26,6 @@
           Login
         </button>
       </form>
-
-      <div class="mt-4 text-center">
-      <div v-if="isAdmin">
-        <NuxtLink to="/register" class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg">
-        Create an Account
-        </NuxtLink>
-      </div>
-      </div>
     </div>
   </div>
 </template>
@@ -69,7 +61,7 @@ async function handleLogin() {
     })
 
     if (result && result.success) {
-      localStorage.setItem('role', result.role)
+      localStorage.setItem('user', JSON.stringify(result)) // ✅ Save whole user object
       router.push('/dashboard')
     } else {
       alert(result?.error || 'Login failed.')
