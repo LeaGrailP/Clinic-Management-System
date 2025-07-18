@@ -1,19 +1,20 @@
-// stores/user.js
-import { defineStore } from 'pinia'
+const bcrypt = require('bcryptjs');
 
-export const useUserStore = defineStore('user', {
-  state: () => ({
-    role: '',        // cashier or manager
-    isLoggedIn: false
-  }),
-  actions: {
-    login(role) {
-      this.role = role
-      this.isLoggedIn = true
-    },
-    logout() {
-      this.role = ''
-      this.isLoggedIn = false
+function registerUser(db, username, password, role) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const hash = await bcrypt.hash(password, 10);
+      db.prepare(`INSERT INTO users (username, password, role) VALUES (?, ?, ?)`).run(username, hash, role);
+      resolve({ success: true });
+    } catch (err) {
+      if (err.code === 'SQLITE_CONSTRAINT') {
+        resolve({ success: false, error: 'Username already exists' });
+      } else {
+        console.error('Register error:', err);
+        resolve({ success: false, error: 'Registration failed' });
+      }
     }
-  }
-})
+  });
+}
+
+module.exports = { registerUser };

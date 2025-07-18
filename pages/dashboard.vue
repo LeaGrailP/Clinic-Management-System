@@ -58,8 +58,8 @@
             <td class="p-2 border"></td>
             <td class="p-2 border"></td>
             <td class="p-2 border">
-              <button class="text-red-600 mr-2">🗑️</button>
-              <button class="text-blue-600">✏️</button>
+              <button class="text-red-600 mr-2"><Trash class="w- h-4" /></button>
+              <button class="text-blue-600"><Pencil class="w- h-4" /></button>
             </td>
           </tr>
           <!-- Add more rows as needed -->
@@ -164,6 +164,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
+import { Pencil, Trash } from 'lucide-vue-next'
 
 defineProps({
   show: Boolean,

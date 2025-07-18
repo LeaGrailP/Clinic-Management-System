@@ -8,14 +8,20 @@
         <div class="space-y-4">
           <div>
             <label class="block text-sm font-medium text-white mb-1">Full Name</label>
-            <input v-model="name" type="text" placeholder="Admin" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-400 outline-none" />
-          </div>
-
+            <input v-model="name" type="text" placeholder="Juan De la Cruz" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-400 outline-none" />
+          </div> 
           <div>
-            <label class="block text-sm font-medium text-white mb-1">Email Address</label>
-            <input v-model="email" type="email" placeholder="you@example.com" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-400 outline-none" />
+            <label class="block text-sm font-medium text-white mb-1">Username</label>
+            <input v-model="email" type="text" placeholder="cashier@example.com" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-400 outline-none" />
           </div>
-
+          <div>
+            <label class="block text-sm font-medium text-white mb-1">Role</label>
+            <select v-model="role" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-400 outline-none">
+            <option disabled value="">Select role</option>
+            <option value="admin">Admin</option>
+            <option value="cashier">Cashier</option>
+            </select>
+          </div>
           <div>
             <label class="block text-sm font-medium text-white mb-1">Password</label>
             <input v-model="password" type="password" placeholder="••••••••" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-400 outline-none" />
@@ -31,11 +37,6 @@
           </button>
         </div>
       </form>
-
-      <p class="text-sm text-center text-gray-500 mt-6">
-        Already have an account?
-        <NuxtLink to="/" class="text-blue-600 hover:underline">Login here</NuxtLink>
-      </p>
     </div>
   </div>
 </template>
@@ -55,6 +56,7 @@ definePageMeta({
 
 const name = ref('')
 const email = ref('')
+const role = ref('')
 const password = ref('')
 const confirmPassword = ref('')
 
@@ -63,28 +65,33 @@ const { isAdmin } = useUser()
 
 onMounted(() => {
   if (!isAdmin.value) {
-    alert('Access denied. Admins only.')
-    router.push('/')
+    alert('Access denied. Admins only.');
+    router.push('/');
   }
-})
+});
 
 const register = async () => {
   if (password.value !== confirmPassword.value) {
-    alert("Passwords do not match!")
-    return
+    alert("Passwords do not match!");
+    return;
+  }
+
+  if (!role.value) {
+    alert("Please select a role");
+    return;
   }
 
   const result = await window.auth.register({
     username: email.value,
     password: password.value,
-    role: 'admin'
-  })
+    role: role.value,
+  });
 
   if (result.success) {
-    alert("Account created!")
-    router.push('/dashboard')
+    alert("Account created!");
+    router.push('/dashboard');
   } else {
-    alert(result.error || "Registration failed.")
+    alert(result.error || "Registration failed.");
   }
 }
 </script>

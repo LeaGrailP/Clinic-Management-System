@@ -17,7 +17,7 @@ const user = ref({})
         class="flex items-center space-x-1 px-2 py-1 rounded-md text-gray-700 hover:bg-gray-200 hover:text-black"
         exact-active-class="bg-gray-200 text-black font-semibold"
       >
-        <Home class="w-4 h-4" />
+        <Home class="w-6 h-6" />
       </NuxtLink>
 
       <NuxtLink
@@ -25,7 +25,7 @@ const user = ref({})
         class="flex items-center space-x-1 px-2 py-1 rounded-md hover:bg-gray-200 hover:text-black"
         exact-active-class="bg-gray-200 text-black font-semibold"
       >
-        <User class="w-4 h-4" />
+        <User class="w-6 h-6" />
       </NuxtLink>
     </nav>
   </header>
