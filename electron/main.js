@@ -67,6 +67,17 @@ function initDB() {
     )
   `);
 
+  //Invoice
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS transactions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      date TEXT,
+      total REAL,
+      items TEXT,
+      invoice_number TEXT UNIQUE
+    )
+  `);
+
   return db;
 }
 
@@ -168,4 +179,40 @@ app.whenReady().then(() => {
   });
 
   console.log('✅ All IPC handlers registered');
+});
+//Invoice
+ipcMain.handle('add-transaction', (_event, transaction) => {
+  const lastInvoice = db.prepare(`
+    SELECT invoice_number FROM transactions 
+    ORDER BY id DESC LIMIT 1
+  `).get();
+
+  let nextInvoiceNumber = 'INV-000001';
+  if (lastInvoice?.invoice_number) {
+    const lastNumber = parseInt(lastInvoice.invoice_number.replace('INV-', ''));
+    const nextNumber = (lastNumber + 1).toString().padStart(6, '0');
+    nextInvoiceNumber = `INV-${nextNumber}`;
+  }
+
+  db.prepare(`
+    INSERT INTO transactions (date, total, items, invoice_number)
+    VALUES (?, ?, ?, ?)
+  `).run(transaction.date, transaction.total, transaction.items, nextInvoiceNumber);
+
+  return { success: true, invoice_number: nextInvoiceNumber };
+});
+ipcMain.handle('generate-invoice-number', () => {
+  const lastInvoice = db.prepare(`
+    SELECT invoice_number FROM transactions 
+    ORDER BY id DESC LIMIT 1
+  `).get();
+
+  let nextInvoiceNumber = 'INV-000001';
+  if (lastInvoice?.invoice_number) {
+    const lastNumber = parseInt(lastInvoice.invoice_number.replace('INV-', ''));
+    const nextNumber = (lastNumber + 1).toString().padStart(6, '0');
+    nextInvoiceNumber = `INV-${nextNumber}`;
+  }
+
+  return nextInvoiceNumber;
 });

@@ -6,7 +6,7 @@
   <!--Invoice Number-->
       <div>
         <label class="block text-sm font-medium">Invoice #</label>
-        <input type="text" class="w-full p-2 border rounded" /> 
+        <input type="text" class="w-full p-2 border rounded" :value="invoiceNumber" readonly />
       </div>
       
   <!-- options for the name user -->
@@ -171,6 +171,7 @@ defineProps({
 })
 const emit = defineEmits(['close', 'save'])
 
+const invoiceNumber = ref('');
 const form = reactive({
   date: '',
   name: '',
@@ -230,7 +231,16 @@ async function handleSubmit() {
   fetchProducts();
 }
 
-onMounted(fetchProducts);
+onMounted(async () => {
+  fetchProducts();
+
+  try {
+    invoiceNumber.value = await window.electron.invoke('generate-invoice-number');
+  } catch (err) {
+    console.error('Failed to fetch invoice number:', err);
+  }
+});
+
 </script>
 
 
