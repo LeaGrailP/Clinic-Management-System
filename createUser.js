@@ -14,18 +14,31 @@ async function createUser() {
 
   const hashedPassword = await bcrypt.hash(password, 10);
 
-  db.run(
-    'INSERT INTO users (username, password, role) VALUES (?, ?, ?)',
-    [username, hashedPassword, role],
-    (err) => {
-      if (err) {
-        console.error('❌ Failed to insert user:', err.message);
-      } else {
-        console.log('✅ Admin user inserted!');
-      }
+  db.get('SELECT * FROM users WHERE username = ?', [username], (err, row) => {
+    if (err) {
+      console.error('❌ Error checking user:', err.message);
       db.close();
+      return;
     }
-  );
+
+    if (row) {
+      console.log(`⚠️ User "${username}" already exists. No action taken.`);
+      db.close();
+    } else {
+      db.run(
+        'INSERT INTO users (username, password, role) VALUES (?, ?, ?)',
+        [username, hashedPassword, role],
+        (err) => {
+          if (err) {
+            console.error('❌ Failed to insert user:', err.message);
+          } else {
+            console.log('✅ Admin user inserted!');
+          }
+          db.close();
+        }
+      );
+    }
+  });
 }
 
 createUser();

@@ -1,4 +1,3 @@
-
 <template>
 <h1 class="text-5xl font-bold mb-4">Dashboard</h1>
 
@@ -7,7 +6,7 @@
   <!--Invoice Number-->
       <div>
         <label class="block text-sm font-medium">Invoice #</label>
-        <input type="text" class="w-full p-2 border rounded" /> 
+        <input type="text" class="w-full p-2 border rounded" :value="invoiceNumber" readonly />
       </div>
       
   <!-- options for the name user -->
@@ -59,8 +58,8 @@
             <td class="p-2 border"></td>
             <td class="p-2 border"></td>
             <td class="p-2 border">
-              <button class="text-red-600 mr-2">🗑️</button>
-              <button class="text-blue-600">✏️</button>
+              <button class="text-red-600 mr-2"><Trash class="w- h-4" /></button>
+              <button class="text-blue-600"><Pencil class="w- h-4" /></button>
             </td>
           </tr>
           <!-- Add more rows as needed -->
@@ -165,12 +164,14 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
+import { Pencil, Trash } from 'lucide-vue-next'
 
 defineProps({
   show: Boolean,
 })
 const emit = defineEmits(['close', 'save'])
 
+const invoiceNumber = ref('');
 const form = reactive({
   date: '',
   name: '',
@@ -230,7 +231,16 @@ async function handleSubmit() {
   fetchProducts();
 }
 
-onMounted(fetchProducts);
+onMounted(async () => {
+  fetchProducts();
+
+  try {
+    invoiceNumber.value = await window.electron.invoke('generate-invoice-number');
+  } catch (err) {
+    console.error('Failed to fetch invoice number:', err);
+  }
+});
+
 </script>
 
 

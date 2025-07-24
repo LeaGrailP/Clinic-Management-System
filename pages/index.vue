@@ -61,7 +61,7 @@ async function handleLogin() {
     })
 
     if (result && result.success) {
-      localStorage.setItem('role', result.role)
+      localStorage.setItem('user', JSON.stringify(result)) // ✅ Save whole user object
       router.push('/dashboard')
     } else {
       alert(result?.error || 'Login failed.')

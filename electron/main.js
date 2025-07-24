@@ -67,6 +67,17 @@ function initDB() {
     )
   `);
 
+  //Invoice
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS invoice (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      date TEXT,
+      total REAL,
+      items TEXT,
+      invoice_number TEXT UNIQUE
+    )
+  `);
+
   return db;
 }
 
@@ -90,7 +101,7 @@ app.whenReady().then(() => {
   db = initDB();
   createWindow();
 
-  // ✅ Auth Handlers
+  // Login
   ipcMain.handle('login', async (_event, { username, password }) => {
     console.log('LOGIN ATTEMPT:', username);
 
@@ -107,19 +118,22 @@ app.whenReady().then(() => {
       return { success: false, error: 'Internal login error' };
     }
   });
-
+//Register
   ipcMain.handle('auth:register', async (_event, { username, password, role }) => {
-    try {
-      const hash = await bcrypt.hash(password, 10);
-      db.prepare(`INSERT INTO users (username, password, role) VALUES (?, ?, ?)`).run(username, hash, role);
-      return { success: true };
-    } catch (err) {
-      console.error('Register error:', err);
-      return { success: false, error: 'User exists or DB error' };
+  try {
+    const hash = await bcrypt.hash(password, 10);
+    db.prepare(`INSERT INTO users (username, password, role) VALUES (?, ?, ?)`).run(username, hash, role);
+    return { success: true };
+  } catch (err) {
+    if (err.code === 'SQLITE_CONSTRAINT') {
+      return { success: false, error: 'Username already exists' };
     }
-  });
+    console.error('Register error:', err);
+    return { success: false, error: 'Registration failed' };
+  }
+});
 
-  // ✅ Patients
+  // Patients
   ipcMain.handle('get-patients', () => db.prepare('SELECT * FROM patients').all());
 
   ipcMain.handle('add-patient', (_event, patient) => {
@@ -140,7 +154,7 @@ app.whenReady().then(() => {
     db.prepare('DELETE FROM patients WHERE id = ?').run(id);
   });
 
-  // ✅ Products
+  // Products
   ipcMain.handle('get-products', () => db.prepare('SELECT * FROM products').all());
 
   ipcMain.handle('add-products', (_event, product) => {
@@ -165,4 +179,40 @@ app.whenReady().then(() => {
   });
 
   console.log('✅ All IPC handlers registered');
+});
+//Invoice
+ipcMain.handle('add-invoice', (_event, invoice) => {
+  const lastInvoice = db.prepare(`
+    SELECT invoice_number FROM invoice 
+    ORDER BY id DESC LIMIT 1
+  `).get();
+
+  let nextInvoiceNumber = 'INV-000001';
+  if (lastInvoice?.invoice_number) {
+    const lastNumber = parseInt(lastInvoice.invoice_number.replace('INV-', ''));
+    const nextNumber = (lastNumber + 1).toString().padStart(6, '0');
+    nextInvoiceNumber = `INV-${nextNumber}`;
+  }
+
+  db.prepare(`
+    INSERT INTO invoice (date, total, items, invoice_number)
+    VALUES (?, ?, ?, ?)
+  `).run(invoice.date, invoice.total, invoice.items, nextInvoiceNumber);
+
+  return { success: true, invoice_number: nextInvoiceNumber };
+});
+ipcMain.handle('generate-invoice-number', () => {
+  const lastInvoice = db.prepare(`
+    SELECT invoice_number FROM invoice 
+    ORDER BY id DESC LIMIT 1
+  `).get();
+
+  let nextInvoiceNumber = 'INV-000001';
+  if (lastInvoice?.invoice_number) {
+    const lastNumber = parseInt(lastInvoice.invoice_number.replace('INV-', ''));
+    const nextNumber = (lastNumber + 1).toString().padStart(6, '0');
+    nextInvoiceNumber = `INV-${nextNumber}`;
+  }
+
+  return nextInvoiceNumber;
 });

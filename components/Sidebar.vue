@@ -1,12 +1,26 @@
 <script setup>
-import { defineProps, defineEmits } from 'vue'
-import { Menu, ChevronLeft, ShoppingCart, ArrowLeftRight, Info, User, Home } from 'lucide-vue-next'
+import { defineProps, defineEmits, ref, onMounted } from 'vue'
+import { Menu, ChevronLeft, ShoppingCart, ArrowLeftRight, Info, User, Home, LogOut, LogIn } from 'lucide-vue-next'
 
 const props = defineProps({
   collapsed: Boolean
 })
 
 const emit = defineEmits(['toggle'])
+
+// ✅ Get current user role from localStorage
+const user = ref({ role: '' })
+
+onMounted(() => {
+  const stored = localStorage.getItem('user')
+  if (stored) {
+    try {
+      user.value = JSON.parse(stored)
+    } catch {
+      user.value = { role: '' }
+    }
+  }
+})
 </script>
 
 <template>
@@ -59,8 +73,23 @@ const emit = defineEmits(['toggle'])
       >
         <ArrowLeftRight class="w-5 h-5" />
         <span v-if="!props.collapsed">Transactions</span>
+      </NuxtLink><!-- ✅ Show only for admin -->
+      <NuxtLink
+        v-if="user.role === 'admin'"
+        to="/register"
+        class="flex items-center space-x-3 px-3 py-2 rounded-md text-gray-700 hover:bg-gray-200 hover:text-black"
+        exact-active-class="bg-gray-200 text-black font-semibold">
+        <LogIn class="w-5 h-5" />
+        <span v-if="!props.collapsed">Create Account</span>
+      </NuxtLink> 
+      <NuxtLink
+        to="/"
+        class="flex items-center space-x-3 px-3 py-2 rounded-md text-gray-700 hover:bg-gray-200 hover:text-black"
+        exact-active-class="bg-gray-200 text-black font-semibold"
+      >
+        <LogOut class="w-5 h-5" />
+        <span v-if="!props.collapsed">Log Out</span>
       </NuxtLink>
-
       <NuxtLink
         to="/about"
         class="flex items-center space-x-3 px-3 py-2 rounded-md text-gray-700 hover:bg-gray-200 hover:text-black"

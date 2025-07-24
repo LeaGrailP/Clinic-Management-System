@@ -1,8 +1,8 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('auth', {
-  login: (data) => ipcRenderer.invoke('login', data),
-  register: (data) => ipcRenderer.invoke('auth:register', data),
+  login: (credentials) => ipcRenderer.invoke('login', credentials),
+  register: (account) => ipcRenderer.invoke('auth:register', account),
 });
 
 contextBridge.exposeInMainWorld('patientAPI', {
