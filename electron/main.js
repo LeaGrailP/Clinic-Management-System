@@ -69,7 +69,7 @@ function initDB() {
 
   //Invoice
   db.exec(`
-    CREATE TABLE IF NOT EXISTS transactions (
+    CREATE TABLE IF NOT EXISTS invoice (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       date TEXT,
       total REAL,
@@ -181,9 +181,9 @@ app.whenReady().then(() => {
   console.log('✅ All IPC handlers registered');
 });
 //Invoice
-ipcMain.handle('add-transaction', (_event, transaction) => {
+ipcMain.handle('add-invoice', (_event, invoice) => {
   const lastInvoice = db.prepare(`
-    SELECT invoice_number FROM transactions 
+    SELECT invoice_number FROM invoice 
     ORDER BY id DESC LIMIT 1
   `).get();
 
@@ -195,15 +195,15 @@ ipcMain.handle('add-transaction', (_event, transaction) => {
   }
 
   db.prepare(`
-    INSERT INTO transactions (date, total, items, invoice_number)
+    INSERT INTO invoice (date, total, items, invoice_number)
     VALUES (?, ?, ?, ?)
-  `).run(transaction.date, transaction.total, transaction.items, nextInvoiceNumber);
+  `).run(invoice.date, invoice.total, invoice.items, nextInvoiceNumber);
 
   return { success: true, invoice_number: nextInvoiceNumber };
 });
 ipcMain.handle('generate-invoice-number', () => {
   const lastInvoice = db.prepare(`
-    SELECT invoice_number FROM transactions 
+    SELECT invoice_number FROM invoice 
     ORDER BY id DESC LIMIT 1
   `).get();
 
