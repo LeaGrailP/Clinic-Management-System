@@ -26,7 +26,7 @@ function initDB() {
   // Users table
   db.exec(`
     CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
       username TEXT UNIQUE NOT NULL,
       password TEXT NOT NULL,
       role TEXT NOT NULL
@@ -112,7 +112,7 @@ app.whenReady().then(() => {
       const match = await bcrypt.compare(password, user.password);
       if (!match) return { success: false, error: 'Incorrect password' };
 
-      return { success: true, username: user.username, role: user.role };
+      return { success: true, name: user.name, username: user.username, role: user.role };
     } catch (err) {
       console.error('Login error:', err);
       return { success: false, error: 'Internal login error' };

@@ -9,24 +9,22 @@
         <input type="text" class="w-full p-2 border rounded" :value="invoiceNumber" readonly />
       </div>
       
-  <!-- options for the name user -->
+  <!--Issued By-->
       <div>
         <label class="block text-sm font-medium">Issued By</label>
-        <select class="w-full p-2 border rounded">
-          <option>Search Name</option> 
-        </select>
+        <input type="text" :value="issuedBy" class="w-full p-2 border rounded" readonly />
       </div>
 
-  <!-- Current Time (input function here) -->
-      <div> 
-        <label class="block text-sm font-medium">Invoice Time</label>
-        <input type="time" class="w-full p-2 border rounded"/>
-      </div>
-
-  <!-- Current Date (input function here) -->
+  <!-- Invoice Date (Live) -->
       <div>
         <label class="block text-sm font-medium">Invoice Date</label>
-        <input type="date" class="w-full p-2 border rounded" value="2025-11-29" />
+        <input type="date" class="w-full p-2 border rounded" v-model="invoiceDate" readonly />
+      </div>
+
+<!-- Invoice Time (Live) -->
+      <div>
+        <label class="block text-sm font-medium">Invoice Time</label>
+        <input type="time" class="w-full p-2 border rounded" v-model="invoiceTime" readonly />
       </div>
     </div>
 
@@ -163,49 +161,74 @@
 
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, reactive, onMounted, onBeforeUnmount } from 'vue'
 import { Pencil, Trash } from 'lucide-vue-next'
 
-defineProps({
-  show: Boolean,
-})
+defineProps({ show: Boolean })
 const emit = defineEmits(['close', 'save'])
 
-const invoiceNumber = ref('');
-const form = reactive({
-  date: '',
-  name: '',
-  businessStyle: '',
-  address: '',
-  tin: ''
+// -- Issued By (User) --
+const issuedBy = ref('')
+
+onMounted(() => {
+  const userData = localStorage.getItem('user')
+  if (userData) {
+    try {
+      const parsed = JSON.parse(userData)
+      issuedBy.value = parsed.name || 'Unknown User'
+    } catch (e) {
+      console.error('Invalid user data:', e)
+    }
+  }
 })
+
+// -- Invoice Date & Time (Live) --
+const invoiceDate = ref('')
+const invoiceTime = ref('')
+
+function updateClockAndDate() {
+  const now = new Date()
+  invoiceDate.value = now.toISOString().split('T')[0] // YYYY-MM-DD
+  invoiceTime.value = now.toTimeString().slice(0, 5)   // HH:MM
+}
+
+onMounted(() => {
+  updateClockAndDate()
+  const clockInterval = setInterval(updateClockAndDate, 1000)
+  onBeforeUnmount(() => clearInterval(clockInterval))
+})
+
+// -- Invoice Number --
+const invoiceNumber = ref('')
+onMounted(async () => {
+  try {
+    invoiceNumber.value = await window.electron.invoke('generate-invoice-number')
+  } catch (err) {
+    console.error('Failed to fetch invoice number:', err)
+  }
+})
+
+// -- Product Form + Computed Fields --
+const form = reactive({ date: '', name: '', businessStyle: '', address: '', tin: '' })
+const productname = ref('')
+const price = ref(0)
+const vat = ref(0)
+const products = ref([])
+const editingId = ref(null)
+
+const vatAmount = computed(() => (price.value * vat.value) / 100 || 0)
+const total = computed(() => price.value + vatAmount.value || 0)
 
 const save = () => {
   emit('save', { ...form })
   emit('close')
 }
 
-const productname = ref('');
-const price = ref(0);
-const vat = ref(0);
-const products = ref([]);
-const editingId = ref(null);
-
-const vatAmount = computed(() => {
-  const result = (price.value * vat.value) / 100;
-  return isNaN(result) ? 0 : result;
-});
-
-const total = computed(() => {
-  const result = price.value + vatAmount.value;
-  return isNaN(result) ? 0 : result;
-});
-
 async function fetchProducts() {
   try {
-    products.value = await window.electron.invoke('get-products');
+    products.value = await window.electron.invoke('get-products')
   } catch (err) {
-    console.error('Error fetching products:', err);
+    console.error('Error fetching products:', err)
   }
 }
 
@@ -215,32 +238,31 @@ async function handleSubmit() {
     price: price.value,
     vat: vat.value,
     vatAmount: vatAmount.value,
-    total: total.value
-  };
+    total: total.value,
+  }
 
   if (editingId.value) {
-    payload.id = editingId.value;
-    await window.electron.invoke('update-product', payload);
-    alert('✅ Product updated!');
+    payload.id = editingId.value
+    await window.electron.invoke('update-product', payload)
+    alert('✅ Product updated!')
   } else {
-    await window.electron.invoke('add-products', payload);
-    alert('✅ Product added!');
+    await window.electron.invoke('add-products', payload)
+    alert('✅ Product added!')
   }
 
-  clearForm();
-  fetchProducts();
+  clearForm()
+  fetchProducts()
 }
 
-onMounted(async () => {
-  fetchProducts();
+function clearForm() {
+  productname.value = ''
+  price.value = 0
+  vat.value = 0
+  editingId.value = null
+}
 
-  try {
-    invoiceNumber.value = await window.electron.invoke('generate-invoice-number');
-  } catch (err) {
-    console.error('Failed to fetch invoice number:', err);
-  }
-});
-
+onMounted(fetchProducts)
 </script>
+
 
 

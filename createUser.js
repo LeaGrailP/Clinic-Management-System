@@ -8,6 +8,7 @@ console.log('🧭 Using DB at:', dbPath);
 const db = new sqlite3.Database(dbPath);
 
 async function createUser() {
+  const name = 'Ai Ly';
   const username = 'admin2@example.com';
   const password = 'securepass456';
   const role = 'admin';
@@ -26,13 +27,13 @@ async function createUser() {
       db.close();
     } else {
       db.run(
-        'INSERT INTO users (username, password, role) VALUES (?, ?, ?)',
-        [username, hashedPassword, role],
+        'INSERT INTO users (name, username, password, role) VALUES (?, ?, ?, ?)',
+        [name, username, hashedPassword, role],
         (err) => {
           if (err) {
             console.error('❌ Failed to insert user:', err.message);
           } else {
-            console.log('✅ Admin user inserted!');
+            console.log('✅ Admin user inserted with name!');
           }
           db.close();
         }

@@ -7,8 +7,6 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['toggle'])
-
-// ✅ Get current user role from localStorage
 const user = ref({ role: '' })
 
 onMounted(() => {
