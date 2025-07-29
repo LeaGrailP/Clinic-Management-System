@@ -119,10 +119,15 @@ app.whenReady().then(() => {
     }
   });
 //Register
-  ipcMain.handle('auth:register', async (_event, { username, password, role }) => {
+ipcMain.handle('auth:register', async (_event, { name, username, password, role }) => {
   try {
+    if (!name || !username || !password || !role) {
+      return { success: false, error: 'All fields are required' };
+    }
+
     const hash = await bcrypt.hash(password, 10);
-    db.prepare(`INSERT INTO users (username, password, role) VALUES (?, ?, ?)`).run(username, hash, role);
+    db.prepare(`INSERT INTO users (name, username, password, role) VALUES (?, ?, ?, ?)`)
+      .run(name, username, hash, role);
     return { success: true };
   } catch (err) {
     if (err.code === 'SQLITE_CONSTRAINT') {

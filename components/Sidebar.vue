@@ -47,6 +47,7 @@ onMounted(() => {
       </NuxtLink>
 
       <NuxtLink
+        v-if="user.role === 'admin'"
         to="/products"
         class="flex items-center space-x-3 px-3 py-2 rounded-md text-gray-700 hover:bg-gray-200 hover:text-black"
         exact-active-class="bg-gray-200 text-black font-semibold"
@@ -95,6 +96,14 @@ onMounted(() => {
       >
         <Info class="w-5 h-5" />
         <span v-if="!props.collapsed">About</span>
+      </Nuxtlink>
+       <NuxtLink
+        to="/appointment"
+        class="flex items-center space-x-3 px-3 py-2 rounded-md text-gray-700 hover:bg-gray-200 hover:text-black"
+        exact-active-class="bg-gray-200 text-black font-semibold"
+      >
+        <Info class="w-5 h-5" />
+        <span v-if="!props.collapsed">Appointment</span>
       </NuxtLink>
     </nav>
   </aside>

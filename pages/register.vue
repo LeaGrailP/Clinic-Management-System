@@ -47,7 +47,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useUser } from '~/composables/useUser'
 
-const route = useRoute() // ✅ This fixes the error
+const route = useRoute() 
 
 definePageMeta({
   layout: 'default',
@@ -71,8 +71,8 @@ onMounted(() => {
 });
 
 const register = async () => {
-  if (password.value !== confirmPassword.value) {
-    alert("Passwords do not match!");
+  if (!name.value.trim()) {
+    alert("Full Name is required");
     return;
   }
 
@@ -81,7 +81,13 @@ const register = async () => {
     return;
   }
 
+  if (password.value !== confirmPassword.value) {
+    alert("Passwords do not match!");
+    return;
+  }
+
   const result = await window.auth.register({
+    name: name.value,
     username: email.value,
     password: password.value,
     role: role.value,
@@ -93,5 +99,5 @@ const register = async () => {
   } else {
     alert(result.error || "Registration failed.");
   }
-}
+};
 </script>

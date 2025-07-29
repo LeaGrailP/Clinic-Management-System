@@ -7,6 +7,7 @@ export default {
     },
   },
   css: ['@/assets/css/tailwind.css'],
+  plugins: ['@/plugin/vcalendar.ts'],
   modules: ['@nuxtjs/tailwindcss', 
             '@pinia/nuxt'],
   build: {
@@ -19,7 +20,7 @@ export default {
   },
   nitro: {
     compatibility: {
-      date: '2025-06-06', // Suggested warning fix
+      date: '2025-06-06', 
     },
   },
 };

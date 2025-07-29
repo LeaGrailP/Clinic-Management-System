@@ -113,13 +113,30 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import { useUser } from '~/composables/useUser'
 
 const productname = ref('');
 const price = ref(0);
 const vat = ref(0);
 const products = ref([]);
 const editingId = ref(null);
+
+definePageMeta({
+  layout: 'default',
+  hideSidebar: true
+})
+
+const router = useRouter()
+const { isAdmin } = useUser()
+
+onMounted(() => {
+  if (!isAdmin.value) {
+    alert('Access denied. Admins only.');
+    router.push('/');
+  }
+});
 
 const vatAmount = computed(() => {
   const result = (price.value * vat.value) / 100;
