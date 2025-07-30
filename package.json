@@ -46,7 +46,6 @@
     "bcryptjs": "^3.0.2",
     "better-sqlite3": "^12.2.0",
     "lucide-vue-next": "^0.513.0",
-    "sqlite3": "^5.1.7",
-    "v-calendar": "^2.4.2"
+    "sqlite3": "^5.1.7"
   }
 }

@@ -7,7 +7,6 @@ export default {
     },
   },
   css: ['@/assets/css/tailwind.css'],
-  plugins: ['@/plugin/vcalendar.ts'],
   modules: ['@nuxtjs/tailwindcss', 
             '@pinia/nuxt'],
   build: {

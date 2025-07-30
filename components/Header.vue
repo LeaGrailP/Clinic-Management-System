@@ -1,8 +1,7 @@
 <script setup>
-import { onMounted, ref } from 'vue'
-import { Home, Menu, User } from 'lucide-vue-next'
+import { ref } from 'vue'
+import { Home, Menu, User, LogOut } from 'lucide-vue-next'
 
-const user = ref({})
 </script>
 
 <template>
@@ -26,6 +25,13 @@ const user = ref({})
         exact-active-class="bg-gray-200 text-black font-semibold"
       >
         <User class="w-6 h-6" />
+      </NuxtLink>
+      <NuxtLink
+        to="/"
+        class="flex items-center space-x-3 px-3 py-2 rounded-md text-gray-700 hover:bg-gray-200 hover:text-black"
+        exact-active-class="bg-gray-200 text-black font-semibold"
+      >
+        <LogOut class="w-5 h-5" />
       </NuxtLink>
     </nav>
   </header>

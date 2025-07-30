@@ -1,6 +1,6 @@
 <script setup>
 import { defineProps, defineEmits, ref, onMounted } from 'vue'
-import { Menu, ChevronLeft, ShoppingCart, ArrowLeftRight, Info, User, Home, LogOut, LogIn } from 'lucide-vue-next'
+import { Menu, ChevronLeft, ShoppingCart, ArrowLeftRight, Info, User, Home, LogIn, ListTodo } from 'lucide-vue-next'
 
 const props = defineProps({
   collapsed: Boolean
@@ -63,8 +63,6 @@ onMounted(() => {
         <User class="w-5 h-5" />
         <span v-if="!props.collapsed">Customer</span>
       </NuxtLink>
-
-
       <NuxtLink
         to="/transactions"
         class="flex items-center space-x-3 px-3 py-2 rounded-md text-gray-700 hover:bg-gray-200 hover:text-black"
@@ -72,7 +70,7 @@ onMounted(() => {
       >
         <ArrowLeftRight class="w-5 h-5" />
         <span v-if="!props.collapsed">Transactions</span>
-      </NuxtLink><!-- ✅ Show only for admin -->
+      </NuxtLink>
       <NuxtLink
         v-if="user.role === 'admin'"
         to="/register"
@@ -82,12 +80,12 @@ onMounted(() => {
         <span v-if="!props.collapsed">Create Account</span>
       </NuxtLink> 
       <NuxtLink
-        to="/"
+        to="/appointment"
         class="flex items-center space-x-3 px-3 py-2 rounded-md text-gray-700 hover:bg-gray-200 hover:text-black"
         exact-active-class="bg-gray-200 text-black font-semibold"
       >
-        <LogOut class="w-5 h-5" />
-        <span v-if="!props.collapsed">Log Out</span>
+        <ListTodo class="w-5 h-5" />
+        <span v-if="!props.collapsed">Appointment</span>
       </NuxtLink>
       <NuxtLink
         to="/about"
@@ -97,14 +95,6 @@ onMounted(() => {
         <Info class="w-5 h-5" />
         <span v-if="!props.collapsed">About</span>
       </Nuxtlink>
-       <NuxtLink
-        to="/appointment"
-        class="flex items-center space-x-3 px-3 py-2 rounded-md text-gray-700 hover:bg-gray-200 hover:text-black"
-        exact-active-class="bg-gray-200 text-black font-semibold"
-      >
-        <Info class="w-5 h-5" />
-        <span v-if="!props.collapsed">Appointment</span>
-      </NuxtLink>
     </nav>
   </aside>
 </template>
