@@ -5,7 +5,7 @@ import { Home, Menu, User, LogOut } from 'lucide-vue-next'
 </script>
 
 <template>
-  <header class="bg-white shadow-md p-4 flex justify-between items-center fixed top-0 left-0 right-0 z-20 h-12">
+  <header class="shadow-md p-4 flex justify-between items-center fixed top-0 left-0 right-0 z-20 h-12">
     <div class="flex items-center space-x-4">
       <span class="text-lg font-semibold">ClinicPOS</span>
     </div>
@@ -20,7 +20,7 @@ import { Home, Menu, User, LogOut } from 'lucide-vue-next'
       </NuxtLink>
 
       <NuxtLink
-        to="/user"
+        to="/profile"
         class="flex items-center space-x-1 px-2 py-1 rounded-md hover:bg-gray-200 hover:text-black"
         exact-active-class="bg-gray-200 text-black font-semibold"
       >

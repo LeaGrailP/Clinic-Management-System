@@ -36,9 +36,7 @@ import { useRouter } from 'vue-router'
 import { ref, onMounted } from 'vue'
 
 definePageMeta({
-  layout: 'default',
-  hideHeader: true,
-  hideSidebar: true
+  layout: 'login'
 })
 
 const username = ref('')

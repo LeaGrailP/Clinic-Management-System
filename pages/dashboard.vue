@@ -1,4 +1,5 @@
 <template>
+<div class="bg-slate-50">
 <h1 class="text-5xl font-bold mb-4">Dashboard</h1>
 
     <div class="grid grid-cols-4 gap-4">
@@ -157,6 +158,7 @@
         No products found.
       </div>
       </div>
+</div>
 </template>
 
 
