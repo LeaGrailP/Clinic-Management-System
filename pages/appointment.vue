@@ -61,7 +61,7 @@ const selectedAppointments = computed(() =>
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-100 p-8">
+  <div>
     <h1 class="text-3xl font-bold mb-6">Schedule Appointment</h1>
 
     <!-- Appointment Form -->

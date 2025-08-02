@@ -38,6 +38,7 @@ function initDB() {
     CREATE TABLE IF NOT EXISTS products (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       productname TEXT NOT NULL,
+      image TEXT,
       price REAL,
       vat REAL,
       vatAmount REAL,
@@ -100,6 +101,16 @@ function createWindow() {
 app.whenReady().then(() => {
   db = initDB();
   createWindow();
+
+  //PRODUCTiMAGE
+  const imagesDir = path.join(app.getPath('userData'), 'product-images');
+  if (!fs.existsSync(imagesDir)) fs.mkdirSync(imagesDir);
+
+  ipcMain.handle('save-product-image', async (event, { imageName, buffer }) => {
+    const fullPath = path.join(imagesDir, imageName);
+    fs.writeFileSync(fullPath, Buffer.from(buffer));
+    return fullPath;
+  });
 
   // Login
   ipcMain.handle('login', async (_event, { username, password }) => {
@@ -164,9 +175,9 @@ ipcMain.handle('auth:register', async (_event, { name, username, password, role 
 
   ipcMain.handle('add-products', (_event, product) => {
     db.prepare(`
-      INSERT INTO products (productname, price, vat, vatAmount, total)
-      VALUES (?, ?, ?, ?, ?)
-    `).run(product.productname, product.price, product.vat, product.vatAmount, product.total);
+      INSERT INTO products (productname, price, vat, vatAmount, total, image)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(product.productname, product.price, product.vat, product.vatAmount, product.total, product.image);
     return { success: true };
   });
 

@@ -15,6 +15,16 @@
       </div>
 
       <div>
+        <label class="block font-semibold">Product Image</label>
+        <input
+          type="file"
+          accept="image/*"
+          @change="handleImageUpload"
+          class="w-full border px-3 py-2 rounded" 
+        />
+      </div>
+
+      <div>
         <label class="block font-semibold">Price</label>
         <input
           v-model.number="price"
@@ -125,7 +135,6 @@ const editingId = ref(null);
 
 definePageMeta({
   layout: 'default',
-  hideSidebar: true
 })
 
 const router = useRouter()
@@ -137,6 +146,14 @@ onMounted(() => {
     router.push('/');
   }
 });
+
+const imageFile = ref(null);
+
+function handleImageUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  imageFile.value = file;
+}
 
 const vatAmount = computed(() => {
   const result = (price.value * vat.value) / 100;
@@ -157,21 +174,34 @@ async function fetchProducts() {
 }
 
 async function handleSubmit() {
+  let imagePath = null;
+
+  // If an image was selected, read it as ArrayBuffer
+  if (imageFile.value) {
+    const buffer = await imageFile.value.arrayBuffer();
+    const imageName = `${Date.now()}_${imageFile.value.name}`;
+
+    // Ask Electron to save it to disk and return full path
+    imagePath = await window.electron.invoke('save-product-image', {
+      imageName,
+      buffer: [...new Uint8Array(buffer)]
+    });
+  }
+
   const payload = {
     productname: productname.value,
     price: price.value,
     vat: vat.value,
     vatAmount: vatAmount.value,
-    total: total.value
+    total: total.value,
+    image: imagePath, // saved full path on disk
   };
 
   if (editingId.value) {
     payload.id = editingId.value;
     await window.electron.invoke('update-product', payload);
-    alert('✅ Product updated!');
   } else {
-    await window.electron.invoke('add-products', payload);
-    alert('✅ Product added!');
+    await window.electron.invoke('add-product', payload);
   }
 
   clearForm();

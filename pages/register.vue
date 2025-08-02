@@ -50,8 +50,7 @@ import { useUser } from '~/composables/useUser'
 const route = useRoute() 
 
 definePageMeta({
-  layout: 'default',
-  hideSidebar: true
+  layout: 'default'
 })
 
 const name = ref('')
