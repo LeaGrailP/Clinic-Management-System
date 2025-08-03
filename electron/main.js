@@ -9,10 +9,12 @@ let db;
 // ✅ Create or open the DB
 function initDB() {
   const fs = require('fs');
-  const path = require('path');
   const Database = require('better-sqlite3');
+const { app } = require('electron');
+const path = require('path');
 
-  const dbPath = path.resolve('D:/Clinic-Management-System/electron/userdata/database.db');
+const dbPath = path.resolve(__dirname, 'userData', 'database.db');
+
   const dbDir = path.dirname(dbPath);
   console.log('📂 Electron is trying to open DB at:', dbPath); // << debug
 
