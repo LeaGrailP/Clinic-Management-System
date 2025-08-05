@@ -6,7 +6,11 @@ module.exports = {
     './nuxt.config.{js,ts}'
   ],
   theme: {
-    extend: {}
+    extend: {
+      colors: {
+        primary: colors.blue, // or any other base color like `colors.emerald`
+      }
+    }
   },
   plugins: [
     require('@tailwindcss/forms'),

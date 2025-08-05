@@ -7,8 +7,13 @@ export default {
     },
   },
   css: ['@/assets/css/tailwind.css'],
+  alias: {
+    '#tailwind-config': './tailwind-config'
+  },
   modules: ['@nuxtjs/tailwindcss', 
-            '@pinia/nuxt'],
+            '@pinia/nuxt',
+            '@nuxthq/ui'
+          ],
   build: {
     postcss: {
       plugins: {

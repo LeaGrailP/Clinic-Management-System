@@ -97,27 +97,15 @@
         </div>
 
       </div>
-
-     <!-- Save button and OTHERS-->
-      <div class="space-y-4 ml-4 basis-1/5">
-        <button class="w-full bg-green-400 rounded text-wrap">SAVE</button>
-        <button class="w-full bg-green-400 rounded">Reset Discount</button>
-        <button class="w-full bg-green-400 rounded">Edit Sales</button>
-        <button class="w-full bg-green-400 rounded">Cancel Transaction</button>
-        <button class="w-full bg-green-400 rounded">Open Drawer</button>
-        <button class="w-full bg-green-400 rounded">Print Receipt</button>
-      </div>
+      <UContainer class="space-y-4 ml-4 basis-1/5 mt-8">
+    <UButton label="Save" color="green" variant="solid" block />
+    <UButton label="Reset Discount" color="green" variant="solid" block />
+    <UButton label="Edit Sales" color="green" variant="solid" block />
+    <UButton label="Cancel Transaction" color="red" variant="solid" block />
+    <UButton label="Open Drawer" color="gray" variant="solid" block />
+    <UButton label="Print Receipt" color="blue" variant="solid" block />
+  </UContainer>
     </div>
-
-  <!-- --------------------------------------------------------------------------------------- -->
-   <div class="flex flex-row p-2">
-    <div v-for="product in products" :key="product.id" class="grid grid-rows-4 p-4 border-2 border-blue-500 rounded-lg">
-          <h1 class = "m-2">{{ product.productname }}</h1>
-          <p class="m-2">₱{{ Number(product.total || 0).toFixed(2) }}</p>
-
-    </div>
-
-   </div>
 
     <!-- Services -->
  <div class="bg-white p-4 rounded shadow">
