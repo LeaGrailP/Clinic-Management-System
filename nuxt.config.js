@@ -10,19 +10,13 @@ export default {
   alias: {
     '#tailwind-config': './tailwind-config'
   },
-  modules: ['@nuxtjs/tailwindcss', 
-            '@pinia/nuxt', '@nuxthq/ui'],
-  build: {
-    postcss: {
-      plugins: {
-        tailwindcss: {},
-        autoprefixer: {},
-      },
-    },
-  },
+  modules: [
+    '@nuxtjs/tailwindcss',
+    '@pinia/nuxt'
+  ],
   nitro: {
     compatibility: {
-      date: '2025-06-06', // Suggested warning fix
+      date: '2025-06-06',
     },
   },
 };
