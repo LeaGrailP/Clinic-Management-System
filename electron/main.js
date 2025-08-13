@@ -6,82 +6,107 @@ const Database = require('better-sqlite3');
 
 let db;
 
-// ✅ Create or open the DB
-function initDB() {
-  const fs = require('fs');
-  const Database = require('better-sqlite3');
-const { app } = require('electron');
-const path = require('path');
-
+// ✅ Path to DB
 const dbPath = path.resolve(__dirname, 'userData', 'database.db');
+console.log('📂 Electron is trying to open DB at:', dbPath);
 
-  const dbDir = path.dirname(dbPath);
-  console.log('📂 Electron is trying to open DB at:', dbPath); // << debug
+// ✅ Create or open DB and tables
+function initDB() {
+  try {
+    const dbDir = path.dirname(dbPath);
+    if (!fs.existsSync(dbDir)) fs.mkdirSync(dbDir, { recursive: true });
 
-  // Ensure folder exists
-  if (!fs.existsSync(dbDir)) {
-    fs.mkdirSync(dbDir, { recursive: true });
+    const dbInstance = new Database(dbPath);
+    console.log('✅ Database opened successfully');
+
+    // Users
+    dbInstance.exec(`
+      CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        username TEXT UNIQUE NOT NULL,
+        password TEXT NOT NULL,
+        role TEXT NOT NULL
+      )
+    `);
+
+    // Products
+    dbInstance.exec(`
+      CREATE TABLE IF NOT EXISTS products (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        productname TEXT NOT NULL,
+        image TEXT,
+        price REAL,
+        vat REAL,
+        vatAmount REAL,
+        total REAL
+      )
+    `);
+
+    // Patients
+    dbInstance.exec(`
+      CREATE TABLE IF NOT EXISTS patients (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        patientname TEXT NOT NULL,
+        business TEXT,
+        address TEXT,
+        tin REAL,
+        number REAL
+      )
+    `);
+
+    // Transactions
+    dbInstance.exec(`
+      CREATE TABLE IF NOT EXISTS transactions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        date TEXT,
+        total REAL,
+        items TEXT
+      )
+    `);
+
+    // Invoice
+    dbInstance.exec(`
+      CREATE TABLE IF NOT EXISTS invoice (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        date TEXT,
+        total REAL,
+        items TEXT,
+        invoice_number TEXT UNIQUE
+      )
+    `);
+
+    return dbInstance;
+  } catch (err) {
+    console.error('❌ Failed to open DB:', err);
+    app.quit();
   }
+}
 
-  const db = new Database(dbPath);
+// ✅ Seed default admin
+function ensureDefaultAdmin(db) {
+  try {
+    const username = 'admin2@example.com';
+    const existing = db.prepare('SELECT 1 FROM users WHERE username = ?').get(username);
 
-  // Users table
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS users (
-      name TEXT NOT NULL,
-      username TEXT UNIQUE NOT NULL,
-      password TEXT NOT NULL,
-      role TEXT NOT NULL
-    )
-  `);
+    if (!existing) {
+      const name = 'Ai Ly';
+      const password = 'securepass456';
+      const role = 'admin';
+      const hash = bcrypt.hashSync(password, 10);
 
-  // Products
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS products (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      productname TEXT NOT NULL,
-      image TEXT,
-      price REAL,
-      vat REAL,
-      vatAmount REAL,
-      total REAL
-    )
-  `);
+      db.prepare(`
+        INSERT INTO users (name, username, password, role)
+        VALUES (?, ?, ?, ?)
+      `).run(name, username, hash, role);
 
-  // Patients
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS patients (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      patientname TEXT NOT NULL,
-      business TEXT,
-      address TEXT,
-      tin REAL,
-      number REAL
-    )
-  `);
-
-  // Transactions
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS transactions (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      date TEXT,
-      total REAL,
-      items TEXT
-    )
-  `);
-
-  //Invoice
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS invoice (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      date TEXT,
-      total REAL,
-      items TEXT,
-      invoice_number TEXT UNIQUE
-    )
-  `);
-
-  return db;
+      console.log(`✅ Seeded default admin "${username}"`);
+    } else {
+      console.log(`ℹ️ Admin "${username}" already exists — skipping seed`);
+    }
+  } catch (err) {
+    console.error('❌ Failed to seed default admin:', err);
+  }
 }
 
 // ✅ Create Electron window
@@ -96,17 +121,20 @@ function createWindow() {
     }
   });
 
-  win.loadURL('http://localhost:3000'); // Or use Nuxt build path
+  win.loadURL('http://localhost:3000'); // Or Nuxt build path
 }
 
-// ✅ Setup Electron + DB + Handlers
+// ✅ App ready
 app.whenReady().then(() => {
   db = initDB();
+  ensureDefaultAdmin(db);
   createWindow();
 
-  //PRODUCTiMAGE
+  // Product images folder
   const imagesDir = path.join(app.getPath('userData'), 'product-images');
   if (!fs.existsSync(imagesDir)) fs.mkdirSync(imagesDir);
+
+  // -------------------- IPC HANDLERS --------------------
 
   ipcMain.handle('save-product-image', async (event, { imageName, buffer }) => {
     const fullPath = path.join(imagesDir, imageName);
@@ -116,8 +144,6 @@ app.whenReady().then(() => {
 
   // Login
   ipcMain.handle('login', async (_event, { username, password }) => {
-    console.log('LOGIN ATTEMPT:', username);
-
     try {
       const user = db.prepare('SELECT * FROM users WHERE username = ?').get(username);
       if (!user) return { success: false, error: 'User not found' };
@@ -131,25 +157,26 @@ app.whenReady().then(() => {
       return { success: false, error: 'Internal login error' };
     }
   });
-//Register
-ipcMain.handle('auth:register', async (_event, { name, username, password, role }) => {
-  try {
-    if (!name || !username || !password || !role) {
-      return { success: false, error: 'All fields are required' };
-    }
 
-    const hash = await bcrypt.hash(password, 10);
-    db.prepare(`INSERT INTO users (name, username, password, role) VALUES (?, ?, ?, ?)`)
-      .run(name, username, hash, role);
-    return { success: true };
-  } catch (err) {
-    if (err.code === 'SQLITE_CONSTRAINT') {
-      return { success: false, error: 'Username already exists' };
+  // Register
+  ipcMain.handle('auth:register', async (_event, { name, username, password, role }) => {
+    try {
+      if (!name || !username || !password || !role) {
+        return { success: false, error: 'All fields are required' };
+      }
+
+      const hash = await bcrypt.hash(password, 10);
+      db.prepare(`INSERT INTO users (name, username, password, role) VALUES (?, ?, ?, ?)`)
+        .run(name, username, hash, role);
+      return { success: true };
+    } catch (err) {
+      if (err.code === 'SQLITE_CONSTRAINT') {
+        return { success: false, error: 'Username already exists' };
+      }
+      console.error('Register error:', err);
+      return { success: false, error: 'Registration failed' };
     }
-    console.error('Register error:', err);
-    return { success: false, error: 'Registration failed' };
-  }
-});
+  });
 
   // Patients
   ipcMain.handle('get-patients', () => db.prepare('SELECT * FROM patients').all());
@@ -196,41 +223,43 @@ ipcMain.handle('auth:register', async (_event, { name, username, password, role 
     return { success: true };
   });
 
+  // Invoice
+  ipcMain.handle('add-invoice', (_event, invoice) => {
+    const lastInvoice = db.prepare(`
+      SELECT invoice_number FROM invoice 
+      ORDER BY id DESC LIMIT 1
+    `).get();
+
+    let nextInvoiceNumber = 'INV-000001';
+    if (lastInvoice?.invoice_number) {
+      const lastNumber = parseInt(lastInvoice.invoice_number.replace('INV-', ''));
+      const nextNumber = (lastNumber + 1).toString().padStart(6, '0');
+      nextInvoiceNumber = `INV-${nextNumber}`;
+    }
+
+    db.prepare(`
+      INSERT INTO invoice (date, total, items, invoice_number)
+      VALUES (?, ?, ?, ?)
+    `).run(invoice.date, invoice.total, invoice.items, nextInvoiceNumber);
+
+    return { success: true, invoice_number: nextInvoiceNumber };
+  });
+
+  ipcMain.handle('generate-invoice-number', () => {
+    const lastInvoice = db.prepare(`
+      SELECT invoice_number FROM invoice 
+      ORDER BY id DESC LIMIT 1
+    `).get();
+
+    let nextInvoiceNumber = 'INV-000001';
+    if (lastInvoice?.invoice_number) {
+      const lastNumber = parseInt(lastInvoice.invoice_number.replace('INV-', ''));
+      const nextNumber = (lastNumber + 1).toString().padStart(6, '0');
+      nextInvoiceNumber = `INV-${nextNumber}`;
+    }
+
+    return nextInvoiceNumber;
+  });
+
   console.log('✅ All IPC handlers registered');
-});
-//Invoice
-ipcMain.handle('add-invoice', (_event, invoice) => {
-  const lastInvoice = db.prepare(`
-    SELECT invoice_number FROM invoice 
-    ORDER BY id DESC LIMIT 1
-  `).get();
-
-  let nextInvoiceNumber = 'INV-000001';
-  if (lastInvoice?.invoice_number) {
-    const lastNumber = parseInt(lastInvoice.invoice_number.replace('INV-', ''));
-    const nextNumber = (lastNumber + 1).toString().padStart(6, '0');
-    nextInvoiceNumber = `INV-${nextNumber}`;
-  }
-
-  db.prepare(`
-    INSERT INTO invoice (date, total, items, invoice_number)
-    VALUES (?, ?, ?, ?)
-  `).run(invoice.date, invoice.total, invoice.items, nextInvoiceNumber);
-
-  return { success: true, invoice_number: nextInvoiceNumber };
-});
-ipcMain.handle('generate-invoice-number', () => {
-  const lastInvoice = db.prepare(`
-    SELECT invoice_number FROM invoice 
-    ORDER BY id DESC LIMIT 1
-  `).get();
-
-  let nextInvoiceNumber = 'INV-000001';
-  if (lastInvoice?.invoice_number) {
-    const lastNumber = parseInt(lastInvoice.invoice_number.replace('INV-', ''));
-    const nextNumber = (lastNumber + 1).toString().padStart(6, '0');
-    nextInvoiceNumber = `INV-${nextNumber}`;
-  }
-
-  return nextInvoiceNumber;
 });
