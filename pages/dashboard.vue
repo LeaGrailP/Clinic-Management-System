@@ -29,14 +29,29 @@
     <!-- Sales Table + Totals -->
     <div class="bg-white rounded-lg shadow p-6 border border-gray-200">
       <div class="flex flex-col lg:flex-row gap-6">
-        
+
+        <!--Product Table-->
+        <div class="flex-1 overflow-auto">
+          <table class="min-w-full border border-gray-300 text-sm text-left">
+            <thead class="bg-sky-300 text-gray-800">
+              <tr>
+                <th class="px-4 py-2 border">Product List</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="text-center hover:bg-gray-50">
+                <td class="p-2 border"></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
         <!-- Sales Table -->
         <div class="flex-1 overflow-auto">
           <table class="min-w-full border border-gray-300 text-sm text-left">
             <thead class="bg-sky-300 text-gray-800">
               <tr>
+                <th class="px-4 py-2 border">Product</th>
                 <th class="px-4 py-2 border">Quantity</th>
-                <th class="px-4 py-2 border">Description</th>
                 <th class="px-4 py-2 border">Price</th>
                 <th class="px-4 py-2 border">Action</th>
               </tr>
@@ -85,6 +100,14 @@
           <div class="bg-white p-4 rounded-lg shadow border border-gray-200 space-y-2 flex justify-between">
               <p class="font-bold text-lg">Discount</p>
               <p class="text-xl">{{ formatCurrency(totals.discount || 0) }}</p>
+               <td class="p-2 border space-x-2">
+                  <button class="text-red-600 hover:text-red-800">
+                    <Trash class="w-4 h-4" />
+                  </button>
+                  <button class="text-blue-600 hover:text-blue-800">
+                    <Pencil class="w-4 h-4" />
+                  </button>
+                </td>
           </div>
           <!-- Totals -->
           <div class="bg-white p-4 rounded-lg shadow border border-gray-200 space-y-2">
@@ -110,42 +133,7 @@
           <button class="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg shadow">Print Receipt</button>
           </div>
     </div>
-    <!-- Product List -->
-    <div class="bg-white p-6 rounded-lg shadow border border-gray-200">
-      <div class="flex justify-between items-center mb-4">
-        <h2 class="text-xl font-bold text-gray-800">📦 Product List</h2>
-        <button @click="fetchProducts" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg shadow text-sm">
-          🔄 Refresh
-        </button>
-      </div>
-
-      <table class="table-auto w-full border-collapse border border-gray-300 text-sm">
-        <thead>
-          <tr class="bg-gray-100 text-gray-700">
-            <th class="border p-2">Name</th>
-            <th class="border p-2">Price</th>
-            <th class="border p-2">VAT</th>
-            <th class="border p-2">VAT Amount</th>
-            <th class="border p-2">Total</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="product in products" :key="product.id" class="hover:bg-gray-50">
-            <td class="border p-2">{{ product.productname }}</td>
-            <td class="border p-2">₱{{ Number(product.price || 0).toFixed(2) }}</td>
-            <td class="border p-2">{{ Number(product.vat || 0).toFixed(2) }}%</td>
-            <td class="border p-2">₱{{ Number(product.vatAmount || 0).toFixed(2) }}</td>
-            <td class="border p-2">₱{{ Number(product.total || 0).toFixed(2) }}</td>
-          </tr>
-        </tbody>
-      </table>
-
-      <div v-if="products.length === 0" class="text-gray-500 text-sm mt-2">
-        No products found.
-      </div>
-    </div>
-
-     <!-- Invoices Table -->
+    <!-- Invoices Table -->
     <div class="bg-white shadow rounded overflow-x-auto">
       <table class="min-w-full border-collapse">
         <thead class="bg-gray-100">
