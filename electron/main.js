@@ -50,14 +50,18 @@ const dbPath = path.resolve(__dirname, 'userData', 'database.db');
 
   // Patients
   db.exec(`
-    CREATE TABLE IF NOT EXISTS patients (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      patientname TEXT NOT NULL,
-      business TEXT,
-      address TEXT,
-      tin REAL,
-      number REAL
-    )
+ CREATE TABLE IF NOT EXISTS clinicpatients (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    firstName TEXT,
+    lastName TEXT,
+    middleName TEXT,
+    address TEXT,
+    phone INTEGER,
+    businessStyle TEXT,
+    tin INTEGER,
+    isSenior INTEGER,
+    seniorId TEXT
+  )
   `);
 
   // Transactions
@@ -131,6 +135,7 @@ app.whenReady().then(() => {
       return { success: false, error: 'Internal login error' };
     }
   });
+
 //Register
 ipcMain.handle('auth:register', async (_event, { name, username, password, role }) => {
   try {
@@ -152,30 +157,42 @@ ipcMain.handle('auth:register', async (_event, { name, username, password, role 
 });
 
   // Patients
-  ipcMain.handle('get-patients', () => db.prepare('SELECT * FROM patients').all());
+  ipcMain.handle('get-patients', () => db.prepare('SELECT * FROM clinicpatients').all());
 
-  ipcMain.handle('add-patient', (_event, patient) => {
+  ipcMain.handle('add-patient', (_event, clinicPT) => {
     db.prepare(`
-      INSERT INTO patients (patientname, address, number, business, tin)
-      VALUES (?, ?, ?, ?, ?)
-    `).run(patient.patientname, patient.address, patient.number, patient.business, patient.tin);
+    INSERT INTO clinicpatients
+    (firstName, lastName, middleName, address, phone, businessStyle, tin, isSenior, seniorId)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
   });
 
-  ipcMain.handle('update-patient', (_event, patient) => {
+  ipcMain.handle('update-patient', (_event, clinicPT) => {
     db.prepare(`
-      UPDATE patients SET patientname = ?, address = ?, number = ?, business = ?, tin = ?
+      UPDATE patients SET  firstName = ?, lastName = ?, middleName = ?, 
+      address = ?, phone = ?, businessStyle = ?, tin = ?, isSenior = ?, seniorId = ? 
       WHERE id = ?
-    `).run(patient.patientname, patient.address, patient.number, patient.business, patient.tin, patient.id);
+    `).run(
+    patient.firstName,
+    patient.lastName,
+    patient.middleName || '',
+    patient.address,
+    patient.phone,
+    patient.businessStyle,
+    patient.tin,
+    patient.isSenior ? 1 : 0,
+    patient.seniorId || ''
+  );
   });
 
   ipcMain.handle('delete-patient', (_event, id) => {
-    db.prepare('DELETE FROM patients WHERE id = ?').run(id);
+    db.prepare('DELETE FROM clinicpatients WHERE id = ?').run(id);
   });
 
   // Products
   ipcMain.handle('get-products', () => db.prepare('SELECT * FROM products').all());
 
-  ipcMain.handle('add-products', (_event, product) => {
+  ipcMain.handle('add-product', (_event, product) => {
     db.prepare(`
       INSERT INTO products (productname, price, vat, vatAmount, total, image)
       VALUES (?, ?, ?, ?, ?, ?)
@@ -198,6 +215,8 @@ ipcMain.handle('auth:register', async (_event, { name, username, password, role 
 
   console.log('✅ All IPC handlers registered');
 });
+
+
 //Invoice
 ipcMain.handle('add-invoice', (_event, invoice) => {
   const lastInvoice = db.prepare(`

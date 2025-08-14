@@ -1,57 +1,199 @@
 <template>
-  <div class="p-6">
-    <div class="flex justify-between items-center mb-4">
-      <h1 class="text-3xl font-bold">Patients List</h1>
-      <div class="flex space-x-2">
-        <input v-model="search" type="text" placeholder="Search..." class="border px-3 py-2 rounded" />
-        <DropdownMenu />
-        <button @click="showModal = true" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
-          Add Patient
-        </button>
-      </div>
-    </div>
+  <div class="p-6 bg-gray-100 min-h-screen">
+    <!-- Page Title -->
+    <h1 class="text-2xl font-bold mb-4">Patient Records</h1>
 
-    <div class="overflow-x-auto">
-      <table class="min-w-full border rounded-lg">
-        <thead class="bg-gray-100">
+    <!-- Add Patient Button -->
+    <button
+      @click="showModal = true"
+      class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded mb-6"
+    >
+      Add New Patient
+    </button>
+
+    <!-- Patient Table -->
+    <div class="bg-white shadow rounded-lg overflow-x-auto">
+      <table class="w-full border-collapse">
+        <thead class="bg-gray-200">
           <tr>
-            <th class="px-4 py-2 text-left">Last Visit</th>
-            <th class="px-4 py-2 text-left">Name</th>
-            <th class="px-4 py-2 text-left">Business Style</th>
+            <th class="px-4 py-2 text-left">First Name</th>
+            <th class="px-4 py-2 text-left">Last Name</th>
+            <th class="px-4 py-2 text-left">Middle Name</th>
             <th class="px-4 py-2 text-left">Address</th>
+            <th class="px-4 py-2 text-left">Phone</th>
+            <th class="px-4 py-2 text-left">Business Style</th>
             <th class="px-4 py-2 text-left">TIN</th>
-            <th class="px-4 py-2 text-left">Action</th>
+            <th class="px-4 py-2 text-left">Senior</th>
+            <th class="px-4 py-2 text-left">Senior ID Number</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(patient, index) in filteredPatients" :key="index" class="border-t">
-            <td class="px-4 py-2">{{ patient.lastVisit }}</td>
-            <td class="px-4 py-2">{{ patient.name }}</td>
-            <td class="px-4 py-2">{{ patient.businessStyle }}</td>
-            <td class="px-4 py-2">{{ patient.address }}</td>
-            <td class="px-4 py-2">{{ patient.tin }}</td>
+          <tr
+            v-for="(clinicPT, index) in clinicpatients"
+            :key="index"
+            class="border-b"
+          >
+            <td class="px-4 py-2">{{ clinicPT.firstName }}</td>
+            <td class="px-4 py-2">{{ clinicPT.lastName }}</td>
+            <td class="px-4 py-2">{{ clinicPT.middleName }}</td>
+            <td class="px-4 py-2">{{ clinicPT.address }}</td>
+            <td class="px-4 py-2">{{ clinicPT.phone }}</td>
+            <td class="px-4 py-2">{{ clinicPT.businessStyle }}</td>
+            <td class="px-4 py-2">{{ clinicPT.tin }}</td>
+            <td class="px-4 py-2">{{ clinicPT.isSenior ? "Yes" : "No" }}</td>
             <td class="px-4 py-2">
-              <button @click="removePatient(index)" class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600">Delete</button>
+              {{ clinicPT.isSenior ? clinicPT.seniorIdNumber : "-" }}
+            </td>
+          </tr>
+          <tr v-if="clinicpatients.length === 0">
+            <td colspan="9" class="text-center py-4 text-gray-500">
+              No patient records yet.
             </td>
           </tr>
         </tbody>
       </table>
     </div>
 
-    <!-- Add Patient Modal -->
-    <div v-if="showModal" class="fixed inset-0 bg-black bg-opacity-30 flex justify-center items-center">
-      <div class="bg-white p-6 rounded-lg w-full max-w-md">
-        <h2 class="text-xl font-semibold mb-4">Add New Patient</h2>
-        <form @submit.prevent="addPatient">
-          <input v-model="newPatient.lastVisit" type="date" class="mb-2 w-full border px-3 py-2 rounded" placeholder="Last Visit Date" />
-          <input v-model="newPatient.name" type="text" class="mb-2 w-full border px-3 py-2 rounded" placeholder="Name" />
-          <input v-model="newPatient.businessStyle" type="text" class="mb-2 w-full border px-3 py-2 rounded" placeholder="Business Style" />
-          <input v-model="newPatient.address" type="text" class="mb-2 w-full border px-3 py-2 rounded" placeholder="Address" />
-          <input v-model="newPatient.tin" type="text" class="mb-4 w-full border px-3 py-2 rounded" placeholder="TIN" />
+    <!-- Modal -->
+    <div
+      v-if="showModal"
+      class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50"
+    >
+      <div
+        class="bg-white p-6 rounded-md shadow-md w-full max-w-3xl relative"
+      >
+        <!-- Close Button -->
+        <button
+          @click="showModal = false"
+          class="absolute top-3 right-3 text-gray-500 hover:text-gray-700"
+        >
+          ✖
+        </button>
 
-          <div class="flex justify-end space-x-2">
-            <button type="button" @click="showModal = false" class="px-4 py-2 rounded border">Cancel</button>
-            <button type="submit" class="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700">Save</button>
+        <h2 class="text-lg font-semibold mb-4">Add New Patient</h2>
+
+        <form @submit.prevent="submitForm" class="grid grid-cols-3 gap-4">
+          <!-- First Name -->
+          <div>
+            <label class="block text-sm font-medium mb-1">First Name</label>
+            <input
+              v-model="form.firstName"
+              type="text"
+              placeholder="Michael"
+              class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
+
+          <!-- Last Name -->
+          <div>
+            <label class="block text-sm font-medium mb-1">Last Name</label>
+            <input
+              v-model="form.lastName"
+              type="text"
+              placeholder="Johnson"
+              class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
+
+          <!-- Middle Name -->
+          <div>
+            <label class="block text-sm font-medium mb-1">Middle Name</label>
+            <input
+              v-model="form.middleName"
+              type="text"
+              placeholder="(Optional)"
+              class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <!-- Address -->
+          <div>
+            <label class="block text-sm font-medium mb-1">Address</label>
+            <input
+              v-model="form.address"
+              type="text"
+              placeholder="Baguio City"
+              class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
+
+          <!-- Phone -->
+          <div>
+            <label class="block text-sm font-medium mb-1">Phone</label>
+            <input
+              v-model="form.phone"
+              type="text"
+              placeholder="09234567890"
+              class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
+
+          <!-- Business Style -->
+          <div>
+            <label class="block text-sm font-medium mb-1">Business Style</label>
+            <input
+              v-model="form.businessStyle"
+              type="text"
+              placeholder="Retail"
+              class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <!-- TIN -->
+          <div>
+            <label class="block text-sm font-medium mb-1">TIN</label>
+            <input
+              v-model="form.tin"
+              type="text"
+              placeholder="1234 1234 1234"
+              class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <!-- Senior Checkbox -->
+          <div class="col-span-3 flex items-center mt-2">
+            <input
+              v-model="form.isSenior"
+              type="checkbox"
+              id="senior"
+              class="mr-2"
+            />
+            <label for="senior" class="text-sm">Senior</label>
+          </div>
+
+          <!-- Senior ID Number -->
+          <div v-if="form.isSenior" class="col-span-3">
+            <label class="block text-sm font-medium mb-1"
+              >Senior ID Number</label
+            >
+            <input
+              v-model="form.seniorIdNumber"
+              type="text"
+              placeholder="Enter Senior ID Number"
+              :required="form.isSenior"
+              class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <!-- Buttons -->
+          <div class="col-span-3 mt-6 flex items-center space-x-4">
+            <button
+              type="submit"
+              class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded"
+            >
+              Save Patient
+            </button>
+            <button
+              type="button"
+              @click="showModal = false"
+              class="text-blue-600 hover:underline"
+            >
+              Cancel
+            </button>
           </div>
         </form>
       </div>
@@ -60,75 +202,55 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 
-const search = ref('')
-const showModal = ref(false)
+const showModal = ref(false) // 👈 this fixes the error
 
-const patients = ref([
-  {
-    lastVisit: '2025-06-15',
-    name: 'John Doe',
-    businessStyle: 'Retail',
-    address: '123 Market St.',
-    tin: '123-456-789'
-  },
-])
-
-const newPatient = ref({
-  lastVisit: '',
-  name: '',
-  businessStyle: '',
+const form = ref({
+  firstName: '',
+  lastName: '',
+  middleName: '',
   address: '',
-  tin: ''
+  phone: '',
+  businessStyle: '',
+  tin: '',
+  isSenior: false,
+  seniorIdNumber: ''
 })
 
-const addPatient = () => {
-  if (newPatient.value.name.trim()) {
-    patients.value.push({ ...newPatient.value })
-    newPatient.value = { lastVisit: '', name: '', businessStyle: '', address: '', tin: '' }
-    showModal.value = false
-  }
+const clinicpatients = ref([])
+
+async function fetchPatients() {
+  clinicpatients.value = await window.patientAPI.get()
 }
 
-const removePatient = (index) => {
-  patients.value.splice(index, 1)
-}
-
-const filteredPatients = computed(() => {
-  return patients.value.filter(p =>
-    p.name.toLowerCase().includes(search.value.toLowerCase()) ||
-    p.businessStyle.toLowerCase().includes(search.value.toLowerCase())
-  )
-})
-</script>
-
-<!-- Dropdown component for file downloads -->
-<script>
-export default {
-  components: {
-    DropdownMenu: {
-      template: `
-        <div class="relative">
-          <button class="border px-3 py-2 rounded bg-gray-200 hover:bg-gray-300">Download As</button>
-          <div class="absolute bg-white shadow-md mt-1 rounded border w-32 z-10">
-            <a href="#" class="block px-4 py-2 hover:bg-gray-100">PDF</a>
-            <a href="#" class="block px-4 py-2 hover:bg-gray-100">TXT</a>
-            <a href="#" class="block px-4 py-2 hover:bg-gray-100">DOC</a>
-          </div>
-        </div>
-      `
+async function submitForm() {
+  try {
+    const plainData = JSON.parse(JSON.stringify(form.value)) // strip reactivity
+    await window.patientAPI.add(plainData)
+    await fetchPatients()
+    form.value = {
+      firstName: '',
+      lastName: '',
+      middleName: '',
+      address: '',
+      phone: '',
+      businessStyle: '',
+      tin: '',
+      isSenior: false,
+      seniorIdNumber: ''
     }
+    showModal.value = false
+  } catch (err) {
+    console.error('Error adding patient:', err)
   }
 }
+
+
+onMounted(() => {
+  fetchPatients()
+})
 </script>
 
-<style scoped>
-/* Optional: Position dropdown absolutely */
-.relative:hover > div.absolute {
-  display: block;
-}
-div.absolute {
-  display: none;
-}
-</style>
+
+

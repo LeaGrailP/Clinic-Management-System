@@ -46,8 +46,8 @@
       </div>
 
       <div class="mt-2">
-        <p>VAT Amount: <strong>₱{{ vatAmount.toFixed(2) }}</strong></p>
-        <p>Total Price: <strong>₱{{ total.toFixed(2) }}</strong></p>
+        <p>VAT Amount: <strong>₱{{ Number(vatAmount).toFixed(2) }}</strong></p>
+        <p>Total Price: <strong>₱{{ Number(total).toFixed(2) }}</strong></p>
       </div>
 
       <button
@@ -93,10 +93,10 @@
         <tbody>
           <tr v-for="product in products" :key="product.id">
             <td class="border p-2">{{ product.productname }}</td>
-            <td class="border p-2">₱{{ Number(product.price || 0).toFixed(2) }}</td>
-            <td class="border p-2">{{ Number(product.vat || 0).toFixed(2) }}%</td>
-            <td class="border p-2">₱{{ Number(product.vatAmount || 0).toFixed(2) }}</td>
-            <td class="border p-2">₱{{ Number(product.total || 0).toFixed(2) }}</td>
+            <td class="border p-2">₱{{ Number(product.price).toFixed(2) }}</td>
+            <td class="border p-2">{{ Number(product.vat).toFixed(2) }}%</td>
+            <td class="border p-2">₱{{ Number(product.vatAmount).toFixed(2) }}</td>
+            <td class="border p-2">₱{{ Number(product.total).toFixed(2) }}</td>
             <td class="border p-2 space-x-2">
               <button
                 @click="startEdit(product)"
@@ -124,7 +124,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { useRouter } from 'vue-router'
 import { useUser } from '~/composables/useUser'
 
 const productname = ref('');
@@ -167,7 +167,7 @@ const total = computed(() => {
 
 async function fetchProducts() {
   try {
-    products.value = await window.electron.invoke('get-products');
+    products.value = await window.productAPI.get();
   } catch (err) {
     console.error('Error fetching products:', err);
   }
@@ -176,33 +176,31 @@ async function fetchProducts() {
 async function handleSubmit() {
   let imagePath = null;
 
-  // If an image was selected, read it as ArrayBuffer
-  if (imageFile.value) {
-    const buffer = await imageFile.value.arrayBuffer();
-    const imageName = `${Date.now()}_${imageFile.value.name}`;
+if (imageFile.value) {
+  const buffer = await imageFile.value.arrayBuffer();
+  const imageName = `${Date.now()}_${imageFile.value.name}`;
+  imagePath = await window.productAPI.saveImage({
+    imageName,
+    buffer: [...new Uint8Array(buffer)]
+  });
+}
 
-    // Ask Electron to save it to disk and return full path
-    imagePath = await window.electron.invoke('save-product-image', {
-      imageName,
-      buffer: [...new Uint8Array(buffer)]
-    });
-  }
+const payload = {
+  productname: productname.value,
+  price: price.value,
+  vat: vat.value,
+  vatAmount: vatAmount.value,
+  total: total.value,
+  image: imagePath,
+};
 
-  const payload = {
-    productname: productname.value,
-    price: price.value,
-    vat: vat.value,
-    vatAmount: vatAmount.value,
-    total: total.value,
-    image: imagePath, // saved full path on disk
-  };
+if (editingId.value) {
+  payload.id = editingId.value;
+  await window.productAPI.update(payload);
+} else {
+  await window.productAPI.add(payload);
+}
 
-  if (editingId.value) {
-    payload.id = editingId.value;
-    await window.electron.invoke('update-product', payload);
-  } else {
-    await window.electron.invoke('add-product', payload);
-  }
 
   clearForm();
   fetchProducts();
@@ -229,9 +227,10 @@ function clearForm() {
 async function deleteProduct(id) {
   const confirmDelete = confirm('Are you sure you want to delete this product?');
   if (!confirmDelete) return;
+  await window.productAPI.delete(id);
 
-  await window.electron.invoke('delete-product', id);
   fetchProducts();
 }
+
 onMounted(fetchProducts);
 </script>
