@@ -1,106 +1,127 @@
 <template>
-  <div class="bg-slate-50 min-h-screen p-6 space-y-6">
-    <!-- Page Title -->
-    <h1 class="text-5xl font-bold text-gray-800">Dashboard</h1>
+<div class="bg-slate-50">
+<h1 class="text-5xl font-bold mb-4">Dashboard</h1>
 
-    <!-- Invoice Info -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div class="grid grid-cols-4 gap-4">
+
+  <!--Invoice Number-->
       <div>
-        <label class="block text-sm font-medium text-gray-700">Invoice #</label>
-        <input type="text" class="mt-1 w-full rounded-lg border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500" :value="invoiceNumber" readonly />
+        <label class="block text-sm font-medium">Invoice #</label>
+        <input type="text" class="w-full p-2 border rounded" :value="invoiceNumber" readonly />
+      </div>
+      
+  <!--Issued By-->
+      <div>
+        <label class="block text-sm font-medium">Issued By</label>
+        <input type="text" :value="issuedBy" class="w-full p-2 border rounded" readonly />
       </div>
 
+  <!-- Invoice Date (Live) -->
       <div>
-        <label class="block text-sm font-medium text-gray-700">Issued By</label>
-        <input type="text" :value="issuedBy" class="mt-1 w-full rounded-lg border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500" readonly />
+        <label class="block text-sm font-medium">Invoice Date</label>
+        <input type="date" class="w-full p-2 border rounded" v-model="invoiceDate" readonly />
       </div>
 
+<!-- Invoice Time (Live) -->
       <div>
-        <label class="block text-sm font-medium text-gray-700">Invoice Date</label>
-        <input type="date" class="mt-1 w-full rounded-lg border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500" v-model="invoiceDate" readonly />
-      </div>
-
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Invoice Time</label>
-        <input type="time" class="mt-1 w-full rounded-lg border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500" v-model="invoiceTime" readonly />
+        <label class="block text-sm font-medium">Invoice Time</label>
+        <input type="time" class="w-full p-2 border rounded" v-model="invoiceTime" readonly />
       </div>
     </div>
 
-    <!-- Sales Table + Totals -->
-    <div class="bg-white rounded-lg shadow p-6 border border-gray-200">
-      <div class="flex flex-col lg:flex-row gap-6">
-        
-        <!-- Sales Table -->
-        <div class="flex-1 overflow-auto">
-          <table class="min-w-full border border-gray-300 text-sm text-left">
-            <thead class="bg-sky-300 text-gray-800">
-              <tr>
-                <th class="px-4 py-2 border">Quantity</th>
-                <th class="px-4 py-2 border">Description</th>
-                <th class="px-4 py-2 border">Price</th>
-                <th class="px-4 py-2 border">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr class="text-center hover:bg-gray-50">
-                <td class="p-2 border"></td>
-                <td class="p-2 border"></td>
-                <td class="p-2 border"></td>
-                <td class="p-2 border space-x-2">
-                  <button class="text-red-600 hover:text-red-800">
-                    <Trash class="w-4 h-4" />
-                  </button>
-                  <button class="text-blue-600 hover:text-blue-800">
-                    <Pencil class="w-4 h-4" />
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+    <!--                 Costumer           -->
 
-        <!-- Totals + Buttons -->
-        <div class="w-full lg:w-1/3 space-y-4">
-          <!-- Discounts -->
-          <div class="bg-gray-50 p-4 rounded-lg shadow border border-gray-200">
-            <div class="flex justify-between"><span>VAT Sales</span><span>₱0.00</span></div>
-            <div class="flex justify-between"><span>VAT Exempt Sales</span><span>₱0.00</span></div>
-            <div class="flex justify-between"><span>Zero-rated Sales</span><span>₱0.00</span></div>
-            <div class="flex justify-between"><span>Discount</span><span>₱0.00</span></div>
-          </div>
+    <div class="p-6">
+      INSERT SEARCH INPUT FOR REGISTERED PATIENTS
+      <button class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Register New Patient</button>
+    </div>
+    <!-- --------------------------------------------------------------------------------------- -->
 
-          <!-- Totals -->
-          <div class="bg-white p-4 rounded-lg shadow border border-gray-200 space-y-2">
-            <div class="flex justify-between font-semibold"><span>TOTAL</span><span>₱0.00</span></div>
-            <div class="flex justify-between"><span>TENDERED</span><span>₱0.00</span></div>
-            <div class="flex justify-between"><span>CHANGE</span><span>₱0.00</span></div>
-          </div>
+    <!-- table and buttons-->
+    <div class = "flex flex-row pt-6">
 
-          <!-- Action Buttons -->
-          <div class="space-y-2">
-            <button class="w-full bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg shadow">Save</button>
-            <button class="w-full bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg shadow">Reset Discount</button>
-            <button class="w-full bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg shadow">Edit Sales</button>
-            <button class="w-full bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg shadow">Cancel Transaction</button>
-            <button class="w-full bg-gray-500 hover:bg-gray-600 text-white py-2 px-4 rounded-lg shadow">Open Drawer</button>
-            <button class="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg shadow">Print Receipt</button>
-          </div>
-        </div>
-      </div>
+<!-- Sales Table -->
+    <div class="grid-row">
+      <table class="border-2 border-slate-800">
+        <thead class="bg-sky-300">
+          <tr>
+            <th class="p-2 border">Quantity</th>
+            <th class="p-2 border">Description</th>
+            <th class="p-2 border">Price</th>
+            <th class="p-2 border">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="text-center">
+            <td class="p-2 border"></td>
+            <td class="p-2 border"></td>
+            <td class="p-2 border"></td>
+            <td class="p-2 border">
+              <button class="text-red-600 mr-2"><Trash class="w- h-4" /></button>
+              <button class="text-blue-600"><Pencil class="w- h-4" /></button>
+            </td>
+          </tr>
+          <!-- Add more rows as needed -->
+        </tbody>
+      </table>
     </div>
 
-    <!-- Product List -->
-    <div class="bg-white p-6 rounded-lg shadow border border-gray-200">
+    <!-- Right Side -->
+      <div class="space-y-4 ml-4 basis-2/5">
+
+    <!--DISCOUNTS-->
+        <div class="bg-white p-4 rounded shadow border-2">
+          <div class="flex justify-between mb-2 space-x-4"><span>VAT Sales</span><span>₱0.00</span></div>
+          <div class="flex justify-between mb-2 space-x-4"><span>VAT Exempt Sales</span><span>₱0.00</span></div>
+          <div class="flex justify-between mb-2 space-x-4"><span>Zero-rated Sales</span><span>₱0.00</span></div>
+          <div class="flex justify-between mb-2 space-x-4"><span>Discount</span><span>₱0.00</span></div>
+        </div>
+
+    <!-- TOTAL-->
+        <div class="bg-white p-4 rounded shadow border-2 ">
+          <div class="flex justify-between mb-2 space-x-4">
+            <h1 class="font-medium">TOTAL</h1> <!--total-->
+            <h2 class="font-medium">₱0.00</h2>
+          </div>
+
+          <div class="flex justify-between mb-2 space-x-4">
+            <h1 class="font-medium">TENDERED</h1> <!--tendered-->
+            <h2 class="font-medium">₱0.00</h2>
+          </div>
+
+          <div class="flex justify-between mb-2 space-x-4">
+            <h1 class="font-medium">CHANGE</h1> <!--change-->
+            <h2 class="font-medium">₱0.00</h2>
+          </div>
+
+        </div>
+
+      </div>
+      <UContainer class="space-y-4 ml-4 basis-1/5 mt-8">
+    <UButton label="Save" color="green" variant="solid" block />
+    <UButton label="Reset Discount" color="green" variant="solid" block />
+    <UButton label="Edit Sales" color="green" variant="solid" block />
+    <UButton label="Cancel Transaction" color="red" variant="solid" block />
+    <UButton label="Open Drawer" color="gray" variant="solid" block />
+    <UButton label="Print Receipt" color="blue" variant="solid" block />
+  </UContainer>
+    </div>
+
+    <!-- Services -->
+ <div class="bg-white p-4 rounded shadow">
       <div class="flex justify-between items-center mb-4">
-        <h2 class="text-xl font-bold text-gray-800">📦 Product List</h2>
-        <button @click="fetchProducts" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg shadow text-sm">
+        <h2 class="text-xl font-bold">📦 Product List</h2>
+        <button
+          @click="fetchProducts"
+          class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm"
+        >
           🔄 Refresh
         </button>
       </div>
 
       <table class="table-auto w-full border-collapse border border-gray-300 text-sm">
         <thead>
-          <tr class="bg-gray-100 text-gray-700">
+          <tr class="bg-gray-100 text-left">
             <th class="border p-2">Name</th>
             <th class="border p-2">Price</th>
             <th class="border p-2">VAT</th>
@@ -109,12 +130,14 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="product in products" :key="product.id" class="hover:bg-gray-50">
+          <tr v-for="product in products" :key="product.id">
             <td class="border p-2">{{ product.productname }}</td>
             <td class="border p-2">₱{{ Number(product.price || 0).toFixed(2) }}</td>
             <td class="border p-2">{{ Number(product.vat || 0).toFixed(2) }}%</td>
             <td class="border p-2">₱{{ Number(product.vatAmount || 0).toFixed(2) }}</td>
             <td class="border p-2">₱{{ Number(product.total || 0).toFixed(2) }}</td>
+            <td class="border p-2 space-x-2">
+            </td>
           </tr>
         </tbody>
       </table>
@@ -122,9 +145,10 @@
       <div v-if="products.length === 0" class="text-gray-500 text-sm mt-2">
         No products found.
       </div>
-    </div>
-  </div>
+      </div>
+</div>
 </template>
+
 
 <script setup>
 import { ref, computed, reactive, onMounted, onBeforeUnmount } from 'vue'

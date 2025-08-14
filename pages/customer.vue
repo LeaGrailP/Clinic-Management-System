@@ -226,8 +226,6 @@ async function fetchPatients() {
 
 async function submitForm() {
   try {
-    const plainData = JSON.parse(JSON.stringify(form.value)) // strip reactivity
-    await window.patientAPI.add(plainData)
     await fetchPatients()
     form.value = {
       firstName: '',
