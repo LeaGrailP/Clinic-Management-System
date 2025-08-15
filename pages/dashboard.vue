@@ -1,33 +1,27 @@
 <template>
   <div class="bg-slate-50 min-h-screen p-6 space-y-6">
-    <!-- Page Title -->
-    <h1 class="text-5xl font-bold text-gray-800">Dashboard</h1>
-
     <!-- Invoice Info -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
       <div>
         <label class="block text-sm font-medium text-gray-700">Invoice #</label>
-        <input type="text" class="mt-1 w-full rounded-lg border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500" :value="invoiceNumber" readonly />
+        <input type="text" class="mt-1 w-full rounded-lg border-gray-300 shadow-sm focus:ring-sky-500 focus:border-sky-500" :value="invoiceNumber" readonly />
       </div>
-
       <div>
         <label class="block text-sm font-medium text-gray-700">Issued By</label>
-        <input type="text" :value="issuedBy" class="mt-1 w-full rounded-lg border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500" readonly />
+        <input type="text" :value="issuedBy" class="mt-1 w-full rounded-lg border-gray-300 shadow-sm focus:ring-sky-500 focus:border-sky-500" readonly />
       </div>
-
       <div>
         <label class="block text-sm font-medium text-gray-700">Invoice Date</label>
-        <input type="date" class="mt-1 w-full rounded-lg border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500" v-model="invoiceDate" readonly />
+        <input type="date" class="mt-1 w-full rounded-lg border-gray-300 shadow-sm focus:ring-sky-500 focus:border-sky-500" v-model="invoiceDate" readonly />
       </div>
-
       <div>
         <label class="block text-sm font-medium text-gray-700">Invoice Time</label>
-        <input type="time" class="mt-1 w-full rounded-lg border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500" v-model="invoiceTime" readonly />
+        <input type="time" class="mt-1 w-full rounded-lg border-gray-300 shadow-sm focus:ring-sky-500 focus:border-sky-500" v-model="invoiceTime" readonly />
       </div>
     </div>
 
     <!-- Sales Table + Totals -->
-    <div class="bg-white rounded-lg shadow p-6 border border-gray-200">
+    <div class="bg-slate-50 rounded-lg shadow p-6 border border-gray-200">
       <div class="flex flex-col lg:flex-row gap-6">
 
         <!--Product Table-->
@@ -100,20 +94,25 @@
           <div class="bg-white p-4 rounded-lg shadow border border-gray-200 space-y-2 flex justify-between">
               <p class="font-bold text-lg">Discount</p>
               <p class="text-xl">{{ formatCurrency(totals.discount || 0) }}</p>
-               <td class="p-2 border space-x-2">
+               <p class="p-2 space-x-2">
                   <button class="text-red-600 hover:text-red-800">
                     <Trash class="w-4 h-4" />
                   </button>
                   <button class="text-blue-600 hover:text-blue-800">
                     <Pencil class="w-4 h-4" />
                   </button>
-                </td>
+                </p>
           </div>
           <!-- Totals -->
           <div class="bg-white p-4 rounded-lg shadow border border-gray-200 space-y-2">
             <div class="flex justify-between font-semibold"><span>TOTAL</span><span>{{ formatCurrency(totals.total || 0) }}</span></div>
             <div class="flex justify-between"><span>TENDERED</span><span>₱0.00</span></div>
             <div class="flex justify-between"><span>CHANGE</span><span>₱0.00</span></div>
+          </div>
+          <div>
+          <router-link to="/transactions" class="text-blue-500 hover:underline">
+           View All Invoices →
+          </router-link>
           </div>
         </div>
       </div>
@@ -132,40 +131,6 @@
           <div>
           <button class="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg shadow">Print Receipt</button>
           </div>
-    </div>
-    <!-- Invoices Table -->
-    <div class="bg-white shadow rounded overflow-x-auto">
-      <table class="min-w-full border-collapse">
-        <thead class="bg-gray-100">
-          <tr>
-            <th class="px-4 py-2 border">Invoice #</th>
-            <th class="px-4 py-2 border">Date</th>
-            <th class="px-4 py-2 border">Customer</th>
-            <th class="px-4 py-2 border">VAT Sales</th>
-            <th class="px-4 py-2 border">VAT Amount</th>
-            <th class="px-4 py-2 border">VAT-Exempt Sales</th>
-            <th class="px-4 py-2 border">Zero-Rated Sales</th>
-            <th class="px-4 py-2 border">Discount</th>
-            <th class="px-4 py-2 border">Total</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="invoice in invoices" :key="invoice.id">
-            <td class="px-4 py-2 border">{{ invoice.invoice_number }}</td>
-            <td class="px-4 py-2 border">{{ invoice.date }}</td>
-            <td class="px-4 py-2 border">{{ invoice.customer_name }}</td>
-            <td class="px-4 py-2 border">₱ {{ formatCurrency(invoice.vat_sales) }}</td>
-            <td class="px-4 py-2 border">₱ {{ formatCurrency(invoice.vat_amount) }}</td>
-            <td class="px-4 py-2 border">₱ {{ formatCurrency(invoice.vat_exempt_sales) }}</td>
-            <td class="px-4 py-2 border">₱ {{ formatCurrency(invoice.zero_rated_sales) }}</td>
-            <td class="px-4 py-2 border">₱ {{ formatCurrency(invoice.discount) }}</td>
-            <td class="px-4 py-2 border">₱ {{ formatCurrency(invoice.total) }}</td>
-          </tr>
-          <tr v-if="invoices.length === 0">
-            <td class="px-4 py-2 border text-center text-gray-500" colspan="9">No invoices found</td>
-          </tr>
-        </tbody>
-      </table>
     </div>
   </div>
 </template>

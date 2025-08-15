@@ -7,7 +7,7 @@ const Database = require('better-sqlite3');
 let db;
 
 // ✅ Path to DB
-const dbPath = path.resolve(__dirname, 'userData', 'database.db');
+const dbPath = path.join(app.getPath('userdata'), 'database.db');
 console.log('📂 Electron is trying to open DB at:', dbPath);
 
 // ✅ Create or open DB and tables
