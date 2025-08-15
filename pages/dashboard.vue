@@ -29,124 +29,148 @@
       </div>
     </div>
 
-    <!--                 Costumer           -->
+    <!-- Sales Table + Totals -->
+    <div class="bg-white rounded-lg shadow p-6 border border-gray-200">
+      <div class="flex flex-col lg:flex-row gap-6">
 
-    <div class="p-6">
-      INSERT SEARCH INPUT FOR REGISTERED PATIENTS
-      <button class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Register New Patient</button>
+        <!--Product Table-->
+        <div class="flex-1 overflow-auto">
+          <table class="min-w-full border border-gray-300 text-sm text-left">
+            <thead class="bg-sky-300 text-gray-800">
+              <tr>
+                <th class="px-4 py-2 border">Product List</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="text-center hover:bg-gray-50">
+                <td class="p-2 border"></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <!-- Sales Table -->
+        <div class="flex-1 overflow-auto">
+          <table class="min-w-full border border-gray-300 text-sm text-left">
+            <thead class="bg-sky-300 text-gray-800">
+              <tr>
+                <th class="px-4 py-2 border">Product</th>
+                <th class="px-4 py-2 border">Quantity</th>
+                <th class="px-4 py-2 border">Price</th>
+                <th class="px-4 py-2 border">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="text-center hover:bg-gray-50">
+                <td class="p-2 border"></td>
+                <td class="p-2 border"></td>
+                <td class="p-2 border"></td>
+                <td class="p-2 border space-x-2">
+                  <button class="text-red-600 hover:text-red-800">
+                    <Trash class="w-4 h-4" />
+                  </button>
+                  <button class="text-blue-600 hover:text-blue-800">
+                    <Pencil class="w-4 h-4" />
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Totals + Buttons -->
+        <div class="w-full lg:w-1/3 space-y-4">
+          <!-- Totals Card -->
+          <div>
+            <div class="bg-white p-4 rounded-lg shadow border border-gray-200 space-y-2">
+              <div class="flex justify-between">
+              <p class="font-bold text-lg">Total VAT Sales</p>
+              <p class="text-xl">{{ formatCurrency(totals.vat_sales) }}</p>
+              </div>
+              <div class="flex justify-between">
+              <p class="font-bold text-lg">Total VAT Amount</p>
+              <p class="text-xl">{{ formatCurrency(totals.vat_amount) }}</p>
+              </div>
+              <div class="flex justify-between">
+              <p class="font-bold text-lg">Total VAT-Exempt Sales</p>
+              <p class="text-xl">{{ formatCurrency(totals.vat_exempt_sales) }}</p>
+              </div>
+              <div class="flex justify-between">
+              <p class="font-bold text-lg">Total Zero-Rated Sales</p>
+              <p class="text-xl">{{ formatCurrency(totals.zero_rated_sales) }}</p>
+              </div>
+            </div>
+          </div>
+          <div class="bg-white p-4 rounded-lg shadow border border-gray-200 space-y-2 flex justify-between">
+              <p class="font-bold text-lg">Discount</p>
+              <p class="text-xl">{{ formatCurrency(totals.discount || 0) }}</p>
+               <td class="p-2 border space-x-2">
+                  <button class="text-red-600 hover:text-red-800">
+                    <Trash class="w-4 h-4" />
+                  </button>
+                  <button class="text-blue-600 hover:text-blue-800">
+                    <Pencil class="w-4 h-4" />
+                  </button>
+                </td>
+          </div>
+          <!-- Totals -->
+          <div class="bg-white p-4 rounded-lg shadow border border-gray-200 space-y-2">
+            <div class="flex justify-between font-semibold"><span>TOTAL</span><span>{{ formatCurrency(totals.total || 0) }}</span></div>
+            <div class="flex justify-between"><span>TENDERED</span><span>₱0.00</span></div>
+            <div class="flex justify-between"><span>CHANGE</span><span>₱0.00</span></div>
+          </div>
+        </div>
+      </div>
     </div>
-    <!-- --------------------------------------------------------------------------------------- -->
-
-    <!-- table and buttons-->
-    <div class = "flex flex-row pt-6">
-
-<!-- Sales Table -->
-    <div class="grid-row">
-      <table class="border-2 border-slate-800">
-        <thead class="bg-sky-300">
+    <!-- Action Buttons -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div class="space-y-2">
+          <button class="w-full bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg shadow">Save</button>
+          </div>
+          <div>
+          <button class="w-full bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg shadow">Cancel Transaction</button>
+          </div>
+          <div>
+          <button class="w-full bg-gray-500 hover:bg-gray-600 text-white py-2 px-4 rounded-lg shadow">Open Drawer</button>
+          </div>
+          <div>
+          <button class="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg shadow">Print Receipt</button>
+          </div>
+    </div>
+    <!-- Invoices Table -->
+    <div class="bg-white shadow rounded overflow-x-auto">
+      <table class="min-w-full border-collapse">
+        <thead class="bg-gray-100">
           <tr>
-            <th class="p-2 border">Quantity</th>
-            <th class="p-2 border">Description</th>
-            <th class="p-2 border">Price</th>
-            <th class="p-2 border">Action</th>
+            <th class="px-4 py-2 border">Invoice #</th>
+            <th class="px-4 py-2 border">Date</th>
+            <th class="px-4 py-2 border">Customer</th>
+            <th class="px-4 py-2 border">VAT Sales</th>
+            <th class="px-4 py-2 border">VAT Amount</th>
+            <th class="px-4 py-2 border">VAT-Exempt Sales</th>
+            <th class="px-4 py-2 border">Zero-Rated Sales</th>
+            <th class="px-4 py-2 border">Discount</th>
+            <th class="px-4 py-2 border">Total</th>
           </tr>
         </thead>
         <tbody>
-          <tr class="text-center">
-            <td class="p-2 border"></td>
-            <td class="p-2 border"></td>
-            <td class="p-2 border"></td>
-            <td class="p-2 border">
-              <button class="text-red-600 mr-2"><Trash class="w- h-4" /></button>
-              <button class="text-blue-600"><Pencil class="w- h-4" /></button>
-            </td>
+          <tr v-for="invoice in invoices" :key="invoice.id">
+            <td class="px-4 py-2 border">{{ invoice.invoice_number }}</td>
+            <td class="px-4 py-2 border">{{ invoice.date }}</td>
+            <td class="px-4 py-2 border">{{ invoice.customer_name }}</td>
+            <td class="px-4 py-2 border">₱ {{ formatCurrency(invoice.vat_sales) }}</td>
+            <td class="px-4 py-2 border">₱ {{ formatCurrency(invoice.vat_amount) }}</td>
+            <td class="px-4 py-2 border">₱ {{ formatCurrency(invoice.vat_exempt_sales) }}</td>
+            <td class="px-4 py-2 border">₱ {{ formatCurrency(invoice.zero_rated_sales) }}</td>
+            <td class="px-4 py-2 border">₱ {{ formatCurrency(invoice.discount) }}</td>
+            <td class="px-4 py-2 border">₱ {{ formatCurrency(invoice.total) }}</td>
           </tr>
-          <!-- Add more rows as needed -->
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Right Side -->
-      <div class="space-y-4 ml-4 basis-2/5">
-
-    <!--DISCOUNTS-->
-        <div class="bg-white p-4 rounded shadow border-2">
-          <div class="flex justify-between mb-2 space-x-4"><span>VAT Sales</span><span>₱0.00</span></div>
-          <div class="flex justify-between mb-2 space-x-4"><span>VAT Exempt Sales</span><span>₱0.00</span></div>
-          <div class="flex justify-between mb-2 space-x-4"><span>Zero-rated Sales</span><span>₱0.00</span></div>
-          <div class="flex justify-between mb-2 space-x-4"><span>Discount</span><span>₱0.00</span></div>
-        </div>
-
-    <!-- TOTAL-->
-        <div class="bg-white p-4 rounded shadow border-2 ">
-          <div class="flex justify-between mb-2 space-x-4">
-            <h1 class="font-medium">TOTAL</h1> <!--total-->
-            <h2 class="font-medium">₱0.00</h2>
-          </div>
-
-          <div class="flex justify-between mb-2 space-x-4">
-            <h1 class="font-medium">TENDERED</h1> <!--tendered-->
-            <h2 class="font-medium">₱0.00</h2>
-          </div>
-
-          <div class="flex justify-between mb-2 space-x-4">
-            <h1 class="font-medium">CHANGE</h1> <!--change-->
-            <h2 class="font-medium">₱0.00</h2>
-          </div>
-
-        </div>
-
-      </div>
-      <UContainer class="space-y-4 ml-4 basis-1/5 mt-8">
-    <UButton label="Save" color="green" variant="solid" block />
-    <UButton label="Reset Discount" color="green" variant="solid" block />
-    <UButton label="Edit Sales" color="green" variant="solid" block />
-    <UButton label="Cancel Transaction" color="red" variant="solid" block />
-    <UButton label="Open Drawer" color="gray" variant="solid" block />
-    <UButton label="Print Receipt" color="blue" variant="solid" block />
-  </UContainer>
-    </div>
-
-    <!-- Services -->
- <div class="bg-white p-4 rounded shadow">
-      <div class="flex justify-between items-center mb-4">
-        <h2 class="text-xl font-bold">📦 Product List</h2>
-        <button
-          @click="fetchProducts"
-          class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm"
-        >
-          🔄 Refresh
-        </button>
-      </div>
-
-      <table class="table-auto w-full border-collapse border border-gray-300 text-sm">
-        <thead>
-          <tr class="bg-gray-100 text-left">
-            <th class="border p-2">Name</th>
-            <th class="border p-2">Price</th>
-            <th class="border p-2">VAT</th>
-            <th class="border p-2">VAT Amount</th>
-            <th class="border p-2">Total</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="product in products" :key="product.id">
-            <td class="border p-2">{{ product.productname }}</td>
-            <td class="border p-2">₱{{ Number(product.price || 0).toFixed(2) }}</td>
-            <td class="border p-2">{{ Number(product.vat || 0).toFixed(2) }}%</td>
-            <td class="border p-2">₱{{ Number(product.vatAmount || 0).toFixed(2) }}</td>
-            <td class="border p-2">₱{{ Number(product.total || 0).toFixed(2) }}</td>
-            <td class="border p-2 space-x-2">
-            </td>
+          <tr v-if="invoices.length === 0">
+            <td class="px-4 py-2 border text-center text-gray-500" colspan="9">No invoices found</td>
           </tr>
         </tbody>
       </table>
-
-      <div v-if="products.length === 0" class="text-gray-500 text-sm mt-2">
-        No products found.
-      </div>
-      </div>
-</div>
+    </div>
+  </div>
 </template>
 
 
@@ -172,14 +196,47 @@ onMounted(() => {
   }
 })
 
-// -- Invoice Date & Time (Live) --
+const invoices = ref([])
+const totals = ref({
+  vat_sales: 0,
+  vat_amount: 0,
+  vat_exempt_sales: 0,
+  zero_rated_sales: 0,
+  discount: 0,
+  total: 0
+})
+
+function formatCurrency(amount) {
+  return new Intl.NumberFormat('en-PH', {
+    style: 'currency',
+    currency: 'PHP'
+  }).format(amount || 0)
+}
+
+onMounted(async () => {
+  const rows = await window.electron.invoke('get-all-invoices')
+  invoices.value = rows
+
+  // Use DB-precomputed values
+  totals.value = rows.reduce((acc, inv) => {
+    acc.vat_sales += inv.vat_sales || 0
+    acc.vat_amount += inv.vat_amount || 0
+    acc.vat_exempt_sales += inv.vat_exempt_sales || 0
+    acc.zero_rated_sales += inv.zero_rated_sales || 0
+    acc.discount += inv.discount || 0
+    acc.total += inv.total || 0
+    return acc
+  }, { vat_sales: 0, vat_amount: 0, vat_exempt_sales: 0, zero_rated_sales: 0, discount: 0, total: 0 })
+})
+
+// -- Invoice Date & Time --
 const invoiceDate = ref('')
 const invoiceTime = ref('')
 
 function updateClockAndDate() {
   const now = new Date()
-  invoiceDate.value = now.toISOString().split('T')[0] // YYYY-MM-DD
-  invoiceTime.value = now.toTimeString().slice(0, 5)   // HH:MM
+  invoiceDate.value = now.toISOString().split('T')[0]
+  invoiceTime.value = now.toTimeString().slice(0, 5)
 }
 
 onMounted(() => {
@@ -198,7 +255,7 @@ onMounted(async () => {
   }
 })
 
-// -- Product Form + Computed Fields --
+// -- Product Form --
 const form = reactive({ date: '', name: '', businessStyle: '', address: '', tin: '' })
 const productname = ref('')
 const price = ref(0)
@@ -208,11 +265,6 @@ const editingId = ref(null)
 
 const vatAmount = computed(() => (price.value * vat.value) / 100 || 0)
 const total = computed(() => price.value + vatAmount.value || 0)
-
-const save = () => {
-  emit('save', { ...form })
-  emit('close')
-}
 
 async function fetchProducts() {
   try {
@@ -253,6 +305,3 @@ function clearForm() {
 
 onMounted(fetchProducts)
 </script>
-
-
-
