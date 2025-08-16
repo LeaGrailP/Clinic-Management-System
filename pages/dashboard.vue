@@ -21,7 +21,7 @@
     </div>
 
     <!-- Sales Table + Totals -->
-    <div class="bg-slate-50 rounded-lg shadow p-6 border border-gray-200">
+    <div class="bg-white rounded-lg shadow p-6 border border-gray-200">
       <div class="flex flex-col lg:flex-row gap-6">
 
         <!--Product Table-->

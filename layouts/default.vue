@@ -15,7 +15,7 @@ function toggleSidebar() {
     <!-- Fixed Header -->
     <Header
      v-if="!route.meta.hideHeader"
-      class="fixed top-0 left-0 right-0 h-12 z-20 bg-white shadow"
+      class="fixed top-0 left-0 right-0 h-12 z-20 bg-slate-50 shadow"
     />
 
     <!-- Layout Body -->
@@ -23,7 +23,7 @@ function toggleSidebar() {
       <!-- Fixed Sidebar -->
       <Sidebar
   v-if="!route.meta.hideSidebar"
-  class="fixed top-12 bottom-8 left-0 z-10 bg-gray-100 border-r transition-all duration-300"
+  class="fixed top-12 bottom-8 left-0 z-10 bg-slate-100 border-r transition-all duration-300"
   :collapsed="collapsed"
   @toggle="toggleSidebar"
 />
