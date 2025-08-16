@@ -7,7 +7,7 @@ const Database = require('better-sqlite3');
 let db;
 
 // ✅ Path to DB
-const dbPath = path.join(app.getPath('userdata'), 'database.db');
+const dbPath = path.join(app.getPath('userData'), 'database.db');
 console.log('📂 Electron is trying to open DB at:', dbPath);
 
 // ✅ Create or open DB and tables
@@ -168,7 +168,17 @@ ipcMain.handle('auth:register', async (_event, { name, username, password, role 
     INSERT INTO clinicpatients
     (firstName, lastName, middleName, address, phone, businessStyle, tin, isSenior, seniorId)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `);
+  `).run(
+        clinicPT.firstName,
+    clinicPT.lastName,
+    clinicPT.middleName || '',
+    clinicPT.address,
+    clinicPT.phone,
+    clinicPT.businessStyle,
+    clinicPT.tin,
+    clinicPT.isSenior ? 1 : 0,
+    clinicPT.seniorId || ''
+  );
   });
 
   ipcMain.handle('update-patient', (_event, clinicPT) => {
@@ -177,15 +187,15 @@ ipcMain.handle('auth:register', async (_event, { name, username, password, role 
       address = ?, phone = ?, businessStyle = ?, tin = ?, isSenior = ?, seniorId = ? 
       WHERE id = ?
     `).run(
-    patient.firstName,
-    patient.lastName,
-    patient.middleName || '',
-    patient.address,
-    patient.phone,
-    patient.businessStyle,
-    patient.tin,
-    patient.isSenior ? 1 : 0,
-    patient.seniorId || ''
+    clinicPT.firstName,
+    clinicPT.lastName,
+    clinicPT.middleName || '',
+    clinicPT.address,
+    clinicPT.phone,
+    clinicPT.businessStyle,
+    clinicPT.tin,
+    clinicPT.isSenior ? 1 : 0,
+    clinicPT.seniorId || ''
   );
   });
 

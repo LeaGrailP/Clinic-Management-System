@@ -29,20 +29,20 @@
         </thead>
         <tbody>
           <tr
-            v-for="(clinicPT, index) in clinicpatients"
+            v-for="index in clinicpatients"
             :key="index"
             class="border-b"
           >
-            <td class="px-4 py-2">{{ clinicPT.firstName }}</td>
-            <td class="px-4 py-2">{{ clinicPT.lastName }}</td>
-            <td class="px-4 py-2">{{ clinicPT.middleName }}</td>
-            <td class="px-4 py-2">{{ clinicPT.address }}</td>
-            <td class="px-4 py-2">{{ clinicPT.phone }}</td>
-            <td class="px-4 py-2">{{ clinicPT.businessStyle }}</td>
-            <td class="px-4 py-2">{{ clinicPT.tin }}</td>
-            <td class="px-4 py-2">{{ clinicPT.isSenior ? "Yes" : "No" }}</td>
+            <td class="px-4 py-2">{{ index.firstName }}</td>
+            <td class="px-4 py-2">{{ index.lastName }}</td>
+            <td class="px-4 py-2">{{ index.middleName }}</td>
+            <td class="px-4 py-2">{{ index.address }}</td>
+            <td class="px-4 py-2">{{ index.phone }}</td>
+            <td class="px-4 py-2">{{ index.businessStyle }}</td>
+            <td class="px-4 py-2">{{ index.tin }}</td>
+            <td class="px-4 py-2">{{ index.isSenior ? "Yes" : "No" }}</td>
             <td class="px-4 py-2">
-              {{ clinicPT.isSenior ? clinicPT.seniorIdNumber : "-" }}
+              {{ index.isSenior ? index.seniorId : "-" }}
             </td>
           </tr>
           <tr v-if="clinicpatients.length === 0">
@@ -171,7 +171,7 @@
               >Senior ID Number</label
             >
             <input
-              v-model="form.seniorIdNumber"
+              v-model="form.seniorId"
               type="text"
               placeholder="Enter Senior ID Number"
               :required="form.isSenior"
@@ -204,7 +204,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 
-const showModal = ref(false) // 👈 this fixes the error
+const showModal = ref(false) 
 
 const form = ref({
   firstName: '',
@@ -215,18 +215,24 @@ const form = ref({
   businessStyle: '',
   tin: '',
   isSenior: false,
-  seniorIdNumber: ''
+  seniorId: ''
 })
 
 const clinicpatients = ref([])
 
-async function fetchPatients() {
-  clinicpatients.value = await window.patientAPI.get()
+async function fetchClinicpatients() {
+  clinicpatients.value = await window.electron.invoke('get-patients')
 }
 
 async function submitForm() {
   try {
-    await fetchPatients()
+    // Insert into DB via IPC
+    await window.electron.invoke('add-patient', { ...form.value })
+
+    // Refresh data
+    await fetchClinicpatients()
+
+    // Reset form
     form.value = {
       firstName: '',
       lastName: '',
@@ -236,8 +242,9 @@ async function submitForm() {
       businessStyle: '',
       tin: '',
       isSenior: false,
-      seniorIdNumber: ''
+      seniorId: ''
     }
+
     showModal.value = false
   } catch (err) {
     console.error('Error adding patient:', err)
@@ -245,9 +252,9 @@ async function submitForm() {
 }
 
 
-onMounted(() => {
-  fetchPatients()
-})
+
+
+onMounted(fetchClinicpatients)
 </script>
 
 
