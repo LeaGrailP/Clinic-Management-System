@@ -1,38 +1,66 @@
 <template>
   <div class="min-h-screen flex items-center justify-center">
     <background />
-    <div class="z-10 p-8 bg-white bg-opacity-10 backdrop-blur-md rounded-lg shadow-lg w-full max-w-md">
+    <div class="z-10 p-8 border-sky-500 bg-opacity-10 backdrop-blur-md rounded-lg shadow-lg w-full max-w-md">
       <h1 class="text-3xl font-bold text-center mb-6">Create an Account</h1>
 
       <form @submit.prevent="register">
         <div class="space-y-4">
+          <!-- Full Name -->
           <div>
-            <label class="block text-sm font-medium text-white mb-1">Full Name</label>
-            <input v-model="name" type="text" placeholder="Juan De la Cruz" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-400 outline-none" />
+            <label class="block text-sm font-medium mb-1">Name</label>
+            <input 
+              v-model="name" 
+              type="text" 
+              placeholder="Juan De la Cruz" 
+              required 
+              class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-400 outline-none" 
+            />
           </div> 
+
+          <!-- Role -->
           <div>
-            <label class="block text-sm font-medium text-white mb-1">Username</label>
-            <input v-model="email" type="text" placeholder="cashier@example.com" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-400 outline-none" />
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-white mb-1">Role</label>
-            <select v-model="role" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-400 outline-none">
-            <option disabled value="">Select role</option>
-            <option value="admin">Admin</option>
-            <option value="cashier">Cashier</option>
+            <label class="block text-sm font-medium mb-1">Role</label>
+            <select 
+              v-model="role" 
+              required 
+              class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-400 outline-none"
+            >
+              <option disabled value="">Select role</option>
+              <option value="admin">Admin</option>
+              <option value="cashier">Cashier</option>
             </select>
           </div>
+
+          <!-- Password -->
           <div>
-            <label class="block text-sm font-medium text-white mb-1">Password</label>
-            <input v-model="password" type="password" placeholder="••••••••" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-400 outline-none" />
+            <label class="block text-sm font-medium mb-1">Password</label>
+            <input 
+              v-model="password" 
+              type="password" 
+              placeholder="••••••••" 
+              required 
+              class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-400 outline-none" 
+            />
           </div>
 
+          <!-- Confirm Password -->
           <div>
-            <label class="block text-sm font-medium text-white mb-1">Confirm Password</label>
-            <input v-model="confirmPassword" type="password" placeholder="••••••••" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-400 outline-none" />
+            <label class="block text-sm font-medium mb-1">Confirm Password</label>
+            <input 
+              v-model="confirmPassword" 
+              type="password" 
+              placeholder="••••••••" 
+              required 
+              class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-400 outline-none" 
+            />
           </div>
 
-          <button type="submit" class="w-full bg-blue-600 text-white font-semibold py-2 rounded-lg hover:bg-blue-700 transition">
+          <!-- Submit -->
+          <button 
+            type="submit" 
+            class="w-full bg-blue-600 text-white font-semibold py-2 rounded-lg hover:bg-blue-700 transition"
+          >
             Sign Up
           </button>
         </div>
@@ -44,17 +72,14 @@
 <script setup>
 import background from '~/components/background.vue'
 import { ref, onMounted } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { useRouter } from 'vue-router'
 import { useUser } from '~/composables/useUser'
-
-const route = useRoute() 
 
 definePageMeta({
   layout: 'default'
 })
 
 const name = ref('')
-const email = ref('')
 const role = ref('')
 const password = ref('')
 const confirmPassword = ref('')
@@ -86,8 +111,7 @@ const register = async () => {
   }
 
   const result = await window.auth.register({
-    name: name.value,
-    username: email.value,
+    name: name.value,   // ✅ use name only
     password: password.value,
     role: role.value,
   });

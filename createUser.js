@@ -8,13 +8,13 @@ console.log('🧭 Using DB at:', dbPath);
 const db = new sqlite3.Database(dbPath);
 
 async function createUser() {
-  const username = 'admin2@example.com';
+  const name = 'Admin'; // 👈 Simple name instead of email
   const password = 'securepass456';
   const role = 'admin';
 
   const hashedPassword = await bcrypt.hash(password, 10);
 
-  db.get('SELECT * FROM users WHERE username = ?', [username], (err, row) => {
+  db.get('SELECT * FROM users WHERE name = ?', [name], (err, row) => {
     if (err) {
       console.error('❌ Error checking user:', err.message);
       db.close();
@@ -22,12 +22,12 @@ async function createUser() {
     }
 
     if (row) {
-      console.log(`⚠️ User "${username}" already exists. No action taken.`);
+      console.log(`⚠️ User "${name}" already exists. No action taken.`);
       db.close();
     } else {
       db.run(
-        'INSERT INTO users (username, password, role) VALUES (?, ?, ?)',
-        [username, hashedPassword, role],
+        'INSERT INTO users (name, password, role) VALUES (?, ?, ?)',
+        [name, hashedPassword, role],
         (err) => {
           if (err) {
             console.error('❌ Failed to insert user:', err.message);

@@ -5,10 +5,11 @@
       <form @submit.prevent="handleLogin" class="p-8 rounded w-full max-w-sm">
         <h2 class="text-2xl font-bold mb-6 text-center text-white">Clinic POS</h2>
 
+        <!-- Use Name instead of Username -->
         <input
-          v-model="username"
+          v-model="name"
           type="text"
-          placeholder="Username"
+          placeholder="Name"
           class="w-full p-2 border border-gray-300 rounded mb-4"
           required
         />
@@ -39,7 +40,7 @@ definePageMeta({
   layout: 'login'
 })
 
-const username = ref('')
+const name = ref('')
 const password = ref('')
 const router = useRouter();
 const isAdmin = ref(false)
@@ -54,12 +55,13 @@ onMounted(() => {
 async function handleLogin() {
   try {
     const result = await window.auth.login({
-      username: username.value,
+      name: name.value,
       password: password.value
     })
 
     if (result && result.success) {
-      localStorage.setItem('user', JSON.stringify(result)) // ✅ Save whole user object
+      localStorage.setItem("name", result.name)
+      localStorage.setItem("role", result.role)
       router.push('/dashboard')
     } else {
       alert(result?.error || 'Login failed.')
@@ -70,9 +72,3 @@ async function handleLogin() {
   }
 }
 </script>
-
-<style scoped>
-.dot {
-  transition: transform 0.3s ease;
-}
-</style>

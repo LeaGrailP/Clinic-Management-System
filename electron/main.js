@@ -6,69 +6,55 @@ const Database = require('better-sqlite3');
 
 let db;
 
-// ✅ Path to DB
-const dbPath = path.join(app.getPath('userData'), 'database.db');
-console.log('📂 Electron is trying to open DB at:', dbPath);
-
-// ✅ Create or open DB and tables
+// ✅ Initialize Database
 function initDB() {
-  const fs = require('fs');
-  const Database = require('better-sqlite3');
-const { app } = require('electron');
-const path = require('path');
-
-const dbPath = path.resolve(__dirname, 'userData', 'database.db');
-
+  const dbPath = path.resolve('D:/Clinic-Management-System/electron/userData/database.db');
   const dbDir = path.dirname(dbPath);
-  console.log('📂 Electron is trying to open DB at:', dbPath); // << debug
+  console.log('📂 Electron is trying to open DB at:', dbPath);
 
-  // Ensure folder exists
-  if (!fs.existsSync(dbDir)) {
-    fs.mkdirSync(dbDir, { recursive: true });
-  }
+  if (!fs.existsSync(dbDir)) fs.mkdirSync(dbDir, { recursive: true });
 
-  const db = new Database(dbPath);
+  db = new Database(dbPath);
 
   // Users table
   db.exec(`
     CREATE TABLE IF NOT EXISTS users (
-      name TEXT NOT NULL,
-      username TEXT UNIQUE NOT NULL,
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT UNIQUE NOT NULL,
       password TEXT NOT NULL,
       role TEXT NOT NULL
     )
   `);
 
-  // Products
+  // Products table
   db.exec(`
     CREATE TABLE IF NOT EXISTS products (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       productname TEXT NOT NULL,
-      image TEXT,
-      price REAL,
-      vat REAL,
+      price REAL NOT NULL,
+      vatType TEXT NOT NULL,
+      vatSales REAL,
       vatAmount REAL,
-      total REAL
+      vatExempt REAL,
+      zeroRated REAL,
+      total REAL,
+      image TEXT
     )
   `);
 
-  // Patients
+  // Patients table
   db.exec(`
- CREATE TABLE IF NOT EXISTS clinicpatients (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    firstName TEXT,
-    lastName TEXT,
-    middleName TEXT,
-    address TEXT,
-    phone INTEGER,
-    businessStyle TEXT,
-    tin INTEGER,
-    isSenior INTEGER,
-    seniorId TEXT
-  )
+    CREATE TABLE IF NOT EXISTS patients (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      patientname TEXT NOT NULL,
+      business TEXT,
+      address TEXT,
+      tin REAL,
+      number REAL
+    )
   `);
 
-  // Transactions
+  // Transactions table
   db.exec(`
     CREATE TABLE IF NOT EXISTS transactions (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -78,7 +64,7 @@ const dbPath = path.resolve(__dirname, 'userData', 'database.db');
     )
   `);
 
-  //Invoice
+  // Invoice table
   db.exec(`
     CREATE TABLE IF NOT EXISTS invoice (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -92,7 +78,7 @@ const dbPath = path.resolve(__dirname, 'userData', 'database.db');
   return db;
 }
 
-// ✅ Create Electron window
+// ✅ Create Electron Window
 function createWindow() {
   const win = new BrowserWindow({
     width: 1200,
@@ -104,118 +90,135 @@ function createWindow() {
     }
   });
 
-  win.loadURL('http://localhost:3000'); // Or use Nuxt build path
+  win.loadURL('http://localhost:3000'); // Nuxt dev or build URL
 }
 
-// ✅ Setup Electron + DB + Handlers
+// ✅ App Ready
 app.whenReady().then(() => {
   db = initDB();
   createWindow();
 
-  //PRODUCTiMAGE
-  const imagesDir = path.join(app.getPath('userData'), 'product-images');
-  if (!fs.existsSync(imagesDir)) fs.mkdirSync(imagesDir);
-
-  ipcMain.handle('save-product-image', async (event, { imageName, buffer }) => {
-    const fullPath = path.join(imagesDir, imageName);
-    fs.writeFileSync(fullPath, Buffer.from(buffer));
-    return fullPath;
-  });
-
-  // Login
-  ipcMain.handle('login', async (_event, { username, password }) => {
-    console.log('LOGIN ATTEMPT:', username);
-
+  // ----- USERS -----
+  ipcMain.handle('login', async (_event, { name, password }) => {
     try {
-      const user = db.prepare('SELECT * FROM users WHERE username = ?').get(username);
+      const user = db.prepare('SELECT * FROM users WHERE name = ?').get(name);
       if (!user) return { success: false, error: 'User not found' };
-
       const match = await bcrypt.compare(password, user.password);
       if (!match) return { success: false, error: 'Incorrect password' };
-
-      return { success: true, name: user.name, username: user.username, role: user.role };
+      return { success: true, name: user.name, role: user.role };
     } catch (err) {
       console.error('Login error:', err);
       return { success: false, error: 'Internal login error' };
     }
   });
 
-//Register
-ipcMain.handle('auth:register', async (_event, { name, username, password, role }) => {
-  try {
-    if (!name || !username || !password || !role) {
-      return { success: false, error: 'All fields are required' };
+  ipcMain.handle('auth:register', async (_event, { name, password, role }) => {
+    try {
+      const hash = await bcrypt.hash(password, 10);
+      db.prepare(`INSERT INTO users (name, password, role) VALUES (?, ?, ?)`).run(name, hash, role);
+      return { success: true };
+    } catch (err) {
+      if (err.code === 'SQLITE_CONSTRAINT') return { success: false, error: 'Name already exists' };
+      console.error('Register error:', err);
+      return { success: false, error: 'Registration failed' };
     }
-
-    const hash = await bcrypt.hash(password, 10);
-    db.prepare(`INSERT INTO users (name, username, password, role) VALUES (?, ?, ?, ?)`)
-      .run(name, username, hash, role);
-    return { success: true };
-  } catch (err) {
-    if (err.code === 'SQLITE_CONSTRAINT') {
-      return { success: false, error: 'Username already exists' };
-    }
-    console.error('Register error:', err);
-    return { success: false, error: 'Registration failed' };
-  }
-});
-
-  // Patients
-  ipcMain.handle('get-patients', () => db.prepare('SELECT * FROM clinicpatients').all());
-
-  ipcMain.handle('add-patient', (_event, clinicPT) => {
-    db.prepare(`
-    INSERT INTO clinicpatients
-    (firstName, lastName, middleName, address, phone, businessStyle, tin, isSenior, seniorId)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `);
   });
 
-  ipcMain.handle('update-patient', (_event, clinicPT) => {
-    db.prepare(`
-      UPDATE patients SET  firstName = ?, lastName = ?, middleName = ?, 
-      address = ?, phone = ?, businessStyle = ?, tin = ?, isSenior = ?, seniorId = ? 
-      WHERE id = ?
-    `).run(
-    patient.firstName,
-    patient.lastName,
-    patient.middleName || '',
-    patient.address,
-    patient.phone,
-    patient.businessStyle,
-    patient.tin,
-    patient.isSenior ? 1 : 0,
-    patient.seniorId || ''
-  );
-  });
+  // ----- PATIENTS -----
+  ipcMain.handle('get-patients', () => db.prepare('SELECT * FROM patients').all());
+  ipcMain.handle('add-patient', (_e, p) => db.prepare(`
+    INSERT INTO patients (patientname, address, number, business, tin)
+    VALUES (?, ?, ?, ?, ?)
+  `).run(p.patientname, p.address, p.number, p.business, p.tin));
+  ipcMain.handle('update-patient', (_e, p) => db.prepare(`
+    UPDATE patients SET patientname = ?, address = ?, number = ?, business = ?, tin = ?
+    WHERE id = ?
+  `).run(p.patientname, p.address, p.number, p.business, p.tin, p.id));
+  ipcMain.handle('delete-patient', (_e, id) => db.prepare('DELETE FROM patients WHERE id = ?').run(id));
 
-  ipcMain.handle('delete-patient', (_event, id) => {
-    db.prepare('DELETE FROM clinicpatients WHERE id = ?').run(id);
-  });
-
-  // Products
+  // ----- PRODUCTS -----
   ipcMain.handle('get-products', () => db.prepare('SELECT * FROM products').all());
 
-  ipcMain.handle('add-product', (_event, product) => {
+  ipcMain.handle('add-product', (_e, p) => {
+    const stmt = db.prepare(`
+      INSERT INTO products
+      (productname, price, vatType, vatSales, vatAmount, vatExempt, zeroRated, total, image)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+    const result = stmt.run(
+      p.productname,
+      p.price,
+      p.vatType,
+      p.vatSales,
+      p.vatAmount,
+      p.vatExempt,
+      p.zeroRated,
+      p.total,
+      p.image
+    );
+    return { success: true, id: result.lastInsertRowid };
+  });
+
+  ipcMain.handle('update-product', (_e, p) => {
     db.prepare(`
-      INSERT INTO products (productname, price, vat, vatAmount, total, image)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `).run(product.productname, product.price, product.vat, product.vatAmount, product.total, product.image);
+      UPDATE products
+      SET productname=?, price=?, vatType=?, vatSales=?, vatAmount=?, vatExempt=?, zeroRated=?, total=?, image=?
+      WHERE id=?
+    `).run(
+      p.productname,
+      p.price,
+      p.vatType,
+      p.vatSales,
+      p.vatAmount,
+      p.vatExempt,
+      p.zeroRated,
+      p.total,
+      p.image,
+      p.id
+    );
     return { success: true };
   });
 
-  ipcMain.handle('update-product', (_event, product) => {
-    db.prepare(`
-      UPDATE products SET productname = ?, price = ?, vat = ?, vatAmount = ?, total = ?
-      WHERE id = ?
-    `).run(product.productname, product.price, product.vat, product.vatAmount, product.total, product.id);
+  ipcMain.handle('delete-product', (_e, id) => {
+    db.prepare('DELETE FROM products WHERE id=?').run(id);
     return { success: true };
   });
 
-  ipcMain.handle('delete-product', (_event, id) => {
-    db.prepare('DELETE FROM products WHERE id = ?').run(id);
-    return { success: true };
+  ipcMain.handle('save-product-image', (_e, { imageName, buffer }) => {
+    const saveDir = path.join(app.getPath('userData'), 'images');
+    if (!fs.existsSync(saveDir)) fs.mkdirSync(saveDir);
+    const fullPath = path.join(saveDir, imageName);
+    fs.writeFileSync(fullPath, Buffer.from(buffer));
+    return fullPath;
   });
+
+  // ----- INVOICES -----
+  ipcMain.handle('add-invoice', (_e, invoice) => {
+    const lastInvoice = db.prepare(`SELECT invoice_number FROM invoice ORDER BY id DESC LIMIT 1`).get();
+    let nextInvoiceNumber = 'INV-000001';
+    if (lastInvoice?.invoice_number) {
+      const lastNumber = parseInt(lastInvoice.invoice_number.replace('INV-', ''));
+      nextInvoiceNumber = `INV-${(lastNumber + 1).toString().padStart(6, '0')}`;
+    }
+    db.prepare(`
+      INSERT INTO invoice (date, total, items, invoice_number)
+      VALUES (?, ?, ?, ?)
+    `).run(invoice.date, invoice.total, invoice.items, nextInvoiceNumber);
+    return { success: true, invoice_number: nextInvoiceNumber };
+  });
+
+  ipcMain.handle('generate-invoice-number', () => {
+    const lastInvoice = db.prepare(`SELECT invoice_number FROM invoice ORDER BY id DESC LIMIT 1`).get();
+    let nextInvoiceNumber = 'INV-000001';
+    if (lastInvoice?.invoice_number) {
+      const lastNumber = parseInt(lastInvoice.invoice_number.replace('INV-', ''));
+      nextInvoiceNumber = `INV-${(lastNumber + 1).toString().padStart(6, '0')}`;
+    }
+    return nextInvoiceNumber;
+  });
+
+  ipcMain.handle('get-all-invoices', () => db.prepare('SELECT * FROM invoice').all());
+  ipcMain.handle('delete-invoice', (_e, id) => { db.prepare('DELETE FROM invoice WHERE id=?').run(id); return { success: true }; });
 
   console.log('✅ All IPC handlers registered');
 });

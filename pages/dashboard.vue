@@ -24,7 +24,7 @@
     <div class="bg-white rounded-lg shadow p-6 border border-gray-200">
       <div class="flex flex-col lg:flex-row gap-6">
 
-        <!--Product Table-->
+        <!-- Product List -->
         <div class="flex-1 overflow-auto">
           <table class="min-w-full border border-gray-300 text-sm text-left">
             <thead class="bg-sky-300 text-gray-800">
@@ -33,133 +33,146 @@
               </tr>
             </thead>
             <tbody>
-              <tr class="text-center hover:bg-gray-50">
-                <td class="p-2 border"></td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <!-- Sales Table -->
-        <div class="flex-1 overflow-auto">
-          <table class="min-w-full border border-gray-300 text-sm text-left">
-            <thead class="bg-sky-300 text-gray-800">
-              <tr>
-                <th class="px-4 py-2 border">Product</th>
-                <th class="px-4 py-2 border">Quantity</th>
-                <th class="px-4 py-2 border">Price</th>
-                <th class="px-4 py-2 border">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr class="text-center hover:bg-gray-50">
-                <td class="p-2 border"></td>
-                <td class="p-2 border"></td>
-                <td class="p-2 border"></td>
-                <td class="p-2 border space-x-2">
-                  <button class="text-red-600 hover:text-red-800">
-                    <Trash class="w-4 h-4" />
-                  </button>
-                  <button class="text-blue-600 hover:text-blue-800">
-                    <Pencil class="w-4 h-4" />
-                  </button>
-                </td>
+              <tr
+                v-for="product in products"
+                :key="product.id"
+                class="text-center hover:bg-gray-50 cursor-pointer"
+                @click="addProductToInvoice(product)"
+              >
+                <td class="p-2 border">{{ product.productname }}</td>
               </tr>
             </tbody>
           </table>
         </div>
 
-        <!-- Totals + Buttons -->
+        <!-- Sales Table -->
+<div class="flex-1 overflow-auto">
+  <table class="min-w-full border border-gray-300 text-sm text-left">
+    <thead class="bg-sky-300 text-gray-800">
+      <tr>
+        <th class="px-4 py-2 border">Product</th>
+        <th class="px-4 py-2 border">Quantity</th>
+        <th class="px-4 py-2 border">Price</th>
+        <th class="px-4 py-2 border">Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr
+        v-for="(p, index) in selectedProducts"
+        :key="p.id"
+        class="text-center hover:bg-gray-50"
+      >
+        <td class="p-2 border">{{ p.productname }}</td>
+        <td class="p-2 border">{{ p.quantity }}</td>
+        <td class="p-2 border">₱{{ p.total.toFixed(2) }}</td>
+        <td class="p-2 border space-x-2 flex justify-center items-center">
+          <button
+            @click="decreaseQuantity(index)"
+            class="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
+          >−</button>
+          <button
+            @click="increaseQuantity(index)"
+            class="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
+          >+</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+        <!-- Totals + Actions -->
         <div class="w-full lg:w-1/3 space-y-4">
-          <!-- Totals Card -->
-          <div>
-            <div class="bg-white p-4 rounded-lg shadow border border-gray-200 space-y-2">
-              <div class="flex justify-between">
+          <div class="bg-white p-4 rounded-lg shadow border border-gray-200 space-y-2">
+            <div class="flex justify-between">
               <p class="font-bold text-lg">Total VAT Sales</p>
               <p class="text-xl">{{ formatCurrency(totals.vat_sales) }}</p>
-              </div>
-              <div class="flex justify-between">
+            </div>
+            <div class="flex justify-between">
               <p class="font-bold text-lg">Total VAT Amount</p>
               <p class="text-xl">{{ formatCurrency(totals.vat_amount) }}</p>
-              </div>
-              <div class="flex justify-between">
+            </div>
+            <div class="flex justify-between">
               <p class="font-bold text-lg">Total VAT-Exempt Sales</p>
               <p class="text-xl">{{ formatCurrency(totals.vat_exempt_sales) }}</p>
-              </div>
-              <div class="flex justify-between">
+            </div>
+            <div class="flex justify-between">
               <p class="font-bold text-lg">Total Zero-Rated Sales</p>
               <p class="text-xl">{{ formatCurrency(totals.zero_rated_sales) }}</p>
-              </div>
             </div>
           </div>
-          <div class="bg-white p-4 rounded-lg shadow border border-gray-200 space-y-2 flex justify-between">
-              <p class="font-bold text-lg">Discount</p>
-              <p class="text-xl">{{ formatCurrency(totals.discount || 0) }}</p>
-               <p class="p-2 space-x-2">
-                  <button class="text-red-600 hover:text-red-800">
-                    <Trash class="w-4 h-4" />
-                  </button>
-                  <button class="text-blue-600 hover:text-blue-800">
-                    <Pencil class="w-4 h-4" />
-                  </button>
-                </p>
-          </div>
-          <!-- Totals -->
+
           <div class="bg-white p-4 rounded-lg shadow border border-gray-200 space-y-2">
-            <div class="flex justify-between font-semibold"><span>TOTAL</span><span>{{ formatCurrency(totals.total || 0) }}</span></div>
-            <div class="flex justify-between"><span>TENDERED</span><span>₱0.00</span></div>
-            <div class="flex justify-between"><span>CHANGE</span><span>₱0.00</span></div>
+<!-- Discount as Percentage -->
+<div class="flex justify-between items-center space-x-2">
+  <span class="font-bold">DISCOUNT</span>
+  <div class="relative w-28">
+    <input
+      type="text"
+      :value="totals.discount"
+      @input="handleDiscountInput($event)"
+      placeholder="0"
+      class="w-full text-right border rounded px-6 py-1 focus:outline-sky-500"
+    />
+    <span class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500">%</span>
+  </div>
+</div>
+
+<!-- Tendered -->
+<div class="flex justify-between items-center space-x-2">
+  <span class="font-bold">TENDERED</span>
+  <div class="relative w-28">
+    <span class="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500">₱</span>
+    <input
+      type="text"
+      :value="tendered"
+      @input="tendered = parseFloat($event.target.value) || 0; recalculateTotals()"
+      placeholder="0.00"
+      class="w-full text-right border rounded px-6 py-1 focus:outline-sky-500"
+    />
+  </div>
+</div>
+
+  <!-- Change -->
+  <div class="flex justify-between items-center space-x-2">
+    <span class="font-bold">CHANGE</span>
+    <span>{{ formatCurrency(change) }}</span>
+  </div>
+</div>
+
+          <div class="bg-white p-4 rounded-lg shadow border border-gray-200 space-y-2 flex justify-between">
+            <span>TOTAL</span>
+            <span>{{ formatCurrency(totals.total || 0) }}</span>
           </div>
+
           <div>
-          <router-link to="/transactions" class="text-blue-500 hover:underline">
-           View All Invoices →
-          </router-link>
+            <router-link to="/transactions" class="text-blue-500 hover:underline">
+              View All Invoices →
+            </router-link>
           </div>
         </div>
       </div>
     </div>
+
     <!-- Action Buttons -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div class="space-y-2">
-          <button class="w-full bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg shadow">Save</button>
-          </div>
-          <div>
-          <button class="w-full bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg shadow">Cancel Transaction</button>
-          </div>
-          <div>
-          <button class="w-full bg-gray-500 hover:bg-gray-600 text-white py-2 px-4 rounded-lg shadow">Open Drawer</button>
-          </div>
-          <div>
-          <button class="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg shadow">Print Receipt</button>
-          </div>
+      <button @click="saveInvoice" class="w-full bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg shadow">Save</button>
+      <button @click="clearInvoice" class="w-full bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg shadow">Cancel Transaction</button>
+      <button class="w-full bg-gray-500 hover:bg-gray-600 text-white py-2 px-4 rounded-lg shadow">Open Drawer</button>
+      <button class="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg shadow">Print Receipt</button>
     </div>
   </div>
 </template>
 
-
 <script setup>
-import { ref, computed, reactive, onMounted, onBeforeUnmount } from 'vue'
-import { Pencil, Trash } from 'lucide-vue-next'
+import { ref, reactive, computed, onMounted, onBeforeUnmount } from 'vue'
 
-defineProps({ show: Boolean })
-const emit = defineEmits(['close', 'save'])
+const issuedBy = ref(localStorage.getItem("name") || "Unknown User")
+const invoiceDate = ref('')
+const invoiceTime = ref('')
+const invoiceNumber = ref('')
+const products = ref([])
+const selectedProducts = ref([])
 
-// -- Issued By (User) --
-const issuedBy = ref('')
-
-onMounted(() => {
-  const userData = localStorage.getItem('user')
-  if (userData) {
-    try {
-      const parsed = JSON.parse(userData)
-      issuedBy.value = parsed.name || 'Unknown User'
-    } catch (e) {
-      console.error('Invalid user data:', e)
-    }
-  }
-})
-
-const invoices = ref([])
-const totals = ref({
+const totals = reactive({
   vat_sales: 0,
   vat_amount: 0,
   vat_exempt_sales: 0,
@@ -168,102 +181,132 @@ const totals = ref({
   total: 0
 })
 
+const tendered = ref(0)
+
+// Format currency helper
 function formatCurrency(amount) {
-  return new Intl.NumberFormat('en-PH', {
-    style: 'currency',
-    currency: 'PHP'
-  }).format(amount || 0)
+  return new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(amount || 0)
 }
 
-onMounted(async () => {
-  const rows = await window.electron.invoke('get-all-invoices')
-  invoices.value = rows
-
-  // Use DB-precomputed values
-  totals.value = rows.reduce((acc, inv) => {
-    acc.vat_sales += inv.vat_sales || 0
-    acc.vat_amount += inv.vat_amount || 0
-    acc.vat_exempt_sales += inv.vat_exempt_sales || 0
-    acc.zero_rated_sales += inv.zero_rated_sales || 0
-    acc.discount += inv.discount || 0
-    acc.total += inv.total || 0
-    return acc
-  }, { vat_sales: 0, vat_amount: 0, vat_exempt_sales: 0, zero_rated_sales: 0, discount: 0, total: 0 })
-})
-
-// -- Invoice Date & Time --
-const invoiceDate = ref('')
-const invoiceTime = ref('')
-
+// Clock & Date
 function updateClockAndDate() {
   const now = new Date()
   invoiceDate.value = now.toISOString().split('T')[0]
-  invoiceTime.value = now.toTimeString().slice(0, 5)
+  invoiceTime.value = now.toTimeString().slice(0,5)
 }
 
-onMounted(() => {
-  updateClockAndDate()
-  const clockInterval = setInterval(updateClockAndDate, 1000)
-  onBeforeUnmount(() => clearInterval(clockInterval))
-})
-
-// -- Invoice Number --
-const invoiceNumber = ref('')
-onMounted(async () => {
-  try {
-    invoiceNumber.value = await window.electron.invoke('generate-invoice-number')
-  } catch (err) {
-    console.error('Failed to fetch invoice number:', err)
-  }
-})
-
-// -- Product Form --
-const form = reactive({ date: '', name: '', businessStyle: '', address: '', tin: '' })
-const productname = ref('')
-const price = ref(0)
-const vat = ref(0)
-const products = ref([])
-const editingId = ref(null)
-
-const vatAmount = computed(() => (price.value * vat.value) / 100 || 0)
-const total = computed(() => price.value + vatAmount.value || 0)
-
+// Fetch products from Electron
 async function fetchProducts() {
   try {
     products.value = await window.electron.invoke('get-products')
-  } catch (err) {
+  } catch(err) {
     console.error('Error fetching products:', err)
   }
 }
 
-async function handleSubmit() {
-  const payload = {
-    productname: productname.value,
-    price: price.value,
-    vat: vat.value,
-    vatAmount: vatAmount.value,
-    total: total.value,
+// Generate invoice number
+async function generateInvoiceNumber() {
+  try {
+    invoiceNumber.value = await window.electron.invoke('generate-invoice-number')
+  } catch(err) {
+    console.error('Failed to fetch invoice number:', err)
   }
+}
 
-  if (editingId.value) {
-    payload.id = editingId.value
-    await window.electron.invoke('update-product', payload)
-    alert('✅ Product updated!')
+// Add product to invoice
+function addProductToInvoice(product) {
+  const existing = selectedProducts.value.find(p => p.id === product.id)
+  if(existing) {
+    existing.quantity += 1
+    existing.total = existing.quantity * (existing.price + existing.vatAmount)
   } else {
-    await window.electron.invoke('add-products', payload)
-    alert('✅ Product added!')
+    selectedProducts.value.push({
+      ...product,
+      quantity: 1,
+      total: product.price + product.vatAmount
+    })
   }
+  recalculateTotals()
+}
 
-  clearForm()
+// Quantity controls
+function increaseQuantity(index) {
+  const p = selectedProducts.value[index]
+  p.quantity += 1
+  p.total = p.quantity * (p.price + p.vatAmount)
+  recalculateTotals()
+}
+
+function decreaseQuantity(index) {
+  const p = selectedProducts.value[index]
+  p.quantity -= 1
+  if(p.quantity <= 0) selectedProducts.value.splice(index,1)
+  else p.total = p.quantity * (p.price + p.vatAmount)
+  recalculateTotals()
+}
+
+// Totals calculation
+function recalculateTotals() {
+  let subtotal = 0
+  totals.vat_sales = 0
+  totals.vat_amount = 0
+  totals.vat_exempt_sales = 0
+  totals.zero_rated_sales = 0
+
+  selectedProducts.value.forEach(p => {
+    totals.vat_sales += p.vat || 0
+    totals.vat_amount += p.vatAmount || 0
+    subtotal += p.total || 0
+  })
+
+  // Apply discount as percentage
+  totals.total = Math.max(subtotal - (subtotal * (totals.discount / 100)), 0)
+}
+
+function handleDiscountInput(e) {
+  // Parse the typed value to a float, limit between 0 and 100
+  let val = parseFloat(e.target.value)
+  if (isNaN(val) || val < 0) val = 0
+  if (val > 100) val = 100
+  totals.discount = val
+  recalculateTotals()
+}
+// Reactive change
+const change = computed(() => Math.max(tendered.value - totals.total, 0))
+
+// Clear invoice
+function clearInvoice() {
+  selectedProducts.value = []
+  totals.discount = 0
+  tendered.value = 0
+  recalculateTotals()
+}
+
+// Save invoice
+async function saveInvoice() {
+  if(!selectedProducts.value.length) return alert('No products added!')
+  const payload = {
+    date: invoiceDate.value,
+    total: totals.total,
+    items: JSON.stringify(selectedProducts.value)
+  }
+  try {
+    const result = await window.electron.invoke('add-invoice', payload)
+    alert(`Invoice saved! Number: ${result.invoice_number}`)
+    clearInvoice()
+    generateInvoiceNumber()
+  } catch(err) {
+    console.error('Failed to save invoice:', err)
+  }
+}
+
+// Initialize
+onMounted(() => {
+  updateClockAndDate()
+  const clockInterval = setInterval(updateClockAndDate, 1000)
+  onBeforeUnmount(() => clearInterval(clockInterval))
+
   fetchProducts()
-}
-
-function clearForm() {
-  productname.value = ''
-  price.value = 0
-  vat.value = 0
-  editingId.value = null
-}
-
-onMounted(fetchProducts)
+  generateInvoiceNumber()
+})
 </script>
