@@ -8,7 +8,7 @@ console.log('🧭 Using DB at:', dbPath);
 const db = new sqlite3.Database(dbPath);
 
 async function createUser() {
-  const name = 'Admin'; // 👈 Simple name instead of email
+  const name = 'Admin'; 
   const password = 'securepass456';
   const role = 'admin';
 
