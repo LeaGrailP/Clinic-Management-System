@@ -124,39 +124,25 @@ app.whenReady().then(() => {
     }
   });
 
-  // ----- PATIENTS -----
-  ipcMain.handle('get-patients', () => db.prepare('SELECT * FROM patients').all());
-  ipcMain.handle('add-patient', (_e, p) => db.prepare(`
-    INSERT INTO patients (patientname, address, number, business, tin)
-    VALUES (?, ?, ?, ?, ?)
-  `).run(p.patientname, p.address, p.number, p.business, p.tin));
-  ipcMain.handle('update-patient', (_e, p) => db.prepare(`
-    UPDATE patients SET patientname = ?, address = ?, number = ?, business = ?, tin = ?
-    WHERE id = ?
-  `).run(p.patientname, p.address, p.number, p.business, p.tin, p.id));
-  ipcMain.handle('delete-patient', (_e, id) => db.prepare('DELETE FROM patients WHERE id = ?').run(id));
+  // Patients
+  ipcMain.handle('get-patients', () => db.prepare('SELECT * FROM clinicpatients').all());
 
-  // ----- PRODUCTS -----
-  ipcMain.handle('get-products', () => db.prepare('SELECT * FROM products').all());
-
-  ipcMain.handle('add-product', (_e, p) => {
-    const stmt = db.prepare(`
-      INSERT INTO products
-      (productname, price, vatType, vatSales, vatAmount, vatExempt, zeroRated, total, image)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
-    const result = stmt.run(
-      p.productname,
-      p.price,
-      p.vatType,
-      p.vatSales,
-      p.vatAmount,
-      p.vatExempt,
-      p.zeroRated,
-      p.total,
-      p.image
-    );
-    return { success: true, id: result.lastInsertRowid };
+  ipcMain.handle('add-patient', (_event, clinicPT) => {
+    db.prepare(`
+    INSERT INTO clinicpatients
+    (firstName, lastName, middleName, address, phone, businessStyle, tin, isSenior, seniorId)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+        clinicPT.firstName,
+    clinicPT.lastName,
+    clinicPT.middleName || '',
+    clinicPT.address,
+    clinicPT.phone,
+    clinicPT.businessStyle,
+    clinicPT.tin,
+    clinicPT.isSenior ? 1 : 0,
+    clinicPT.seniorId || ''
+  );
   });
 
   ipcMain.handle('update-product', (_e, p) => {
@@ -165,19 +151,24 @@ app.whenReady().then(() => {
       SET productname=?, price=?, vatType=?, vatSales=?, vatAmount=?, vatExempt=?, zeroRated=?, total=?, image=?
       WHERE id=?
     `).run(
-      p.productname,
-      p.price,
-      p.vatType,
-      p.vatSales,
-      p.vatAmount,
-      p.vatExempt,
-      p.zeroRated,
-      p.total,
-      p.image,
-      p.id
-    );
-    return { success: true };
+    clinicPT.firstName,
+    clinicPT.lastName,
+    clinicPT.middleName || '',
+    clinicPT.address,
+    clinicPT.phone,
+    clinicPT.businessStyle,
+    clinicPT.tin,
+    clinicPT.isSenior ? 1 : 0,
+    clinicPT.seniorId || ''
+  );
   });
+
+  ipcMain.handle('delete-patient', (_event, id) => {
+    db.prepare('DELETE FROM clinicpatients WHERE id = ?').run(id);
+  });
+
+  // Products
+  ipcMain.handle('get-products', () => db.prepare('SELECT * FROM products').all());
 
   ipcMain.handle('delete-product', (_e, id) => {
     db.prepare('DELETE FROM products WHERE id=?').run(id);
