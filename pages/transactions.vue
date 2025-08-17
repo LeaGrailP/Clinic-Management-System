@@ -2,6 +2,21 @@
   <div class="bg-slate-50 min-h-screen p-6 space-y-6">
     <h1 class="text-4xl font-bold text-gray-800">Invoices</h1>
 
+    <!-- Date Filter -->
+    <div class="flex gap-4 items-end mb-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700">From</label>
+        <input type="date" v-model="filterFrom" class="mt-1 border rounded px-2 py-1" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">To</label>
+        <input type="date" v-model="filterTo" class="mt-1 border rounded px-2 py-1" />
+      </div>
+      <button @click="clearFilter" class="px-4 py-2 bg-gray-300 rounded">Clear</button>
+      <button @click="saveAsFile" class="px-4 py-2 bg-blue-500 text-white rounded">Save as CSV</button>
+    </div>
+
+    <!-- Invoice Table -->
     <div class="bg-white shadow rounded overflow-x-auto">
       <table class="min-w-full border-collapse">
         <thead class="bg-gray-100">
@@ -18,7 +33,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="invoice in invoices" :key="invoice.id">
+          <tr v-for="invoice in filteredInvoices" :key="invoice.id">
             <td class="px-4 py-2 border">{{ invoice.invoice_number }}</td>
             <td class="px-4 py-2 border">{{ invoice.date }}</td>
             <td class="px-4 py-2 border">{{ invoice.customer_name }}</td>
@@ -29,7 +44,7 @@
             <td class="px-4 py-2 border">{{ formatCurrency(invoice.discount) }}</td>
             <td class="px-4 py-2 border">{{ formatCurrency(invoice.total) }}</td>
           </tr>
-          <tr v-if="invoices.length === 0">
+          <tr v-if="filteredInvoices.length === 0">
             <td class="px-4 py-2 border text-center text-gray-500" colspan="9">No invoices found</td>
           </tr>
         </tbody>
@@ -39,17 +54,60 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 
 const invoices = ref([])
+const filterFrom = ref('')
+const filterTo = ref('')
 
+// Format currency
 function formatCurrency(amount) {
-  return new Intl.NumberFormat('en-PH', {
-    style: 'currency',
-    currency: 'PHP'
-  }).format(amount || 0)
+  return new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(amount || 0)
 }
 
+// Filtered invoices based on date range
+const filteredInvoices = computed(() => {
+  return invoices.value.filter(inv => {
+    const invDate = new Date(inv.date)
+    const from = filterFrom.value ? new Date(filterFrom.value) : null
+    const to = filterTo.value ? new Date(filterTo.value) : null
+
+    if (from && invDate < from) return false
+    if (to && invDate > to) return false
+    return true
+  })
+})
+
+// Clear date filter
+function clearFilter() {
+  filterFrom.value = ''
+  filterTo.value = ''
+}
+
+// Save filtered list as CSV
+function saveAsFile() {
+  const headers = [
+    'Invoice #','Date','Customer','VAT Sales','VAT Amount',
+    'VAT-Exempt Sales','Zero-Rated Sales','Discount','Total'
+  ]
+  const rows = filteredInvoices.value.map(inv => [
+    inv.invoice_number, inv.date, inv.customer_name,
+    inv.vat_sales, inv.vat_amount, inv.vat_exempt_sales,
+    inv.zero_rated_sales, inv.discount, inv.total
+  ])
+  const csvContent = [headers, ...rows].map(e => e.join(',')).join('\n')
+
+  // Trigger download
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.setAttribute('href', url)
+  link.setAttribute('download', `invoices_${Date.now()}.csv`)
+  link.click()
+  URL.revokeObjectURL(url)
+}
+
+// Fetch invoices from Electron
 onMounted(async () => {
   try {
     invoices.value = await window.electron.invoke('get-all-invoices')

@@ -46,39 +46,40 @@
         </div>
 
         <!-- Sales Table -->
-<div class="flex-1 overflow-auto">
-  <table class="min-w-full border border-gray-300 text-sm text-left">
-    <thead class="bg-sky-300 text-gray-800">
-      <tr>
-        <th class="px-4 py-2 border">Product</th>
-        <th class="px-4 py-2 border">Quantity</th>
-        <th class="px-4 py-2 border">Price</th>
-        <th class="px-4 py-2 border">Action</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr
-        v-for="(p, index) in selectedProducts"
-        :key="p.id"
-        class="text-center hover:bg-gray-50"
-      >
-        <td class="p-2 border">{{ p.productname }}</td>
-        <td class="p-2 border">{{ p.quantity }}</td>
-        <td class="p-2 border">₱{{ p.total.toFixed(2) }}</td>
-        <td class="p-2 border space-x-2 flex justify-center items-center">
-          <button
-            @click="decreaseQuantity(index)"
-            class="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
-          >−</button>
-          <button
-            @click="increaseQuantity(index)"
-            class="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
-          >+</button>
-        </td>
-      </tr>
-    </tbody>
-  </table>
-</div>
+        <div class="flex-1 overflow-auto">
+          <table class="min-w-full border border-gray-300 text-sm text-left">
+            <thead class="bg-sky-300 text-gray-800">
+              <tr>
+                <th class="px-4 py-2 border">Product</th>
+                <th class="px-4 py-2 border">Quantity</th>
+                <th class="px-4 py-2 border">Price</th>
+                <th class="px-4 py-2 border">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="(p, index) in selectedProducts"
+                :key="p.id"
+                class="text-center hover:bg-gray-50"
+              >
+                <td class="p-2 border">{{ p.productname }}</td>
+                <td class="p-2 border">{{ p.quantity }}</td>
+                <td class="p-2 border">₱{{ p.total.toFixed(2) }}</td>
+                <td class="p-2 border space-x-2 flex justify-center items-center">
+                  <button
+                    @click="decreaseQuantity(index)"
+                    class="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
+                  >−</button>
+                  <button
+                    @click="increaseQuantity(index)"
+                    class="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
+                  >+</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
         <!-- Totals + Actions -->
         <div class="w-full lg:w-1/3 space-y-4">
           <div class="bg-white p-4 rounded-lg shadow border border-gray-200 space-y-2">
@@ -100,43 +101,41 @@
             </div>
           </div>
 
+          <!-- Discount & Tendered -->
           <div class="bg-white p-4 rounded-lg shadow border border-gray-200 space-y-2">
-<!-- Discount as Percentage -->
-<div class="flex justify-between items-center space-x-2">
-  <span class="font-bold">DISCOUNT</span>
-  <div class="relative w-28">
-    <input
-      type="text"
-      :value="totals.discount"
-      @input="handleDiscountInput($event)"
-      placeholder="0"
-      class="w-full text-right border rounded px-6 py-1 focus:outline-sky-500"
-    />
-    <span class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500">%</span>
-  </div>
-</div>
+            <div class="flex justify-between items-center space-x-2">
+              <span class="font-bold">DISCOUNT</span>
+              <div class="relative w-28">
+                <input
+                  type="text"
+                  :value="totals.discount"
+                  @input="handleDiscountInput($event)"
+                  placeholder="0"
+                  class="w-full text-right border rounded px-6 py-1 focus:outline-sky-500"
+                />
+                <span class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500">%</span>
+              </div>
+            </div>
 
-<!-- Tendered -->
-<div class="flex justify-between items-center space-x-2">
-  <span class="font-bold">TENDERED</span>
-  <div class="relative w-28">
-    <span class="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500">₱</span>
-    <input
-      type="text"
-      :value="tendered"
-      @input="tendered = parseFloat($event.target.value) || 0; recalculateTotals()"
-      placeholder="0.00"
-      class="w-full text-right border rounded px-6 py-1 focus:outline-sky-500"
-    />
-  </div>
-</div>
+            <div class="flex justify-between items-center space-x-2">
+              <span class="font-bold">TENDERED</span>
+              <div class="relative w-28">
+                <span class="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500">₱</span>
+                <input
+                  type="text"
+                  :value="tendered"
+                  @input="tendered = parseFloat($event.target.value) || 0; recalculateTotals()"
+                  placeholder="0.00"
+                  class="w-full text-right border rounded px-6 py-1 focus:outline-sky-500"
+                />
+              </div>
+            </div>
 
-  <!-- Change -->
-  <div class="flex justify-between items-center space-x-2">
-    <span class="font-bold">CHANGE</span>
-    <span>{{ formatCurrency(change) }}</span>
-  </div>
-</div>
+            <div class="flex justify-between items-center space-x-2">
+              <span class="font-bold">CHANGE</span>
+              <span>{{ formatCurrency(change) }}</span>
+            </div>
+          </div>
 
           <div class="bg-white p-4 rounded-lg shadow border border-gray-200 space-y-2 flex justify-between">
             <span>TOTAL</span>
@@ -157,7 +156,53 @@
       <button @click="saveInvoice" class="w-full bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg shadow">Save</button>
       <button @click="clearInvoice" class="w-full bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg shadow">Cancel Transaction</button>
       <button class="w-full bg-gray-500 hover:bg-gray-600 text-white py-2 px-4 rounded-lg shadow">Open Drawer</button>
-      <button class="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg shadow">Print Receipt</button>
+      <button @click="printReceipt" class="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg shadow">Print Receipt</button>
+    </div>
+
+    <!-- POS Receipt Template (hidden, for printing) -->
+    <div ref="receipt" class="receipt-container p-4 font-mono hidden">
+      <div class="text-center mb-2">
+        <div class="text-lg font-bold">FETHEA POS</div>
+        <div>Pico, La Trinidad</div>
+        <div>Tel: 0917-XXX-XXXX</div>
+        <div>Date: {{ invoiceDate }} {{ invoiceTime }}</div>
+        <div>Invoice #: {{ invoiceNumber }}</div>
+      </div>
+
+      <hr class="border-t border-black my-1" />
+
+      <div v-for="p in selectedProducts" :key="p.id" class="mb-1">
+        <div class="flex justify-between w-full">
+          <div class="truncate max-w-[140px]">{{ p.productname }}</div>
+          <div>{{ p.quantity }}</div>
+          <div>{{ formatCurrency(p.price) }}</div>
+          <div>{{ formatCurrency(p.total) }}</div>
+        </div>
+        <!-- Auto-wrap long names -->
+        <div v-if="p.productname.length > 20" class="text-xs text-gray-700">
+          {{ p.productname }}
+        </div>
+      </div>
+
+      <hr class="border-t border-black my-1" />
+
+      <div class="flex justify-between"><span>Subtotal:</span><span>{{ formatCurrency(subtotal) }}</span></div>
+      <div class="flex justify-between"><span>VAT (12%):</span><span>{{ formatCurrency(vat) }}</span></div>
+      <div class="flex justify-between"><span>Discount:</span><span>{{ formatCurrency(discount) }}</span></div>
+      <div class="flex justify-between font-bold text-lg"><span>Total:</span><span>{{ formatCurrency(totals.total) }}</span></div>
+
+      <hr class="border-t border-black my-1" />
+
+      <div class="flex justify-between"><span>Payment:</span><span>Cash</span></div>
+      <div class="flex justify-between"><span>Tendered:</span><span>{{ formatCurrency(tendered) }}</span></div>
+      <div class="flex justify-between"><span>Change:</span><span>{{ formatCurrency(change) }}</span></div>
+
+      <hr class="border-t border-black my-1" />
+
+      <div class="text-center text-sm mt-2">
+        Thank you for shopping!<br/>
+        No returns without receipt.
+      </div>
     </div>
   </div>
 </template>
@@ -182,6 +227,7 @@ const totals = reactive({
 })
 
 const tendered = ref(0)
+const receipt = ref(null)
 
 // Format currency helper
 function formatCurrency(amount) {
@@ -247,7 +293,7 @@ function decreaseQuantity(index) {
 
 // Totals calculation
 function recalculateTotals() {
-  let subtotal = 0
+  let subtotalVal = 0
   totals.vat_sales = 0
   totals.vat_amount = 0
   totals.vat_exempt_sales = 0
@@ -256,22 +302,23 @@ function recalculateTotals() {
   selectedProducts.value.forEach(p => {
     totals.vat_sales += p.vat || 0
     totals.vat_amount += p.vatAmount || 0
-    subtotal += p.total || 0
+    subtotalVal += p.total || 0
   })
 
-  // Apply discount as percentage
-  totals.total = Math.max(subtotal - (subtotal * (totals.discount / 100)), 0)
+  totals.total = Math.max(subtotalVal - (subtotalVal * (totals.discount / 100)), 0)
 }
 
 function handleDiscountInput(e) {
-  // Parse the typed value to a float, limit between 0 and 100
   let val = parseFloat(e.target.value)
   if (isNaN(val) || val < 0) val = 0
   if (val > 100) val = 100
   totals.discount = val
   recalculateTotals()
 }
-// Reactive change
+
+const subtotal = computed(() => selectedProducts.value.reduce((sum, p) => sum + p.total, 0))
+const vat = computed(() => subtotal.value * 0.12)
+const discount = computed(() => subtotal.value * (totals.discount / 100))
 const change = computed(() => Math.max(tendered.value - totals.total, 0))
 
 // Clear invoice
@@ -300,6 +347,23 @@ async function saveInvoice() {
   }
 }
 
+// Print POS Receipt
+function printReceipt() {
+  const printWindow = window.open('', '', 'width=300,height=600')
+  printWindow.document.write('<html><head><title>Receipt</title><style>')
+  printWindow.document.write(`
+    body { font-family: monospace; font-size: 12px; }
+    .flex { display: flex; justify-content: space-between; }
+    .truncate { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+    hr { border: none; border-top: 1px dashed black; margin: 2px 0; }
+  `)
+  printWindow.document.write('</style></head><body>')
+  printWindow.document.write(receipt.value.innerHTML)
+  printWindow.document.write('</body></html>')
+  printWindow.document.close()
+  printWindow.print()
+}
+
 // Initialize
 onMounted(() => {
   updateClockAndDate()
@@ -310,3 +374,26 @@ onMounted(() => {
   generateInvoiceNumber()
 })
 </script>
+
+<style scoped>
+.receipt-container {
+  width: 280px; /* thermal printer width */
+  font-size: 12px;
+  line-height: 1.2;
+}
+.flex {
+  display: flex;
+  justify-content: space-between;
+}
+.truncate {
+  max-width: 140px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+hr {
+  border: none;
+  border-top: 1px dashed black;
+  margin: 2px 0;
+}
+</style>

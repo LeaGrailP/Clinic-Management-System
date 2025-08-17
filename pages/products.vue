@@ -1,6 +1,6 @@
 <template>
   <div class="p-6 max-w-3xl mx-auto">
-    <h1 class="text-2xl font-bold mb-6">🛒 Product Manager</h1>
+    <h1 class="text-2xl font-bold mb-6">PRODUCT MANAGER</h1>
 
     <!-- Form -->
     <form @submit.prevent="handleSubmit" class="bg-white p-4 rounded shadow mb-6 space-y-4">
@@ -67,8 +67,7 @@
         <button
           type="submit"
           class="bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded"
-        >
-          {{ editingId ? '💾 Update Product' : '➕ Add Product' }}
+        >Save
         </button>
 
         <button
@@ -77,7 +76,7 @@
           type="button"
           class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded"
         >
-          ❌ Cancel
+        Cancel
         </button>
       </div>
     </form>
@@ -85,12 +84,12 @@
     <!-- Table -->
     <div class="bg-white p-4 rounded shadow">
       <div class="flex justify-between items-center mb-4">
-        <h2 class="text-xl font-bold">📦 Product List</h2>
+        <h2 class="text-xl font-bold">Product List</h2>
         <button
           @click="fetchProducts"
-          class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm"
+          class="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-sm"
         >
-          🔄 Refresh
+        <RefreshCw class="w-4 h-4" />
         </button>
       </div>
 
@@ -123,13 +122,13 @@
                 @click="startEdit(product)"
                 class="text-blue-600 hover:underline text-sm"
               >
-                ✏️ Edit
+              <Pencil class="w-4 h-4" />
               </button>
               <button
                 @click="deleteProduct(product.id)"
                 class="text-red-600 hover:underline text-sm"
               >
-                🗑 Delete
+              <Trash2 class="w-4 h-4" />
               </button>
             </td>
           </tr>
@@ -147,6 +146,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUser } from '~/composables/useUser'
+import { Trash2, Pencil, RefreshCw, Plus } from 'lucide-vue-next';
 
 const productname = ref('')
 const price = ref(0)

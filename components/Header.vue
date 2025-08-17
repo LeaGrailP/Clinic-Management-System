@@ -7,7 +7,7 @@ import { Home, Menu, User, LogOut } from 'lucide-vue-next'
 <template>
   <header class="shadow-md p-4 flex justify-between items-center fixed top-0 left-0 right-0 z-20 h-12">
     <div class="flex items-center space-x-4">
-      <span class="text-lg font-semibold">ClinicPOS</span>
+      <span class="text-lg font-semibold">FETHEA POS</span>
     </div>
 
     <nav class="flex space-x-2">
