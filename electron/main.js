@@ -176,8 +176,28 @@ app.whenReady().then(() => {
   })
 
   // -------------------- PRODUCTS --------------------
-  ipcMain.handle('get-products', () => db.prepare('SELECT * FROM products').all())
-
+  ipcMain.handle('get-products', () => {
+  const rows = db.prepare('SELECT * FROM products').all()
+  return rows.map(p => {
+    let vatSales = 0, vatAmount = 0, vatExempt = 0, zeroRated = 0
+    if (p.vatType === 'vatable') {
+      vatSales = p.price
+      vatAmount = p.price * 0.12
+    } else if (p.vatType === 'exempt') {
+      vatExempt = p.price
+    } else if (p.vatType === 'zero') {
+      zeroRated = p.price
+    }
+    return {
+      ...p,
+      vatSales,
+      vatAmount,
+      vatExempt,
+      zeroRated,
+      total: p.price + vatAmount
+    }
+  })
+})
   ipcMain.handle('add-product', (_e, p) => {
     const stmt = db.prepare(`
       INSERT INTO products
