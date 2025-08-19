@@ -1,4 +1,4 @@
-export default {
+export default defineNuxtConfig({
   ssr: false,
   app: {
     head: {
@@ -14,9 +14,14 @@ export default {
     '@nuxtjs/tailwindcss',
     '@pinia/nuxt'
   ],
+  postcss: {
+    plugins: {
+      autoprefixer: {}, // ✅ only autoprefixer needed
+    },
+  },
   nitro: {
-    compatibility: {
+    compatibilityDate: {
       date: '2025-06-06',
     },
   },
-};
+})

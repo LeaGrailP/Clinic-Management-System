@@ -18,8 +18,33 @@
         <label class="block text-sm font-medium text-gray-700">Invoice Time</label>
         <input type="time" class="mt-1 w-full rounded-lg border-gray-300 shadow-sm focus:ring-sky-500 focus:border-sky-500" v-model="invoiceTime" readonly />
       </div>
-    </div>
+    
 
+    <!-- Add / Select Costumer -->
+      <div>
+    <label class="block text-sm font-medium text-gray-700">Customer</label>
+    <select
+      v-model="selectedCustomer"
+      class="mt-1 w-full block rounded-lg border-gray-300 shadow-sm focus:ring-sky-500 focus:border-sky-500">
+      <option disabled value="">-- Select Customer --</option>
+      <option
+        v-for="patient in patients"
+        :key="patient.id"
+        :value="patient.firstName + ' ' + patient.lastName">
+        {{ patient.firstName }} {{ patient.lastName }}
+      </option>
+    </select>
+  </div>
+
+  <div>
+  <router-link
+      to="/customer"
+      class="mt-4 inline-block px-4 py-2 bg-sky-500 text-white rounded-lg shadow hover:bg-sky-600">
+      + Add New Customer
+    </router-link>
+  </div>
+  
+</div>
     <!-- Sales Table + Totals -->
     <div class="bg-white rounded-lg shadow p-6 border border-gray-200">
       <div class="flex flex-col lg:flex-row gap-6">
@@ -217,6 +242,9 @@ const invoiceNumber = ref('')
 const products = ref([])
 const selectedProducts = ref([])
 
+const patients = ref([]);
+const selectedCustomer = ref(""); 
+
 const totals = reactive({
   vat_sales: 0,
   vat_amount: 0,
@@ -249,6 +277,15 @@ async function fetchProducts() {
     console.error('Error fetching products:', err)
   }
 }
+
+async function fetchClinicpatients() {
+  try {
+    patients.value = await window.electron.invoke('get-patients')
+  } catch(err) {
+    console.error('Error fetching products:', err) 
+  }
+}
+
 
 // Generate invoice number
 async function generateInvoiceNumber() {
@@ -370,6 +407,7 @@ onMounted(() => {
   const clockInterval = setInterval(updateClockAndDate, 1000)
   onBeforeUnmount(() => clearInterval(clockInterval))
 
+  fetchClinicpatients()
   fetchProducts()
   generateInvoiceNumber()
 })

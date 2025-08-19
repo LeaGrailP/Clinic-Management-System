@@ -1,5 +1,5 @@
 <template>
-  <div class="p-6 max-w-3xl mx-auto">
+  <div class="p-6 mx-auto">
     <h1 class="text-2xl font-bold mb-6">PRODUCT MANAGER</h1>
 
     <!-- Form -->
@@ -24,6 +24,10 @@
           @change="handleImageUpload"
           class="w-full border px-3 py-2 rounded"
         />
+        <!-- 🟢 Show preview before saving -->
+        <div v-if="imagePreview" class="mt-2">
+          <img :src="imagePreview" alt="Preview" class="w-20 h-20 object-cover rounded border" />
+        </div>
       </div>
 
       <!-- Price -->
@@ -67,8 +71,7 @@
         <button
           type="submit"
           class="bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded"
-        >Save
-        </button>
+        >Save</button>
 
         <button
           v-if="editingId"
@@ -76,7 +79,7 @@
           type="button"
           class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded"
         >
-        Cancel
+          Cancel
         </button>
       </div>
     </form>
@@ -89,13 +92,15 @@
           @click="fetchProducts"
           class="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-sm"
         >
-        <RefreshCw class="w-4 h-4" />
+          <RefreshCw class="w-4 h-4" />
         </button>
       </div>
 
       <table class="table-auto w-full border-collapse border border-gray-300 text-sm">
         <thead>
           <tr class="bg-gray-100 text-left">
+            <!-- 🟢 Added Image column -->
+            <th class="border p-2">Image</th>
             <th class="border p-2">Name</th>
             <th class="border p-2">VAT Type</th>
             <th class="border p-2">Price</th>
@@ -109,6 +114,11 @@
         </thead>
         <tbody>
           <tr v-for="product in products" :key="product.id">
+            <!-- 🟢 Show saved image -->
+            <td class="border p-2">
+              <img v-if="product.image" :src="product.image" class="w-12 h-12 object-cover rounded" />
+              <span v-else class="text-gray-400 italic">No Image</span>
+            </td>
             <td class="border p-2">{{ product.productname }}</td>
             <td class="border p-2">{{ product.vatType }}</td>
             <td class="border p-2">₱{{ Number(product.price || 0).toFixed(2) }}</td>
@@ -118,17 +128,11 @@
             <td class="border p-2">₱{{ Number(product.zeroRated || 0).toFixed(2) }}</td>
             <td class="border p-2">₱{{ Number(product.total || 0).toFixed(2) }}</td>
             <td class="border p-2 space-x-2">
-              <button
-                @click="startEdit(product)"
-                class="text-blue-600 hover:underline text-sm"
-              >
-              <Pencil class="w-4 h-4" />
+              <button @click="startEdit(product)" class="text-blue-600 hover:underline text-sm">
+                <Pencil class="w-4 h-4" />
               </button>
-              <button
-                @click="deleteProduct(product.id)"
-                class="text-red-600 hover:underline text-sm"
-              >
-              <Trash2 class="w-4 h-4" />
+              <button @click="deleteProduct(product.id)" class="text-red-600 hover:underline text-sm">
+                <Trash2 class="w-4 h-4" />
               </button>
             </td>
           </tr>
@@ -139,6 +143,7 @@
         No products found.
       </div>
     </div>
+
   </div>
 </template>
 
@@ -146,14 +151,15 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUser } from '~/composables/useUser'
-import { Trash2, Pencil, RefreshCw, Plus } from 'lucide-vue-next';
+import { Trash2, Pencil, RefreshCw } from 'lucide-vue-next'
 
 const productname = ref('')
 const price = ref(0)
-const vatType = ref('') // 'vatable', 'exempt', 'zero'
+const vatType = ref('')
 const products = ref([])
 const editingId = ref(null)
 const imageFile = ref(null)
+const imagePreview = ref(null) // 🟢 For preview
 
 definePageMeta({ layout: 'default' })
 const router = useRouter()
@@ -179,6 +185,7 @@ function handleImageUpload(event) {
   const file = event.target.files[0]
   if (!file) return
   imageFile.value = file
+  imagePreview.value = URL.createObjectURL(file) // 🟢 Preview before save
 }
 
 async function fetchProducts() {
@@ -229,6 +236,7 @@ function startEdit(product) {
   productname.value = product.productname
   price.value = product.price
   vatType.value = product.vatType
+  imagePreview.value = product.image // 🟢 Load existing image in preview
 }
 
 function cancelEdit() {
@@ -241,6 +249,7 @@ function clearForm() {
   price.value = 0
   vatType.value = ''
   imageFile.value = null
+  imagePreview.value = null
 }
 
 async function deleteProduct(id) {

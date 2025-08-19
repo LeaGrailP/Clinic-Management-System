@@ -8,13 +8,16 @@ let db
 
 // -------------------- DATABASE INIT --------------------
 function initDB() {
-  const dbPath = path.resolve('D:/Clinic-Management-System/electron/userData/database.db')
-  const dbDir = path.dirname(dbPath)
-  console.log('📂 Electron is trying to open DB at:', dbPath)
+  // Always relative to THIS file's folder (electron/main.js)
+  const dbPath = path.resolve(__dirname, 'userData', 'database.db');
+  const dbDir = path.dirname(dbPath);
 
-  if (!fs.existsSync(dbDir)) fs.mkdirSync(dbDir, { recursive: true })
+  console.log('📂 Electron is trying to open DB at:', dbPath);
 
-  db = new Database(dbPath)
+  if (!fs.existsSync(dbDir)) fs.mkdirSync(dbDir, { recursive: true });
+
+  db = new Database(dbPath);
+
 
   // Users table
   db.exec(`
@@ -54,7 +57,9 @@ function initDB() {
       businessStyle TEXT,
       tin REAL,
       isSenior INTEGER,
-      seniorId TEXT
+      seniorId TEXT,
+      isPWD INTEGER,
+      pwdId TEXT
     )
   `)
 
@@ -134,8 +139,8 @@ app.whenReady().then(() => {
   ipcMain.handle('add-patient', (_event, patient) => {
     db.prepare(`
       INSERT INTO clinicpatients
-      (firstName, lastName, middleName, address, phone, businessStyle, tin, isSenior, seniorId)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      (firstName, lastName, middleName, address, phone, businessStyle, tin, isSenior, seniorId, isPWD, pwdId)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       patient.firstName,
       patient.lastName,
@@ -145,7 +150,9 @@ app.whenReady().then(() => {
       patient.businessStyle,
       patient.tin,
       patient.isSenior ? 1 : 0,
-      patient.seniorId || ''
+      patient.seniorId || '',
+      patient.isPWD ? 1 : 0,
+      patient.pwdId || ''
     )
     return { success: true }
   })
@@ -153,7 +160,7 @@ app.whenReady().then(() => {
   ipcMain.handle('update-patient', (_e, patient) => {
     db.prepare(`
       UPDATE clinicpatients
-      SET firstName=?, lastName=?, middleName=?, address=?, phone=?, businessStyle=?, tin=?, isSenior=?, seniorId=?
+      SET firstName=?, lastName=?, middleName=?, address=?, phone=?, businessStyle=?, tin=?, isSenior=?, seniorId=?, isPWD=?, pwdId=?
       WHERE id=?
     `).run(
       patient.firstName,
@@ -165,6 +172,8 @@ app.whenReady().then(() => {
       patient.tin,
       patient.isSenior ? 1 : 0,
       patient.seniorId || '',
+      patient.isPWD ? 1 : 0,
+      patient.pwdId || '',
       patient.id
     )
     return { success: true }
@@ -223,13 +232,11 @@ app.whenReady().then(() => {
     return { success: true }
   })
 
-  ipcMain.handle('save-product-image', (_e, { imageName, buffer }) => {
-    const saveDir = path.join(app.getPath('userData'), 'images')
-    if (!fs.existsSync(saveDir)) fs.mkdirSync(saveDir)
-    const fullPath = path.join(saveDir, imageName)
-    fs.writeFileSync(fullPath, Buffer.from(buffer))
-    return fullPath
-  })
+ipcMain.handle('save-product-image', async (event, { imageName, buffer }) => {
+  const imagePath = path.join(app.getPath('userData'), 'images', imageName)
+  fs.writeFileSync(imagePath, Buffer.from(buffer))
+  return imagePath // 👈 this is stored in DB
+})
 
   // -------------------- INVOICES --------------------
   ipcMain.handle('add-invoice', (_e, invoice) => {

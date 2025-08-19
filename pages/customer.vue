@@ -25,6 +25,8 @@
             <th class="px-4 py-2 text-left">TIN</th>
             <th class="px-4 py-2 text-left">Senior</th>
             <th class="px-4 py-2 text-left">Senior ID Number</th>
+            <th class="px-4 py-2 text-left">PWD</th>
+            <th class="px-4 py-2 text-left">PWD ID Number</th>
           </tr>
         </thead>
         <tbody>
@@ -43,6 +45,10 @@
             <td class="px-4 py-2">{{ index.isSenior ? "Yes" : "No" }}</td>
             <td class="px-4 py-2">
               {{ index.isSenior ? index.seniorId : "-" }}
+            </td>
+            <td class="px-4 py-2">{{ index.isPWD ? "Yes" : "No" }}</td>
+            <td class="px-4 py-2">
+              {{ index.isPWD ? index.pwdId : "-" }}
             </td>
           </tr>
           <tr v-if="clinicpatients.length === 0">
@@ -154,6 +160,8 @@
             />
           </div>
 
+
+          <!-- Senior Information -->
           <!-- Senior Checkbox -->
           <div class="col-span-3 flex items-center mt-2">
             <input
@@ -178,6 +186,34 @@
               class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
+
+
+          <!-- PWD Information -->
+           <!-- PWD Checkbox -->
+          <div class="col-span-3 flex items-center mt-2">
+            <input
+              v-model="form.isPWD"
+              type="checkbox"
+              id="pwd"
+              class="mr-2"
+            />
+            <label for="senior" class="text-sm">PWD</label>
+          </div>
+
+          <!-- PWD ID Number -->
+          <div v-if="form.isPWD" class="col-span-3">
+            <label class="block text-sm font-medium mb-1"
+              >PWD ID Number</label
+            >
+            <input
+              v-model="form.pwdId"
+              type="text"
+              placeholder="Enter PWD ID Number"
+              :required="form.isPWD"
+              class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
 
           <!-- Buttons -->
           <div class="col-span-3 mt-6 flex items-center space-x-4">
@@ -215,7 +251,9 @@ const form = ref({
   businessStyle: '',
   tin: '',
   isSenior: false,
-  seniorId: ''
+  seniorId: '',
+  isPWD: false,
+  pwdId: ''
 })
 
 const clinicpatients = ref([])
@@ -242,7 +280,9 @@ async function submitForm() {
       businessStyle: '',
       tin: '',
       isSenior: false,
-      seniorId: ''
+      seniorId: '',
+      isPWD: false,
+      pwdId: ''
     }
 
     showModal.value = false
