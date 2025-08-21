@@ -20,7 +20,7 @@
       </div>
     
 
-    <!-- Add / Select Costumer -->
+    <!-- Add / Select Costumer 
       <div>
     <label class="block text-sm font-medium text-gray-700">Customer</label>
     <select
@@ -42,8 +42,50 @@
       class="mt-4 inline-block px-4 py-2 bg-sky-500 text-white rounded-lg shadow hover:bg-sky-600">
       + Add New Customer
     </router-link>
-  </div>
+  </div>-->
   
+
+<!-- Add / Select Customer -->
+<!-- Searchable Dropdown -->
+  <div class="relative" ref="dropdownRef">
+    <label class="block text-sm font-medium text-gray-700 mb-1">Customer</label>
+    <div class="relative">
+      <input
+        type="text"
+        v-model="searchQuery"
+        placeholder="Search customer..."
+        @input="dropdownOpen = true"
+        class="w-full rounded-lg border-gray-300 shadow-sm focus:ring-sky-500 focus:border-sky-500 pl-3 pr-8 py-2"
+      />
+
+      <!-- Dropdown -->
+      <ul
+        v-if="dropdownOpen && filteredPatients.length > 0 && searchQuery"
+        class="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-40 overflow-y-auto"
+      >
+        <li
+          v-for="patient in filteredPatients"
+          :key="patient.id"
+          @click="selectPatient(patient)"
+          class="px-4 py-2 cursor-pointer hover:bg-sky-100"
+        >
+          {{ patient.firstName }} {{ patient.lastName }}
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Add New Patient -->
+  <div>
+    <router-link
+      to="/customer"
+      class="mt-4 inline-block px-4 py-2 bg-sky-500 text-white rounded-lg shadow hover:bg-sky-600"
+    >
+      + Add New Customer
+    </router-link>
+  </div>
+
+
 </div>
     <!-- Sales Table + Totals -->
     <div class="bg-white rounded-lg shadow p-6 border border-gray-200">
@@ -196,12 +238,21 @@
 
       <hr class="border-t border-black my-1" />
 
+      <div class="grid-cols-4 flex flex-row justify-between w-full">
+          <div class="basis-2/5">PRODUCT NAME</div>
+          <div class="basis-1/5">QTY</div>
+          <div class="basis-1/5">PPRICE</div>
+          <div class="basis-1/5">AMOUNT</div>
+        </div>
+
+        <hr class="border-t border-black my-1" />
+
       <div v-for="p in selectedProducts" :key="p.id" class="mb-1">
-        <div class="flex justify-between w-full">
-          <div class="truncate max-w-[140px]">{{ p.productname }}</div>
-          <div>{{ p.quantity }}</div>
-          <div>{{ formatCurrency(p.price) }}</div>
-          <div>{{ formatCurrency(p.total) }}</div>
+        <div class=" grid-cols-4 flex flex-row justify-between w-full">
+          <div class="truncate max-w-[140px] basis-2/5">{{ p.productname }}</div>
+          <div class="basis-1/5">{{ p.quantity }}</div>
+          <div class="basis-1/5">{{ formatCurrency(p.price) }}</div>
+          <div class="basis-1/5">{{ formatCurrency(p.total) }}</div>
         </div>
         <!-- Auto-wrap long names -->
         <div v-if="p.productname.length > 20" class="text-xs text-gray-700">
@@ -224,6 +275,41 @@
 
       <hr class="border-t border-black my-1" />
 
+
+  <!-- Customer Information -->
+  <div class="mt-6 p-4 bg-gray-50 rounded-lg shadow">
+    <div class="text-lg font-bold mb-2">CUSTOMER INFORMATION</div>
+
+    <div v-if="selectedPatient">
+      <div class="flex justify-between">
+        <span class="font-medium">NAME:</span>
+        <span>
+          {{ selectedPatient.lastName }} {{ selectedPatient.firstName }} {{ selectedPatient.middleName }}
+        </span>
+      </div>
+      <div class="flex justify-between">
+        <span class="font-medium">ADDRESS:</span>
+        <span>{{ selectedPatient.address }}</span>
+      </div>
+      <div class="flex justify-between">
+        <span class="font-medium">TIN:</span>
+        <span>{{ selectedPatient.tin }}</span>
+      </div>
+      <div class="flex justify-between">
+        <span class="font-medium">BUS. TYPE:</span>
+        <span>{{ selectedPatient.businessStyle }}</span>
+      </div>
+
+    <hr class="border-t border-black my-1" />
+  </div>
+
+    <div v-else class="text-gray-500 italic">
+      No customer selected
+    </div>
+  </div>
+
+
+
       <div class="text-center text-sm mt-2">
         Thank you for shopping!<br/>
         No returns without receipt.
@@ -241,9 +327,6 @@ const invoiceTime = ref('')
 const invoiceNumber = ref('')
 const products = ref([])
 const selectedProducts = ref([])
-
-const patients = ref([]);
-const selectedCustomer = ref(""); 
 
 const totals = reactive({
   vat_sales: 0,
@@ -269,20 +352,59 @@ function updateClockAndDate() {
   invoiceTime.value = now.toTimeString().slice(0,5)
 }
 
+const patients = ref([])
+const searchQuery = ref("")
+const selectedPatient = ref(null)
+const dropdownOpen = ref(false)
+const dropdownRef = ref(null)
+
+// Fetch patients from DB
+async function fetchClinicpatients() {
+  try {
+    patients.value = await window.electron.invoke("get-patients")
+  } catch (err) {
+    console.error("Error fetching patients:", err)
+  }
+}
+
+onMounted(fetchClinicpatients)
+
+// Filter list based on search query
+const filteredPatients = computed(() =>
+  patients.value.filter((p) =>
+    (p.firstName + " " + p.lastName)
+      .toLowerCase()
+      .includes(searchQuery.value.toLowerCase())
+  )
+)
+
+// Select patient from dropdown
+function selectPatient(patient) {
+  selectedPatient.value = patient
+  searchQuery.value = patient.firstName + " " + patient.lastName
+  dropdownOpen.value = false // close dropdown
+}
+
+// Close dropdown when clicking outside
+function handleClickOutside(event) {
+  if (dropdownRef.value && !dropdownRef.value.contains(event.target)) {
+    dropdownOpen.value = false
+  }
+}
+
+onMounted(() => {
+  document.addEventListener("click", handleClickOutside)
+})
+onBeforeUnmount(() => {
+  document.removeEventListener("click", handleClickOutside)
+})
+
 // Fetch products from Electron
 async function fetchProducts() {
   try {
     products.value = await window.electron.invoke('get-products')
   } catch(err) {
     console.error('Error fetching products:', err)
-  }
-}
-
-async function fetchClinicpatients() {
-  try {
-    patients.value = await window.electron.invoke('get-patients')
-  } catch(err) {
-    console.error('Error fetching products:', err) 
   }
 }
 
