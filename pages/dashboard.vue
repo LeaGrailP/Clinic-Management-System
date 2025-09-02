@@ -18,35 +18,7 @@
         <label class="block text-sm font-medium text-gray-700">Invoice Time</label>
         <input type="time" class="mt-1 w-full rounded-lg border-gray-300 shadow-sm focus:ring-sky-500 focus:border-sky-500" v-model="invoiceTime" readonly />
       </div>
-    
 
-    <!-- Add / Select Costumer 
-      <div>
-    <label class="block text-sm font-medium text-gray-700">Customer</label>
-    <select
-      v-model="selectedCustomer"
-      class="mt-1 w-full block rounded-lg border-gray-300 shadow-sm focus:ring-sky-500 focus:border-sky-500">
-      <option disabled value="">-- Select Customer --</option>
-      <option
-        v-for="patient in patients"
-        :key="patient.id"
-        :value="patient.firstName + ' ' + patient.lastName">
-        {{ patient.firstName }} {{ patient.lastName }}
-      </option>
-    </select>
-  </div>
-
-  <div>
-  <router-link
-      to="/customer"
-      class="mt-4 inline-block px-4 py-2 bg-sky-500 text-white rounded-lg shadow hover:bg-sky-600">
-      + Add New Customer
-    </router-link>
-  </div>-->
-  
-
-<!-- Add / Select Customer -->
-<!-- Searchable Dropdown -->
   <div class="relative" ref="dropdownRef">
     <label class="block text-sm font-medium text-gray-700 mb-1">Customer</label>
     <div class="relative">
@@ -220,11 +192,10 @@
 
     <!-- Action Buttons -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-      <button @click="saveInvoice" class="w-full bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg shadow">Save</button>
+      <button @click="saveInvoice" class="w-full bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg shadow">Save and Print Reciept</button>
       <button @click="clearInvoice" class="w-full bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg shadow">Cancel Transaction</button>
       <button class="w-full bg-gray-500 hover:bg-gray-600 text-white py-2 px-4 rounded-lg shadow">Open Drawer</button>
-      <button @click="printReceipt" class="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg shadow">Print Receipt</button>
-    </div>
+       </div>
 
     <!-- POS Receipt Template (hidden, for printing) -->
     <div ref="receipt" class="receipt-container p-4 font-mono hidden">
@@ -489,8 +460,9 @@ function clearInvoice() {
 }
 
 // Save invoice
+// Save invoice
 async function saveInvoice() {
-  if(!selectedProducts.value.length) return alert('No products added!')
+  if (!selectedProducts.value.length) return alert('No products added!')
   const payload = {
     date: invoiceDate.value,
     total: totals.total,
@@ -499,12 +471,17 @@ async function saveInvoice() {
   try {
     const result = await window.electron.invoke('add-invoice', payload)
     alert(`Invoice saved! Number: ${result.invoice_number}`)
+
+    // ✅ Call print right after saving
+    printReceipt()
+
     clearInvoice()
     generateInvoiceNumber()
-  } catch(err) {
+  } catch (err) {
     console.error('Failed to save invoice:', err)
   }
 }
+
 
 // Print POS Receipt
 function printReceipt() {
