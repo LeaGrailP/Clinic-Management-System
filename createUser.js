@@ -1,43 +1,33 @@
-const sqlite3 = require('sqlite3').verbose();
+const Database = require('better-sqlite3');
 const bcrypt = require('bcryptjs');
 const path = require('path');
 
 const dbPath = path.resolve('D:/Clinic-Management-System/electron/userdata/database.db');
 console.log('🧭 Using DB at:', dbPath);
 
-const db = new sqlite3.Database(dbPath);
+const db = new Database(dbPath);
 
-async function createUser() {
+// ⚡ no callbacks in better-sqlite3, it’s synchronous!
+function createUser() {
   const name = 'Admin'; 
   const password = 'securepass456';
   const role = 'admin';
 
-  const hashedPassword = await bcrypt.hash(password, 10);
-
-  db.get('SELECT * FROM users WHERE name = ?', [name], (err, row) => {
-    if (err) {
-      console.error('❌ Error checking user:', err.message);
-      db.close();
-      return;
-    }
+  // hash password (bcrypt is async, so wrap in Promise)
+  bcrypt.hash(password, 10).then((hashedPassword) => {
+    // check if user exists
+    const row = db.prepare('SELECT * FROM users WHERE name = ?').get(name);
 
     if (row) {
       console.log(`⚠️ User "${name}" already exists. No action taken.`);
-      db.close();
     } else {
-      db.run(
-        'INSERT INTO users (name, password, role) VALUES (?, ?, ?)',
-        [name, hashedPassword, role],
-        (err) => {
-          if (err) {
-            console.error('❌ Failed to insert user:', err.message);
-          } else {
-            console.log('✅ Admin user inserted!');
-          }
-          db.close();
-        }
-      );
+      db.prepare('INSERT INTO users (name, password, role) VALUES (?, ?, ?)')
+        .run(name, hashedPassword, role);
+
+      console.log('✅ Admin user inserted!');
     }
+  }).catch(err => {
+    console.error('❌ Error hashing password:', err.message);
   });
 }
 
