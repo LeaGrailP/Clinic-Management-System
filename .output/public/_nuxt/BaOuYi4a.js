@@ -1,0 +1,1 @@
+import{z as o,A as e}from"./_qwiZnX4.js";const n=o(t=>{const a=localStorage.getItem("token"),r=localStorage.getItem("role");if(!a)return e("/login");if(t.meta.requiresAdmin&&r!=="admin")return e("/unauthorized");if(t.meta.requiresStaff&&r!=="cashier")return e("/unauthorized")});export{n as default};
