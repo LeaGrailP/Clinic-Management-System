@@ -1,4 +1,4 @@
-<template>
+<template> 
   <div class="bg-slate-50 min-h-screen p-6 space-y-6">
     <!-- Invoice Info -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -197,95 +197,68 @@
       <button class="w-full bg-gray-500 hover:bg-gray-600 text-white py-2 px-4 rounded-lg shadow">Open Drawer</button>
        </div>
 
-    <!-- POS Receipt Template (hidden, for printing) -->
-    <div ref="receipt" class="receipt-container p-4 font-mono hidden">
-      <div class="text-center mb-2">
-        <div class="text-lg font-bold">FETHEA POS</div>
-        <div>Pico, La Trinidad</div>
-        <div>Tel: 0917-XXX-XXXX</div>
-        <div>Date: {{ invoiceDate }} {{ invoiceTime }}</div>
-        <div>Invoice #: {{ invoiceNumber }}</div>
-      </div>
-
-      <hr class="border-t border-black my-1" />
-
-      <div class="grid-cols-4 flex flex-row justify-between w-full">
-          <div class="basis-2/5">PRODUCT NAME</div>
-          <div class="basis-1/5">QTY</div>
-          <div class="basis-1/5">PPRICE</div>
-          <div class="basis-1/5">AMOUNT</div>
-        </div>
-
-        <hr class="border-t border-black my-1" />
-
-      <div v-for="p in selectedProducts" :key="p.id" class="mb-1">
-        <div class=" grid-cols-4 flex flex-row justify-between w-full">
-          <div class="truncate max-w-[140px] basis-2/5">{{ p.productname }}</div>
-          <div class="basis-1/5">{{ p.quantity }}</div>
-          <div class="basis-1/5">{{ formatCurrency(p.price) }}</div>
-          <div class="basis-1/5">{{ formatCurrency(p.total) }}</div>
-        </div>
-        <!-- Auto-wrap long names -->
-        <div v-if="p.productname.length > 20" class="text-xs text-gray-700">
-          {{ p.productname }}
-        </div>
-      </div>
-
-      <hr class="border-t border-black my-1" />
-
-      <div class="flex justify-between"><span>Subtotal:</span><span>{{ formatCurrency(subtotal) }}</span></div>
-      <div class="flex justify-between"><span>VAT (12%):</span><span>{{ formatCurrency(vat) }}</span></div>
-      <div class="flex justify-between"><span>Discount:</span><span>{{ formatCurrency(discount) }}</span></div>
-      <div class="flex justify-between font-bold text-lg"><span>Total:</span><span>{{ formatCurrency(totals.total) }}</span></div>
-
-      <hr class="border-t border-black my-1" />
-
-      <div class="flex justify-between"><span>Payment:</span><span>Cash</span></div>
-      <div class="flex justify-between"><span>Tendered:</span><span>{{ formatCurrency(tendered) }}</span></div>
-      <div class="flex justify-between"><span>Change:</span><span>{{ formatCurrency(change) }}</span></div>
-
-      <hr class="border-t border-black my-1" />
-
-
-  <!-- Customer Information -->
-  <div class="mt-6 p-4 bg-gray-50 rounded-lg shadow">
-    <div class="text-lg font-bold mb-2">CUSTOMER INFORMATION</div>
-
-    <div v-if="selectedPatient">
-      <div class="flex justify-between">
-        <span class="font-medium">NAME:</span>
-        <span>
-          {{ selectedPatient.lastName }} {{ selectedPatient.firstName }} {{ selectedPatient.middleName }}
-        </span>
-      </div>
-      <div class="flex justify-between">
-        <span class="font-medium">ADDRESS:</span>
-        <span>{{ selectedPatient.address }}</span>
-      </div>
-      <div class="flex justify-between">
-        <span class="font-medium">TIN:</span>
-        <span>{{ selectedPatient.tin }}</span>
-      </div>
-      <div class="flex justify-between">
-        <span class="font-medium">BUS. TYPE:</span>
-        <span>{{ selectedPatient.businessStyle }}</span>
-      </div>
-
-    <hr class="border-t border-black my-1" />
+<!-- POS Receipt Template (hidden, for printing) -->
+<div ref="receipt" class="receipt-container p-4 font-mono hidden">
+  <div class="text-center mb-2">
+    <div class="text-lg font-bold">FETHEA POS</div>
+    <div>Pico, La Trinidad</div>
+    <div>VAT REG TIN: 001-001-001-000</div>
+    <div>CASHIER: {{ issuedBy }}</div>
+    <div>Date: {{ invoiceDate }} {{ invoiceTime }}</div>
+    <div>Invoice #: {{ invoiceNumber }}</div>
   </div>
 
-    <div v-else class="text-gray-500 italic">
-      No customer selected
+  <hr />
+
+  <!-- Receipt Header -->
+  <div class="flex font-bold border-b border-black pb-1 mb-1">
+    <span class="w-8 text-left">Qty</span>
+    <span class="flex-1 text-left">Description</span>
+    <span class="w-12 text-right">Price</span>
+    <span class="w-12 text-right">Amount</span>
+  </div>
+
+  <!-- Receipt Items -->
+  <div v-for="p in selectedProducts" :key="p.id" class="mb-1">
+    <div class="flex">
+      <span class="w-8">{{ p.quantity }}</span>
+      <span class="flex-1 break-words">
+        {{ p.productname }}
+      </span>
+      <span class="w-12 text-right">{{ formatCurrency(p.price) }}</span>
+      <span class="w-12 text-right">{{ formatCurrency(p.total) }}</span>
     </div>
   </div>
 
+  <hr />
 
+  <!-- Totals -->
+  <div class="flex justify-between"><span>Discount:</span><span>{{ formatCurrency(discount) }}</span></div>
+  <div class="flex justify-between"><span>Subtotal:</span><span>{{ formatCurrency(subtotal) }}</span></div>
+  <div class="flex justify-between font-bold text-lg"><span>Total:</span><span>{{ formatCurrency(totals.total) }}</span></div>
 
-      <div class="text-center text-sm mt-2">
-        Thank you for shopping!<br/>
-        No returns without receipt.
-      </div>
-    </div>
+  <hr />
+
+  <!-- Payment -->
+  <div class="flex justify-between"><span>Payment:</span><span>Cash</span></div>
+  <div class="flex justify-between"><span>Tendered:</span><span>{{ formatCurrency(tendered) }}</span></div>
+  <div class="flex justify-between"><span>Change:</span><span>{{ formatCurrency(change) }}</span></div>
+
+  <hr />
+
+  <!-- VAT breakdown -->
+  <div class="flex justify-between"><span>VAT SALES:</span><span>{{ formatCurrency(totals.vat_sales) }}</span></div>
+  <div class="flex justify-between"><span>12% VAT Amount:</span><span>{{ formatCurrency(totals.vat_amount) }}</span></div>
+  <div class="flex justify-between"><span>VAT EXEMPT SALES:</span><span>{{ formatCurrency(totals.vat_exempt_sales) }}</span></div>
+  <div class="flex justify-between"><span>ZERO RATED SALES:</span><span>{{ formatCurrency(totals.zero_rated_sales) }}</span></div>
+
+  <hr />
+
+  <div class="text-center text-sm mt-2">
+    Thank you for shopping!<br/>
+    No returns without receipt.
+  </div>
+</div>
   </div>
 </template>
 
@@ -311,66 +284,16 @@ const totals = reactive({
 const tendered = ref(0)
 const receipt = ref(null)
 
-// Format currency helper
 function formatCurrency(amount) {
   return new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(amount || 0)
 }
 
-// Clock & Date
 function updateClockAndDate() {
   const now = new Date()
   invoiceDate.value = now.toISOString().split('T')[0]
   invoiceTime.value = now.toTimeString().slice(0,5)
 }
 
-const patients = ref([])
-const searchQuery = ref("")
-const selectedPatient = ref(null)
-const dropdownOpen = ref(false)
-const dropdownRef = ref(null)
-
-// Fetch patients from DB
-async function fetchClinicpatients() {
-  try {
-    patients.value = await window.electron.invoke("get-patients")
-  } catch (err) {
-    console.error("Error fetching patients:", err)
-  }
-}
-
-onMounted(fetchClinicpatients)
-
-// Filter list based on search query
-const filteredPatients = computed(() =>
-  patients.value.filter((p) =>
-    (p.firstName + " " + p.lastName)
-      .toLowerCase()
-      .includes(searchQuery.value.toLowerCase())
-  )
-)
-
-// Select patient from dropdown
-function selectPatient(patient) {
-  selectedPatient.value = patient
-  searchQuery.value = patient.firstName + " " + patient.lastName
-  dropdownOpen.value = false // close dropdown
-}
-
-// Close dropdown when clicking outside
-function handleClickOutside(event) {
-  if (dropdownRef.value && !dropdownRef.value.contains(event.target)) {
-    dropdownOpen.value = false
-  }
-}
-
-onMounted(() => {
-  document.addEventListener("click", handleClickOutside)
-})
-onBeforeUnmount(() => {
-  document.removeEventListener("click", handleClickOutside)
-})
-
-// Fetch products from Electron
 async function fetchProducts() {
   try {
     products.value = await window.electron.invoke('get-products')
@@ -379,8 +302,6 @@ async function fetchProducts() {
   }
 }
 
-
-// Generate invoice number
 async function generateInvoiceNumber() {
   try {
     invoiceNumber.value = await window.electron.invoke('generate-invoice-number')
@@ -389,50 +310,54 @@ async function generateInvoiceNumber() {
   }
 }
 
-// Add product to invoice
 function addProductToInvoice(product) {
   const existing = selectedProducts.value.find(p => p.id === product.id)
-  if(existing) {
+  if (existing) {
     existing.quantity += 1
-    existing.total = existing.quantity * (existing.price + existing.vatAmount)
+    existing.total = existing.quantity * existing.unitPrice
   } else {
     selectedProducts.value.push({
       ...product,
       quantity: 1,
-      total: product.price + product.vatAmount
+      unitPrice: product.price || product.total, // ensure per-unit price
+      total: product.price || product.total
     })
   }
   recalculateTotals()
 }
 
-// Quantity controls
 function increaseQuantity(index) {
   const p = selectedProducts.value[index]
   p.quantity += 1
-  p.total = p.quantity * (p.price + p.vatAmount)
+  p.total = p.quantity * p.unitPrice
   recalculateTotals()
 }
 
 function decreaseQuantity(index) {
   const p = selectedProducts.value[index]
   p.quantity -= 1
-  if(p.quantity <= 0) selectedProducts.value.splice(index,1)
-  else p.total = p.quantity * (p.price + p.vatAmount)
+  if (p.quantity <= 0) {
+    selectedProducts.value.splice(index, 1)
+  } else {
+    p.total = p.quantity * p.unitPrice
+  }
   recalculateTotals()
 }
 
-// Totals calculation
 function recalculateTotals() {
-  let subtotalVal = 0
   totals.vat_sales = 0
   totals.vat_amount = 0
   totals.vat_exempt_sales = 0
   totals.zero_rated_sales = 0
 
+  let subtotalVal = 0
+
   selectedProducts.value.forEach(p => {
-    totals.vat_sales += p.vat || 0
-    totals.vat_amount += p.vatAmount || 0
     subtotalVal += p.total || 0
+    totals.vat_sales += (p.vatSales || 0) * (p.quantity || 1)
+    totals.vat_amount += (p.vatAmount || 0) * (p.quantity || 1)
+    totals.vat_exempt_sales += (p.vatExempt || 0) * (p.quantity || 1)
+    totals.zero_rated_sales += (p.zeroRated || 0) * (p.quantity || 1)
   })
 
   totals.total = Math.max(subtotalVal - (subtotalVal * (totals.discount / 100)), 0)
@@ -447,11 +372,9 @@ function handleDiscountInput(e) {
 }
 
 const subtotal = computed(() => selectedProducts.value.reduce((sum, p) => sum + p.total, 0))
-const vat = computed(() => subtotal.value * 0.12)
 const discount = computed(() => subtotal.value * (totals.discount / 100))
 const change = computed(() => Math.max(tendered.value - totals.total, 0))
 
-// Clear invoice
 function clearInvoice() {
   selectedProducts.value = []
   totals.discount = 0
@@ -459,8 +382,6 @@ function clearInvoice() {
   recalculateTotals()
 }
 
-// Save invoice
-// Save invoice
 async function saveInvoice() {
   if (!selectedProducts.value.length) return alert('No products added!')
   const payload = {
@@ -482,8 +403,6 @@ async function saveInvoice() {
   }
 }
 
-
-// Print POS Receipt
 function printReceipt() {
   const printWindow = window.open('', '', 'width=300,height=600')
   printWindow.document.write('<html><head><title>Receipt</title><style>')
@@ -500,7 +419,6 @@ function printReceipt() {
   printWindow.print()
 }
 
-// Initialize
 onMounted(() => {
   updateClockAndDate()
   const clockInterval = setInterval(updateClockAndDate, 1000)
@@ -514,7 +432,7 @@ onMounted(() => {
 
 <style scoped>
 .receipt-container {
-  width: 280px; /* thermal printer width */
+  width: 280px;
   font-size: 12px;
   line-height: 1.2;
 }
@@ -522,15 +440,13 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
 }
-.truncate {
-  max-width: 140px;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+.break-words {
+  white-space: normal;
+  word-break: break-word;
 }
 hr {
   border: none;
   border-top: 1px dashed black;
-  margin: 2px 0;
+  margin: 4px 0;
 }
 </style>
