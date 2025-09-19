@@ -18,47 +18,8 @@
         <label class="block text-sm font-medium text-gray-700">Invoice Time</label>
         <input type="time" class="mt-1 w-full rounded-lg border-gray-300 shadow-sm focus:ring-sky-500 focus:border-sky-500" v-model="invoiceTime" readonly />
       </div>
-
-  <div class="relative" ref="dropdownRef">
-    <label class="block text-sm font-medium text-gray-700 mb-1">Customer</label>
-    <div class="relative">
-      <input
-        type="text"
-        v-model="searchQuery"
-        placeholder="Search customer..."
-        @input="dropdownOpen = true"
-        class="w-full rounded-lg border-gray-300 shadow-sm focus:ring-sky-500 focus:border-sky-500 pl-3 pr-8 py-2"
-      />
-
-      <!-- Dropdown -->
-      <ul
-        v-if="dropdownOpen && filteredPatients.length > 0 && searchQuery"
-        class="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-40 overflow-y-auto"
-      >
-        <li
-          v-for="patient in filteredPatients"
-          :key="patient.id"
-          @click="selectPatient(patient)"
-          class="px-4 py-2 cursor-pointer hover:bg-sky-100"
-        >
-          {{ patient.firstName }} {{ patient.lastName }}
-        </li>
-      </ul>
     </div>
-  </div>
 
-  <!-- Add New Patient -->
-  <div>
-    <router-link
-      to="/customer"
-      class="mt-4 inline-block px-4 py-2 bg-sky-500 text-white rounded-lg shadow hover:bg-sky-600"
-    >
-      + Add New Customer
-    </router-link>
-  </div>
-
-
-</div>
     <!-- Sales Table + Totals -->
     <div class="bg-white rounded-lg shadow p-6 border border-gray-200">
       <div class="flex flex-col lg:flex-row gap-6">
@@ -192,10 +153,11 @@
 
     <!-- Action Buttons -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-      <button @click="saveInvoice" class="w-full bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg shadow">Save and Print Reciept</button>
+      <button @click="saveInvoice" class="w-full bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg shadow">Save</button>
       <button @click="clearInvoice" class="w-full bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg shadow">Cancel Transaction</button>
       <button class="w-full bg-gray-500 hover:bg-gray-600 text-white py-2 px-4 rounded-lg shadow">Open Drawer</button>
-       </div>
+      <button @click="printReceipt" class="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg shadow">Print Receipt</button>
+    </div>
 
 <!-- POS Receipt Template (hidden, for printing) -->
 <div ref="receipt" class="receipt-container p-4 font-mono hidden">
@@ -383,7 +345,7 @@ function clearInvoice() {
 }
 
 async function saveInvoice() {
-  if (!selectedProducts.value.length) return alert('No products added!')
+  if(!selectedProducts.value.length) return alert('No products added!')
   const payload = {
     date: invoiceDate.value,
     total: totals.total,
@@ -392,13 +354,9 @@ async function saveInvoice() {
   try {
     const result = await window.electron.invoke('add-invoice', payload)
     alert(`Invoice saved! Number: ${result.invoice_number}`)
-
-    // ✅ Call print right after saving
-    printReceipt()
-
     clearInvoice()
     generateInvoiceNumber()
-  } catch (err) {
+  } catch(err) {
     console.error('Failed to save invoice:', err)
   }
 }
@@ -424,7 +382,6 @@ onMounted(() => {
   const clockInterval = setInterval(updateClockAndDate, 1000)
   onBeforeUnmount(() => clearInterval(clockInterval))
 
-  fetchClinicpatients()
   fetchProducts()
   generateInvoiceNumber()
 })
