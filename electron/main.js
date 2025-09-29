@@ -255,7 +255,7 @@ app.whenReady().then(() => {
 ipcMain.handle('save-product-image', async (event, { imageName, buffer }) => {
   const imagePath = path.join(app.getPath('userData'), 'images', imageName)
   fs.writeFileSync(imagePath, Buffer.from(buffer))
-  return imagePath // 👈 this is stored in DB
+  return imagePath 
 })
 
   // -------------------- INVOICES --------------------
@@ -289,9 +289,41 @@ ipcMain.handle('save-product-image', async (event, { imageName, buffer }) => {
     return { success: true }
   })
 
-  console.log('✅ All IPC handlers registered')
+  console.log('All IPC handlers registered')
 })
+//SAVE RECEITS AS PDF//
+ipcMain.handle("save-receipt-pdf", async (event, html) => {
+  const win = BrowserWindow.fromWebContents(event.sender);
 
+  try {
+    // Load raw receipt HTML in a hidden offscreen BrowserWindow
+    const tempWin = new BrowserWindow({
+      show: false,
+      webPreferences: { offscreen: true },
+    });
+
+    await tempWin.loadURL("data:text/html;charset=utf-8," + encodeURIComponent(html));
+
+    const pdf = await tempWin.webContents.printToPDF({
+      marginsType: 0,
+      printBackground: true,
+      pageSize: {
+        width: 56000,  // 56mm in µm (1mm = 1000µm)
+        height: 200000, // long enough roll; auto-break if content is shorter
+      },
+    });
+
+    const filePath = path.join(app.getPath("documents"), `receipt_${Date.now()}.pdf`);
+    fs.writeFileSync(filePath, pdf);
+
+    tempWin.close();
+
+    return filePath;
+  } catch (err) {
+    console.error("Receipt PDF export failed:", err);
+    throw err;
+  }
+});
 // -------------------- APP CLOSE --------------------
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()

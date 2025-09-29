@@ -345,19 +345,27 @@ function clearInvoice() {
 }
 
 async function saveInvoice() {
-  if(!selectedProducts.value.length) return alert('No products added!')
+  if (!selectedProducts.value.length) return alert("No products added!");
+
   const payload = {
     date: invoiceDate.value,
     total: totals.total,
-    items: JSON.stringify(selectedProducts.value)
-  }
+    items: JSON.stringify(selectedProducts.value),
+  };
+
   try {
-    const result = await window.electron.invoke('add-invoice', payload)
-    alert(`Invoice saved! Number: ${result.invoice_number}`)
-    clearInvoice()
-    generateInvoiceNumber()
-  } catch(err) {
-    console.error('Failed to save invoice:', err)
+    const result = await window.electron.invoke("add-invoice", payload);
+
+    // Export receipt as PDF
+    const receiptHtml = receipt.value.outerHTML;
+    const filePath = await window.electron.invoke("save-receipt-pdf", receiptHtml);
+
+    alert(`Invoice saved! Number: ${result.invoice_number}\nPDF saved at: ${filePath}`);
+
+    clearInvoice();
+    generateInvoiceNumber();
+  } catch (err) {
+    console.error("Failed to save invoice:", err);
   }
 }
 
