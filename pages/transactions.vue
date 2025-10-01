@@ -14,6 +14,7 @@
       </div>
       <button @click="clearFilter" class="px-4 py-2 bg-gray-300 rounded">Clear</button>
       <button @click="saveAsFile" class="px-4 py-2 bg-blue-500 text-white rounded">Save as CSV</button>
+      <button @click="saveAsPDF" class="px-4 py-2 bg-red-500 text-white rounded">Save as PDF</button>
     </div>
 
     <!-- Invoice Table -->
@@ -84,7 +85,7 @@ function clearFilter() {
   filterTo.value = ''
 }
 
-// Save filtered list as CSV
+// ✅ Save filtered list as CSV
 function saveAsFile() {
   const headers = [
     'Invoice #','Date','Customer','VAT Sales','VAT Amount',
@@ -95,19 +96,45 @@ function saveAsFile() {
     inv.vat_sales, inv.vat_amount, inv.vat_exempt_sales,
     inv.zero_rated_sales, inv.discount, inv.total
   ])
-  const csvContent = [headers, ...rows].map(e => e.join(',')).join('\n')
 
-  // Trigger download
+  const csvContent = [headers, ...rows].map(e => e.join(',')).join('\n')
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
   const url = URL.createObjectURL(blob)
+
   const link = document.createElement('a')
-  link.setAttribute('href', url)
-  link.setAttribute('download', `invoices_${Date.now()}.csv`)
+  link.href = url
+  link.download = `invoices_${Date.now()}.csv`
   link.click()
+
   URL.revokeObjectURL(url)
 }
 
-// Fetch invoices from Electron
+// ✅ Save filtered list as PDF (through Electron main process)
+async function saveAsPDF() {
+  try {
+    // ✅ force plain JSON copy
+    const plainInvoices = filteredInvoices.value.map(inv => ({
+      id: inv.id,
+      invoice_number: inv.invoice_number,
+      date: inv.date,
+      customer_name: inv.customer_name,
+      vat_sales: inv.vat_sales,
+      vat_amount: inv.vat_amount,
+      vat_exempt_sales: inv.vat_exempt_sales,
+      zero_rated_sales: inv.zero_rated_sales,
+      discount: inv.discount,
+      total: inv.total
+    }))
+
+    const filePath = await window.electron.invoke('export-invoices-pdf', plainInvoices)
+    alert(`PDF saved at: ${filePath}`)
+  } catch (err) {
+    console.error('Failed to save PDF:', err)
+    alert('Failed to generate PDF')
+  }
+}
+
+// ✅ Load invoices from Electron on mount
 onMounted(async () => {
   try {
     invoices.value = await window.electron.invoke('get-all-invoices')

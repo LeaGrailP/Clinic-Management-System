@@ -350,17 +350,19 @@ async function saveInvoice() {
   const payload = {
     date: invoiceDate.value,
     total: totals.total,
+    discount: totals.discount,
+    vat_sales: totals.vat_sales,
+    vat_amount: totals.vat_amount,
+    vat_exempt_sales: totals.vat_exempt_sales,
+    zero_rated_sales: totals.zero_rated_sales,
+    customer_name: issuedBy.value,
     items: JSON.stringify(selectedProducts.value),
   };
 
   try {
     const result = await window.electron.invoke("add-invoice", payload);
 
-    // Export receipt as PDF
-    const receiptHtml = receipt.value.outerHTML;
-    const filePath = await window.electron.invoke("save-receipt-pdf", receiptHtml);
-
-    alert(`Invoice saved! Number: ${result.invoice_number}\nPDF saved at: ${filePath}`);
+    alert(`Invoice saved! Number: ${result.invoice_number}`);
 
     clearInvoice();
     generateInvoiceNumber();

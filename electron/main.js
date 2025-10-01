@@ -291,38 +291,64 @@ ipcMain.handle('save-product-image', async (event, { imageName, buffer }) => {
 
   console.log('All IPC handlers registered')
 })
-//SAVE RECEITS AS PDF//
-ipcMain.handle("save-receipt-pdf", async (event, html) => {
-  const win = BrowserWindow.fromWebContents(event.sender);
+//SAVE RECEIPTS AS PDF//
+ipcMain.handle("export-invoices-pdf", async (event, invoices) => {
+  const rows = invoices.map(inv => `
+    <div style="border-bottom:1px dashed #000; margin:6px 0; padding-bottom:4px;">
+      <div><strong>Invoice #:</strong> ${inv.invoice_number}</div>
+      <div><strong>Date:</strong> ${inv.date}</div>
+      <div><strong>Customer:</strong> ${inv.customer_name || "-"}</div>
+      <div><strong>VAT Sales:</strong> ₱${Number(inv.vat_sales).toFixed(2)}</div>
+      <div><strong>VAT Amount:</strong> ₱${Number(inv.vat_amount).toFixed(2)}</div>
+      <div><strong>Exempt Sales:</strong> ₱${Number(inv.vat_exempt_sales).toFixed(2)}</div>
+      <div><strong>Zero-Rated:</strong> ₱${Number(inv.zero_rated_sales).toFixed(2)}</div>
+      <div><strong>Discount:</strong> ₱${Number(inv.discount).toFixed(2)}</div>
+      <div><strong>Total:</strong> <strong>₱${Number(inv.total).toFixed(2)}</strong></div>
+    </div>
+  `).join("");
 
-  try {
-    // Load raw receipt HTML in a hidden offscreen BrowserWindow
-    const tempWin = new BrowserWindow({
-      show: false,
-      webPreferences: { offscreen: true },
-    });
+  const htmlContent = `
+    <html>
+      <head>
+        <style>
+          body {
+            font-family: monospace;
+            font-size: 11px;
+            margin: 0;
+            padding: 8px;
+            width: 58mm;
+          }
+          h2 {
+            text-align: center;
+            margin-bottom: 8px;
+          }
+        </style>
+      </head>
+      <body>
+        <h2>Invoice Report</h2>
+        ${rows}
+        <div style="border-top:1px dashed #000; margin-top:10px; text-align:center;">
+          Exported: ${new Date().toLocaleString()}
+        </div>
+      </body>
+    </html>
+  `;
 
-    await tempWin.loadURL("data:text/html;charset=utf-8," + encodeURIComponent(html));
+  const pdfWin = new BrowserWindow({ show: false });
+  await pdfWin.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`);
 
-    const pdf = await tempWin.webContents.printToPDF({
-      marginsType: 0,
-      printBackground: true,
-      pageSize: {
-        width: 56000,  // 56mm in µm (1mm = 1000µm)
-        height: 200000, // long enough roll; auto-break if content is shorter
-      },
-    });
+  const pdfBuffer = await pdfWin.webContents.printToPDF({
+    marginsType: 1,
+    pageSize: { width: 58000, height: 2000000 }, // 58mm wide roll, long page
+    printBackground: true
+  });
 
-    const filePath = path.join(app.getPath("documents"), `receipt_${Date.now()}.pdf`);
-    fs.writeFileSync(filePath, pdf);
+  const filePath = path.join(app.getPath("documents"), `invoices_${Date.now()}.pdf`);
+  fs.writeFileSync(filePath, pdfBuffer);
 
-    tempWin.close();
+  pdfWin.close();
 
-    return filePath;
-  } catch (err) {
-    console.error("Receipt PDF export failed:", err);
-    throw err;
-  }
+  return filePath;
 });
 // -------------------- APP CLOSE --------------------
 app.on('window-all-closed', () => {
