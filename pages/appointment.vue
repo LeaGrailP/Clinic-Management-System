@@ -58,6 +58,12 @@ const selectedAppointments = computed(() =>
     new Date(appt.datetime).toDateString() === selectedDate.value.toDateString()
   )
 )
+
+definePageMeta({
+  middleware: ['auth'],
+  requiresAdmin: true
+})
+
 </script>
 
 <template>

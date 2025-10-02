@@ -4,33 +4,29 @@ const path = require('path')
 const bcrypt = require('bcryptjs')
 const Database = require('better-sqlite3')
 
-let db
+let db // 👈 declare once (will assign later)
 
 // -------------------- DATABASE INIT --------------------
 function initDB() {
   // Always relative to THIS file's folder (electron/main.js)
-  const dbPath = path.resolve(__dirname, 'userData', 'database.db');
-  const dbDir = path.dirname(dbPath);
+  const dbPath = path.resolve('C:/Clinic-Management-System/electron/userData/database.db')
+  const database = new Database(dbPath) // 👈 use local var, not let db again
 
-  console.log('📂 Electron is trying to open DB at:', dbPath);
-
-  if (!fs.existsSync(dbDir)) fs.mkdirSync(dbDir, { recursive: true });
-
-  db = new Database(dbPath);
-
+  // Enable WAL mode to reduce locking issues
+  database.pragma('journal_mode = WAL')
 
   // Users table
-  db.exec(`
+  database.exec(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT UNIQUE NOT NULL,
-      password TEXT NOT NULL,
-      role TEXT NOT NULL
+      name TEXT UNIQUE,
+      password TEXT,
+      role TEXT
     )
   `)
 
   // Products table
-  db.exec(`
+  database.exec(`
     CREATE TABLE IF NOT EXISTS products (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       productname TEXT NOT NULL,
@@ -46,7 +42,7 @@ function initDB() {
   `)
 
   // Patients table
-  db.exec(`
+  database.exec(`
     CREATE TABLE IF NOT EXISTS clinicpatients (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       firstName TEXT,
@@ -64,7 +60,7 @@ function initDB() {
   `)
 
   // Transactions table
-  db.exec(`
+  database.exec(`
     CREATE TABLE IF NOT EXISTS transactions (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       date TEXT,
@@ -74,7 +70,7 @@ function initDB() {
   `)
 
   // Invoice table
-  db.exec(`
+  database.exec(`
     CREATE TABLE IF NOT EXISTS invoice (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       date TEXT,
@@ -84,7 +80,7 @@ function initDB() {
     )
   `)
 
-  return db
+  return database // 👈 return instance
 }
 
 // -------------------- ELECTRON WINDOW --------------------
@@ -104,34 +100,66 @@ function createWindow() {
 
 // -------------------- APP READY --------------------
 app.whenReady().then(() => {
-  db = initDB()
+  db = initDB()   // 👈 assign once here
   createWindow()
 
-  // -------------------- USERS --------------------
-  ipcMain.handle('login', async (_event, { name, password }) => {
-    try {
-      const user = db.prepare('SELECT * FROM users WHERE name = ?').get(name)
-      if (!user) return { success: false, error: 'User not found' }
-      const match = await bcrypt.compare(password, user.password)
-      if (!match) return { success: false, error: 'Incorrect password' }
-      return { success: true, name: user.name, role: user.role }
-    } catch (err) {
-      console.error('Login error:', err)
-      return { success: false, error: 'Internal login error' }
-    }
-  })
 
-  ipcMain.handle('auth:register', async (_event, { name, password, role }) => {
-    try {
-      const hash = await bcrypt.hash(password, 10)
-      db.prepare(`INSERT INTO users (name, password, role) VALUES (?, ?, ?)`).run(name, hash, role)
-      return { success: true }
-    } catch (err) {
-      if (err.code === 'SQLITE_CONSTRAINT') return { success: false, error: 'Name already exists' }
-      console.error('Register error:', err)
-      return { success: false, error: 'Registration failed' }
+  // -------------------- USERS --------------------
+
+ipcMain.handle('auth:register', async (event, { name, password, role }) => {
+  try {
+    const hashed = await bcrypt.hash(password, 10)
+
+    // Prepare insert
+    const insert = db.prepare(
+      'INSERT INTO users (name, password, role) VALUES (?, ?, ?)'
+    )
+
+    // Transaction ensures DB isn’t locked by partial writes
+    const transaction = db.transaction((name, hashed, role) => {
+      insert.run(name, hashed, role)
+    })
+
+    transaction(name, hashed, role)
+
+    return { success: true }
+  } catch (err) {
+    console.error('Register error:', err)
+    return { success: false, error: err.message }
+  }
+})
+
+// -------------------- CHECK IF ADMIN EXISTS --------------------
+ipcMain.handle('check-admin', async () => {
+  try {
+    const row = db.prepare('SELECT 1 FROM users WHERE role = ? LIMIT 1').get('admin')
+    return !!row // true if admin exists
+  } catch (err) {
+    console.error('check-admin error:', err)
+    throw err
+  }
+})
+
+// -------------------- LOGIN --------------------
+ipcMain.handle('login', async (event, { name, password }) => {
+  try {
+    const user = db.prepare('SELECT * FROM users WHERE name = ?').get(name)
+    if (!user) {
+      return { success: false, error: 'User not found' }
     }
-  })
+
+    const match = await bcrypt.compare(password, user.password)
+    if (!match) {
+      return { success: false, error: 'Invalid password' }
+    }
+
+    return { success: true, name: user.name, role: user.role }
+  } catch (err) {
+    console.error('login error:', err)
+    return { success: false, error: err.message }
+  }
+})
+
 
   // -------------------- PATIENTS --------------------
   ipcMain.handle('get-patients', () => db.prepare('SELECT * FROM clinicpatients').all())

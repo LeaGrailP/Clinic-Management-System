@@ -1,18 +1,16 @@
-import { defineNuxtRouteMiddleware, navigateTo } from 'nuxt/app'
-
 export default defineNuxtRouteMiddleware((to) => {
-  const token = localStorage.getItem('token')
-  const role = localStorage.getItem('role')
+  const user = useState<any>('user')
 
-  if (!token) {
+  if (!user.value && to.path !== '/login' && to.path !== '/register') {
     return navigateTo('/login')
   }
 
-  if (to.meta.requiresAdmin && role !== 'admin') {
+  if (to.meta.requiresAdmin && user.value?.role !== 'admin') {
     return navigateTo('/unauthorized')
   }
 
-  if (to.meta.requiresStaff && role !== 'cashier') {
+  if (to.meta.requiresStaff && user.value?.role !== 'cashier') {
     return navigateTo('/unauthorized')
   }
 })
+

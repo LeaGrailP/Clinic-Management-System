@@ -24,7 +24,6 @@
           @change="handleImageUpload"
           class="w-full border px-3 py-2 rounded"
         />
-        <!-- 🟢 Show preview before saving -->
         <div v-if="imagePreview" class="mt-2">
           <img :src="imagePreview" alt="Preview" class="w-20 h-20 object-cover rounded border" />
         </div>
@@ -99,7 +98,6 @@
       <table class="table-auto w-full border-collapse border border-gray-300 text-sm">
         <thead>
           <tr class="bg-gray-100 text-left">
-            <!-- 🟢 Added Image column -->
             <th class="border p-2">Image</th>
             <th class="border p-2">Name</th>
             <th class="border p-2">VAT Type</th>
@@ -114,7 +112,6 @@
         </thead>
         <tbody>
           <tr v-for="product in products" :key="product.id">
-            <!-- 🟢 Show saved image -->
             <td class="border p-2">
               <img v-if="product.image" :src="product.image" class="w-12 h-12 object-cover rounded" />
               <span v-else class="text-gray-400 italic">No Image</span>
@@ -143,27 +140,34 @@
         No products found.
       </div>
     </div>
-
   </div>
 </template>
 
+
 <script setup>
+definePageMeta({
+  middleware: ['auth'],
+  requiresAdmin: true
+})
+
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useUser } from '~/composables/useUser'
 import { Trash2, Pencil, RefreshCw } from 'lucide-vue-next'
 
+// ✅ Declare refs
 const productname = ref('')
 const price = ref(0)
 const vatType = ref('')
 const products = ref([])
 const editingId = ref(null)
 const imageFile = ref(null)
-const imagePreview = ref(null) // 🟢 For preview
+const imagePreview = ref(null)
 
-definePageMeta({ layout: 'default' })
 const router = useRouter()
-const { isAdmin } = useUser()
+
+// ✅ Example role check (replace with real composable if available)
+const user = ref(JSON.parse(localStorage.getItem('user') || '{"role":"cashier"}'))
+const isAdmin = computed(() => user.value.role === 'admin')
 
 onMounted(() => {
   if (!isAdmin.value) {
@@ -172,11 +176,9 @@ onMounted(() => {
   }
 })
 
-// VAT COMPUTATIONS
+// VAT Computations
 const vatSales = computed(() => (vatType.value === 'vatable' ? price.value : 0))
-const vatAmount = computed(() =>
-  vatType.value === 'vatable' ? (price.value * 0.12) : 0
-)
+const vatAmount = computed(() => (vatType.value === 'vatable' ? price.value * 0.12 : 0))
 const vatExempt = computed(() => (vatType.value === 'exempt' ? price.value : 0))
 const zeroRated = computed(() => (vatType.value === 'zero' ? price.value : 0))
 const total = computed(() => price.value + vatAmount.value)
@@ -185,7 +187,7 @@ function handleImageUpload(event) {
   const file = event.target.files[0]
   if (!file) return
   imageFile.value = file
-  imagePreview.value = URL.createObjectURL(file) // 🟢 Preview before save
+  imagePreview.value = URL.createObjectURL(file)
 }
 
 async function fetchProducts() {
@@ -198,7 +200,6 @@ async function fetchProducts() {
 
 async function handleSubmit() {
   let imagePath = null
-
   if (imageFile.value) {
     const buffer = await imageFile.value.arrayBuffer()
     const imageName = `${Date.now()}_${imageFile.value.name}`
@@ -236,7 +237,7 @@ function startEdit(product) {
   productname.value = product.productname
   price.value = product.price
   vatType.value = product.vatType
-  imagePreview.value = product.image // 🟢 Load existing image in preview
+  imagePreview.value = product.image
 }
 
 function cancelEdit() {

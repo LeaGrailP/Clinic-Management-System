@@ -4,9 +4,10 @@ contextBridge.exposeInMainWorld('electron', {
   invoke: (channel, ...args) => ipcRenderer.invoke(channel, ...args),
 });
 
-contextBridge.exposeInMainWorld('auth', {
-  login: (credentials) => ipcRenderer.invoke('login', credentials),
-  register: (account) => ipcRenderer.invoke('auth:register', account),
+contextBridge.exposeInMainWorld('electronAPI', {
+  checkAdmin: () => ipcRenderer.invoke('check-admin'),
+  register: (data) => ipcRenderer.invoke('auth:register', data),
+  login: (data) => ipcRenderer.invoke('login', data)
 });
 
 contextBridge.exposeInMainWorld('patientAPI', {

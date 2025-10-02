@@ -47,21 +47,31 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 
-const router = useRouter()
-const user = ref({ name: '', role: '' })
-const form = ref({ name: '', password: '' })
-const isEditing = ref(false)
+const user = ref({ role: null })
+
+// computed flag so you can use isAdmin safely
+const isAdmin = computed(() => user.value.role === 'admin')
 
 onMounted(() => {
   const stored = localStorage.getItem('user')
   if (stored) {
-    const parsed = JSON.parse(stored)
-    user.value = parsed
-    form.value.name = parsed.name
-  } else {
-    router.push('/login')
+    try {
+      const parsed = JSON.parse(stored)
+      if (parsed && typeof parsed === 'object') {
+        user.value = parsed
+      } else {
+        user.value = { role: parsed }
+      }
+    } catch {
+      user.value = { role: stored }
+    }
   }
 })
+
+const router = useRouter()
+const form = ref({ name: '', password: '' })
+const isEditing = ref(false)
+
 
 function saveChanges() {
   if (form.value.name.trim() === '') return alert('Name required')
@@ -85,7 +95,7 @@ function confirmDelete() {
     // 🔹 You could also trigger an IPC call here to delete from SQLite
     localStorage.removeItem('user')
     alert('Account deleted.')
-    router.push('/login')
+    router.push()
   }
 }
 </script>
