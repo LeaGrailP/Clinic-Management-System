@@ -5,7 +5,8 @@ contextBridge.exposeInMainWorld('electron', {
 });
 
 contextBridge.exposeInMainWorld('electronAPI', {
-  checkAdmin: () => ipcRenderer.invoke('check-admin'),
+  checkAdmin: () => ipcRenderer.invoke('checkAdmin'),
+  createAdmin: (data) => ipcRenderer.invoke('createAdmin', data),
   register: (data) => ipcRenderer.invoke('auth:register', data),
   login: (data) => ipcRenderer.invoke('login', data)
 });

@@ -10,8 +10,8 @@ definePageMeta({
 const router = useRouter()
 const name = ref('')
 const password = ref('')
-const loginRole = ref('admin') // default role for dropdown
-const showSetup = ref(false)   // show admin setup if no admin exists
+const loginRole = ref('admin')
+const showSetup = ref(false)
 
 // 🔍 Check if admin exists on mount
 onMounted(async () => {
@@ -23,11 +23,31 @@ onMounted(async () => {
   }
 })
 
+/** 🛠 Setup Admin Account */
+async function handleSetup() {
+  try {
+    const result = await window.electronAPI.createAdmin({
+      name: name.value,
+      password: password.value
+    })
+
+    if (result && result.success) {
+      alert('Admin account created successfully!')
+      showSetup.value = false
+    } else {
+      alert(result?.error || 'Failed to create admin.')
+    }
+  } catch (err) {
+    console.error('Setup error:', err)
+    alert('Something went wrong while setting up admin.')
+  }
+}
+
 /** 🔑 Handle normal login */
 async function handleLogin() {
   try {
     const result = await window.electronAPI.login({
-      role: loginRole.value,   // ✅ send selected role
+      role: loginRole.value,
       name: name.value,
       password: password.value
     })
@@ -40,10 +60,8 @@ async function handleLogin() {
       const user = useState('user', () => null)
       user.value = { name: result.name, role: result.role }
 
-      // ✅ redirect based on actual role from DB (extra safety)
       if (result.role === 'admin') router.push('/dashboard')
       else if (result.role === 'cashier') router.push('/dashboard')
-      else router.push('/public')
     } else {
       alert(result?.error || 'Login failed.')
     }
@@ -52,8 +70,8 @@ async function handleLogin() {
     alert('Something went wrong during login.')
   }
 }
-
 </script>
+
 
 <template>
   <div class="min-h-screen flex items-center justify-center">

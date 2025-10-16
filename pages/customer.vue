@@ -240,10 +240,6 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 
-definePageMeta({
-  middleware: ['auth'],
-  requiresAdmin: true
-})
 const showModal = ref(false) 
 
 const form = ref({
@@ -294,8 +290,6 @@ async function submitForm() {
     console.error('Error adding patient:', err)
   }
 }
-
-
 
 
 onMounted(fetchClinicpatients)
