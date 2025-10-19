@@ -1,43 +1,52 @@
 {
   "name": "clinic-pos",
   "version": "0.0.1",
-  "description": "electron-nuxt project",
+  "description": "Clinic POS — Offline Electron + Nuxt 3 system",
   "main": "electron/main.js",
+  "author": "LeaGrail <161104051+LeaGrail@users.noreply.github.com>",
+  "license": "MIT",
   "scripts": {
     "dev": "nuxt dev --host",
-    "build": "nuxt build",
+    "build": "nuxt generate",
     "rebuild": "electron-rebuild -f -w better-sqlite3",
-    "generate": "nuxt generate",
-    "start": "nuxt start",
-    "electron": "electron electron/main.js",
-    "electron:dev": "concurrently \"yarn dev\" \"wait-on http://localhost:3000 && electron electron/",
     "postinstall": "electron-rebuild",
-    "dist": "electron-builder"
+    "electron": "electron electron/main.js",
+    "electron:dev": "concurrently \"yarn dev\" \"wait-on http://localhost:3000 && electron electron/main.js\"",
+    "dist": "yarn build && electron-builder"
   },
   "build": {
     "appId": "com.clinic.pos",
     "productName": "ClinicPOS",
-    "files": [
-      "electron/**/*",
-      ".nuxt/**/*",
-      "package.json"
-    ],
     "directories": {
-      "buildResources": "build"
+      "buildResources": "build",
+      "output": "dist_electron"
     },
+    "files": [
+    "electron/",
+  ".output/**"
+    ],
+    "extraResources": [
+      {
+        "from": "electron/userData",
+        "to": "userData",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "asarUnpack": [
+      "**/node_modules/better-sqlite3/**"
+    ],
     "win": {
       "target": "nsis"
     }
   },
-  "keywords": [],
-  "author": "LeaGrail <161104051+LeaGrail@users.noreply.github.com>",
-  "license": "MIT",
-  "homepage": "https://github.com/michalzaq12/electron-nuxt/blob/master/README.md",
-  "engines": {
-    "node": ">=14.14.9"
-  },
-  "resolutions": {
-    "@types/node": "14.14.9"
+  "dependencies": {
+    "@nuxthq/ui": "^2.7.0",
+    "@pinia/nuxt": "^0.11.1",
+    "bcryptjs": "^3.0.2",
+    "better-sqlite3": "^12.4.1",
+    "lucide-vue-next": "^0.513.0"
   },
   "devDependencies": {
     "@nuxtjs/tailwindcss": "^6.14.0",
@@ -57,11 +66,7 @@
     "tailwindcss": "3.4.17",
     "wait-on": "^8.0.3"
   },
-  "dependencies": {
-    "@nuxthq/ui": "^2.7.0",
-    "@pinia/nuxt": "^0.11.1",
-    "bcryptjs": "^3.0.2",
-    "better-sqlite3": "^12.2.0",
-    "lucide-vue-next": "^0.513.0"
+  "engines": {
+    "node": ">=14.14.9"
   }
 }
