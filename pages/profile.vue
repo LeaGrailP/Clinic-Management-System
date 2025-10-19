@@ -1,6 +1,6 @@
 <template>
-  <div class="min-h-screen bg-gray-50 py-12 px-6">
-    <div class="max-w-xl mx-auto bg-white shadow rounded-lg p-8">
+  <div class="min-h-screen bg-slate-50 py-12 px-6">
+    <div class="max-w-xl mx-auto bg-sky-100 shadow rounded-lg p-8">
       <h2 class="text-2xl font-bold mb-6 text-center">My Profile</h2>
 
       <!-- View Mode -->

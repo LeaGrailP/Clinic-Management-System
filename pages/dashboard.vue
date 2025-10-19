@@ -3,43 +3,43 @@
     <!-- Invoice Info -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
       <div>
-        <label class="block text-sm font-medium text-gray-700">Invoice #</label>
+        <label class="block text-sm font-medium text-gray-700">Invoice Number:</label>
         <input type="text" class="mt-1 w-full rounded-lg border-gray-300 shadow-sm focus:ring-sky-500 focus:border-sky-500" :value="invoiceNumber" readonly />
       </div>
       <div>
-        <label class="block text-sm font-medium text-gray-700">Issued By</label>
+        <label class="block text-sm font-medium text-gray-700">Issued By:</label>
         <input type="text" :value="issuedBy" class="mt-1 w-full rounded-lg border-gray-300 shadow-sm focus:ring-sky-500 focus:border-sky-500" readonly />
       </div>
       <div>
-        <label class="block text-sm font-medium text-gray-700">Invoice Date</label>
+        <label class="block text-sm font-medium text-gray-700">Invoice Date:</label>
         <input type="date" class="mt-1 w-full rounded-lg border-gray-300 shadow-sm focus:ring-sky-500 focus:border-sky-500" v-model="invoiceDate" readonly />
       </div>
       <div>
-        <label class="block text-sm font-medium text-gray-700">Invoice Time</label>
+        <label class="block text-sm font-medium text-gray-700">Invoice Time:</label>
         <input type="time" class="mt-1 w-full rounded-lg border-gray-300 shadow-sm focus:ring-sky-500 focus:border-sky-500" v-model="invoiceTime" readonly />
       </div>
     </div>
 
     <!-- Sales Table + Totals -->
-    <div class="bg-white rounded-lg shadow p-6 border border-gray-200">
+    <div class="bg-sky-100 rounded-lg shadow p-6 border border-slate-400">
       <div class="flex flex-col lg:flex-row gap-6">
 
         <!-- Product List -->
         <div class="flex-1 overflow-auto">
-          <table class="min-w-full border border-gray-300 text-sm text-left">
-            <thead class="bg-sky-300 text-gray-800">
+          <table class="min-w-full border text-sm text-left">
+            <thead class="bg-sky-400 text-gray-800">
               <tr>
-                <th class="px-4 py-2 border">Product List</th>
+                <th class="px-4 py-2 border border-slate-400">Product List</th>
               </tr>
             </thead>
             <tbody>
               <tr
                 v-for="product in products"
                 :key="product.id"
-                class="text-center hover:bg-gray-50 cursor-pointer"
+                class="text-center hover:bg-sky-50 cursor-pointer"
                 @click="addProductToInvoice(product)"
               >
-                <td class="p-2 border">{{ product.productname }}</td>
+                <td class="p-2 border border-slate-400">{{ product.productname }}</td>
               </tr>
             </tbody>
           </table>
@@ -47,32 +47,32 @@
 
         <!-- Sales Table -->
         <div class="flex-1 overflow-auto">
-          <table class="min-w-full border border-gray-300 text-sm text-left">
+          <table class="min-w-full border border-slate-400 text-sm text-left">
             <thead class="bg-sky-300 text-gray-800">
               <tr>
-                <th class="px-4 py-2 border">Product</th>
-                <th class="px-4 py-2 border">Quantity</th>
-                <th class="px-4 py-2 border">Price</th>
-                <th class="px-4 py-2 border">Action</th>
+                <th class="px-4 py-2 border border-slate-400">Product</th>
+                <th class="px-4 py-2 border border-slate-400">Quantity</th>
+                <th class="px-4 py-2 border border-slate-400">Price</th>
+                <th class="px-4 py-2 border border-slate-400">Action</th>
               </tr>
             </thead>
             <tbody>
               <tr
                 v-for="(p, index) in selectedProducts"
                 :key="p.id"
-                class="text-center hover:bg-gray-50"
+                class="text-center hover:bg-sky-50"
               >
-                <td class="p-2 border">{{ p.productname }}</td>
-                <td class="p-2 border">{{ p.quantity }}</td>
-                <td class="p-2 border">₱{{ p.total.toFixed(2) }}</td>
-                <td class="p-2 border space-x-2 flex justify-center items-center">
+                <td class="p-2 border border-slate-400">{{ p.productname }}</td>
+                <td class="p-2 border border-slate-400">{{ p.quantity }}</td>
+                <td class="p-2 border border-slate-400">₱{{ p.total.toFixed(2) }}</td>
+                <td class="p-2 space-x-2 flex justify-center items-center">
                   <button
                     @click="decreaseQuantity(index)"
-                    class="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
+                    class="px-2 py-1 bg-sky-200 rounded hover:bg-sky-400"
                   >−</button>
                   <button
                     @click="increaseQuantity(index)"
-                    class="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
+                    class="px-2 py-1 bg-sky-200 rounded hover:bg-sky-400"
                   >+</button>
                 </td>
               </tr>
