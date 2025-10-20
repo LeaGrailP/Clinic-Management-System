@@ -97,34 +97,31 @@ function createWindow() {
     },
   });
 
-  const isDev = !app.isPackaged;
+  const baseDir = path.join(__dirname, '../dist');
+  const indexPath = path.join(baseDir, 'index.html');
+  console.log('📦 Loading:', indexPath);
 
-  if (isDev) {
-    // 💻 Development mode
-    mainWindow.loadURL('http://localhost:3000');
-    mainWindow.webContents.openDevTools();
-  } else {
-    // 🏗️ Production (packaged) mode
-    const indexPath = path.join(process.resourcesPath, '.output/public/index.html');
-    console.log('📦 Loading frontend from:', indexPath);
+  // Always load the SPA root
+  mainWindow.loadFile(indexPath);
 
-    if (!fs.existsSync(indexPath)) {
-      console.error('❌ index.html not found at:', indexPath);
-      return;
+  // Prevent navigation to real folders (let Vue Router handle)
+  mainWindow.webContents.on('will-navigate', (event, url) => {
+    if (url.startsWith('file://')) {
+      event.preventDefault();
+      mainWindow.loadFile(indexPath);
     }
+  });
 
-    mainWindow.loadFile(indexPath);
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    if (url.startsWith('file://')) {
+      mainWindow.loadFile(indexPath);
+      return { action: 'deny' };
+    }
+    return { action: 'allow' };
+  });
 
-    mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
-  console.error('⚠️ Failed to load:', errorDescription);
-});
-
-
-    // Optional: open DevTools in production for debugging
-    // mainWindow.webContents.openDevTools();
-  }
+  mainWindow.webContents.openDevTools();
 }
-
 
 // -------------------- APP READY --------------------
 app.whenReady().then(() => {

@@ -1,8 +1,9 @@
 export default defineNuxtConfig({
-  ssr: false, // no server-side rendering, for offline Electron use
+  ssr: false, // No SSR for Electron
+
   app: {
-    baseURL: './', // relative path so assets load in file:// or app://
-    buildAssetsDir: 'assets/',
+    baseURL: './', // ✅ Relative paths so Electron can load assets
+    buildAssetsDir: '_nuxt/', // ✅ Keep as is
     head: {
       title: 'Clinic POS',
       meta: [{ charset: 'utf-8' }],
@@ -22,13 +23,16 @@ export default defineNuxtConfig({
 
   postcss: {
     plugins: {
-      autoprefixer: {}, // ✅ correct
+      autoprefixer: {},
     },
   },
 
   nitro: {
-    preset: 'static', // ✅ ensures Nuxt outputs index.html into /dist
+    preset: 'static', // ✅ Output static files
+    output: {
+      publicDir: '../dist/public', // 👈 ✅ Explicitly tell Nuxt where to put built assets
+    },
   },
 
-  compatibilityDate: '2025-06-06', // ✅ correct placement (outside nitro)
+  compatibilityDate: '2025-06-06',
 })
