@@ -371,20 +371,36 @@ async function saveInvoice() {
   }
 }
 
-function printReceipt() {
-  const printWindow = window.open('', '', 'width=300,height=600')
-  printWindow.document.write('<html><head><title>Receipt</title><style>')
-  printWindow.document.write(`
-    body { font-family: monospace; font-size: 12px; }
-    .flex { display: flex; justify-content: space-between; }
-    .truncate { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-    hr { border: none; border-top: 1px dashed black; margin: 2px 0; }
-  `)
-  printWindow.document.write('</style></head><body>')
-  printWindow.document.write(receipt.value.innerHTML)
-  printWindow.document.write('</body></html>')
-  printWindow.document.close()
-  printWindow.print()
+async function printReceipt() {
+  if (!selectedProducts.value.length) {
+    return alert("No products to print!");
+  }
+
+  const data = {
+    header: {
+      storeName: "FETHEA POS",
+      address: "Pico, La Trinidad",
+      cashier: issuedBy.value,
+      date: `${invoiceDate.value} ${invoiceTime.value}`,
+      invoiceNumber: invoiceNumber.value,
+    },
+    items: selectedProducts.value,
+    totals: totals,
+    tendered: tendered.value,
+    change: change.value,
+  }
+
+  try {
+    const success = await window.electron.invoke("print-receipt", data)
+    if (success) {
+      console.log("Receipt printed successfully!")
+    } else {
+      alert("Printer error — please check connection.")
+    }
+  } catch (err) {
+    console.error("Failed to print receipt:", err)
+    alert("Failed to print receipt.")
+  }
 }
 
 onMounted(() => {

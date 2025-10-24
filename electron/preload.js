@@ -2,7 +2,8 @@ const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('electron', {
   invoke: (channel, ...args) => ipcRenderer.invoke(channel, ...args),
-});
+  printReceipt: (html) => ipcRenderer.invoke('print-receipt', html),
+})
 
 contextBridge.exposeInMainWorld('auth', {
   login: (credentials) => ipcRenderer.invoke('login', credentials),

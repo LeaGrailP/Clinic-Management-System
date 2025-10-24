@@ -1,5 +1,5 @@
 import { createRenderer, getRequestDependencies, getPreloadLinks, getPrefetchLinks } from 'vue-bundle-renderer/runtime';
-import { j as joinRelativeURL, u as useRuntimeConfig, g as getResponseStatusText, c as getResponseStatus, e as defineRenderHandler, f as getQuery, h as createError, i as getRouteRules, b as useNitroApp } from '../_/nitro.mjs';
+import { j as joinRelativeURL, u as useRuntimeConfig, g as getResponseStatusText, c as getResponseStatus, e as defineRenderHandler, f as getQuery, h as createError, i as getRouteRules, r as relative, k as joinURL, b as useNitroApp } from '../_/nitro.mjs';
 import { createHead as createHead$1, propsToString, renderSSRHead } from 'unhead/server';
 import { stringify, uneval } from 'devalue';
 import { toValue, isRef } from 'vue';
@@ -182,12 +182,15 @@ function setSSRError(ssrContext, error) {
 
 const renderSSRHeadOptions = {"omitLineBreaks":false};
 
+const entryFileName = "DHcfaAtN.js";
+
 globalThis.__buildAssetsURL = buildAssetsURL;
 globalThis.__publicAssetsURL = publicAssetsURL;
 const HAS_APP_TELEPORTS = !!(appTeleportAttrs.id);
 const APP_TELEPORT_OPEN_TAG = HAS_APP_TELEPORTS ? `<${appTeleportTag}${propsToString(appTeleportAttrs)}>` : "";
 const APP_TELEPORT_CLOSE_TAG = HAS_APP_TELEPORTS ? `</${appTeleportTag}>` : "";
 const PAYLOAD_URL_RE = /^[^?]*\/_payload.json(?:\?.*)?$/ ;
+let entryPath;
 const renderer = defineRenderHandler(async (event) => {
   const nitroApp = useNitroApp();
   const ssrError = event.path.startsWith("/__nuxt_error") ? getQuery(event) : null;
@@ -237,6 +240,28 @@ const renderer = defineRenderHandler(async (event) => {
   }
   const NO_SCRIPTS = routeOptions.noScripts;
   const { styles, scripts } = getRequestDependencies(ssrContext, renderer.rendererContext);
+  if (!NO_SCRIPTS) {
+    let path = entryPath;
+    if (!path) {
+      path = buildAssetsURL(entryFileName);
+      if (ssrContext.runtimeConfig.app.cdnURL || /^(?:\/|\.+\/)/.test(path)) {
+        entryPath = path;
+      } else {
+        path = relative(event.path.replace(/\/[^/]+$/, "/"), joinURL("/", path));
+        if (!/^(?:\/|\.+\/)/.test(path)) {
+          path = `./${path}`;
+        }
+      }
+    }
+    ssrContext.head.push({
+      script: [{
+        tagPosition: "head",
+        tagPriority: -2,
+        type: "importmap",
+        innerHTML: JSON.stringify({ imports: { "#entry": path } })
+      }]
+    }, headEntryOptions);
+  }
   if (ssrContext._preloadManifest && !NO_SCRIPTS) {
     ssrContext.head.push({
       link: [
@@ -308,7 +333,14 @@ const renderer = defineRenderHandler(async (event) => {
   };
 });
 function normalizeChunks(chunks) {
-  return chunks.filter(Boolean).map((i) => i.trim());
+  const result = [];
+  for (const _chunk of chunks) {
+    const chunk = _chunk?.trim();
+    if (chunk) {
+      result.push(chunk);
+    }
+  }
+  return result;
 }
 function joinTags(tags) {
   return tags.join("");

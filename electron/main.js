@@ -3,7 +3,8 @@ const fs = require('fs')
 const path = require('path')
 const bcrypt = require('bcryptjs')
 const Database = require('better-sqlite3')
-
+const { ThermalPrinter, PrinterTypes } = require('node-thermal-printer')
+const escposUSB = require('escpos-usb')
 let db
 
 // -------------------- DATABASE INIT --------------------
@@ -290,6 +291,99 @@ ipcMain.handle('save-product-image', async (event, { imageName, buffer }) => {
   })
 
   console.log('All IPC handlers registered')
+})
+//PrintReceipts//
+ipcMain.handle('print-receipt', async (event, html) => {
+  const win = BrowserWindow.fromWebContents(event.sender)
+
+  try {
+    // Create a hidden print window
+    const printWin = new BrowserWindow({ show: false })
+    await printWin.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`)
+
+    printWin.webContents.on('did-finish-load', () => {
+      printWin.webContents.print(
+        {
+          silent: true,
+          deviceName: 'POS58', // 👈 must match the printer name in Windows
+        },
+        (success, failureReason) => {
+          if (!success) console.error('Print failed:', failureReason)
+          printWin.close()
+        }
+      )
+    })
+  } catch (err) {
+    console.error('Error printing:', err)
+  }
+})
+//testprintreceipt//
+ipcMain.handle('print-receipt', async (event, data) => {
+  try {
+    // data will come as { header, items, totals, tendered, change }
+    const printer = new ThermalPrinter({
+      type: PrinterTypes.EPSON,
+      interface: new escposUSB(),  // auto-detect first USB printer
+      driver: escposUSB,
+      options: {
+        timeout: 5000
+      }
+    })
+
+    const isConnected = await printer.isPrinterConnected()
+    if (!isConnected) {
+      throw new Error('Thermal printer not connected')
+    }
+
+    printer.alignCenter()
+    printer.bold(true)
+    printer.println(data.header?.storeName || "FETHEA POS")
+    printer.bold(false)
+    printer.println(data.header?.address || "Pico, La Trinidad")
+    printer.println("VAT REG TIN: 001-001-001-000")
+    printer.drawLine()
+
+    printer.alignLeft()
+    printer.println(`Cashier: ${data.header?.cashier || "Unknown"}`)
+    printer.println(`Date: ${data.header?.date}`)
+    printer.println(`Invoice #: ${data.header?.invoiceNumber}`)
+    printer.drawLine()
+
+    printer.bold(true)
+    printer.println("QTY   ITEM                AMOUNT")
+    printer.bold(false)
+    printer.drawLine()
+
+    data.items.forEach(item => {
+      const name = item.productname?.substring(0, 15).padEnd(16, ' ')
+      const qty = String(item.quantity).padStart(2, ' ')
+      const total = item.total.toFixed(2).padStart(8, ' ')
+      printer.println(`${qty}x ${name} ₱${total}`)
+    })
+
+    printer.drawLine()
+    printer.bold(true)
+    printer.println(`TOTAL: ₱${data.totals.total.toFixed(2)}`)
+    printer.bold(false)
+    printer.println(`Discount: ${data.totals.discount}%`)
+    printer.println(`Tendered: ₱${data.tendered.toFixed(2)}`)
+    printer.println(`Change:   ₱${data.change.toFixed(2)}`)
+    printer.drawLine()
+
+    printer.alignCenter()
+    printer.println("Thank you for shopping!")
+    printer.println("No returns without receipt.")
+    printer.newLine()
+    printer.cut()
+    printer.openCashDrawer()
+
+    await printer.execute()
+
+    return true
+  } catch (err) {
+    console.error("Print failed:", err)
+    return false
+  }
 })
 //SAVE RECEIPTS AS PDF//
 ipcMain.handle("export-invoices-pdf", async (event, invoices) => {
