@@ -1,11 +1,16 @@
 const { app, BrowserWindow, ipcMain } = require('electron')
 const fs = require('fs')
+const os = require("os")
 const path = require('path')
 const bcrypt = require('bcryptjs')
 const Database = require('better-sqlite3')
-const { ThermalPrinter, PrinterTypes } = require('node-thermal-printer')
-const escposUSB = require('escpos-usb')
+
 let db
+
+// -------------------- APP READY --------------------
+app.whenReady().then(() => {
+  db = initDB()
+  createWindow()
 
 // -------------------- DATABASE INIT --------------------
 function initDB() {
@@ -102,12 +107,6 @@ function createWindow() {
 
   win.loadURL('http://localhost:3000') // Nuxt dev/build URL
 }
-
-// -------------------- APP READY --------------------
-app.whenReady().then(() => {
-  db = initDB()
-  createWindow()
-
   // -------------------- USERS --------------------
   ipcMain.handle('login', async (_event, { name, password }) => {
     try {
@@ -292,99 +291,6 @@ ipcMain.handle('save-product-image', async (event, { imageName, buffer }) => {
 
   console.log('All IPC handlers registered')
 })
-//PrintReceipts//
-ipcMain.handle('print-receipt', async (event, html) => {
-  const win = BrowserWindow.fromWebContents(event.sender)
-
-  try {
-    // Create a hidden print window
-    const printWin = new BrowserWindow({ show: false })
-    await printWin.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`)
-
-    printWin.webContents.on('did-finish-load', () => {
-      printWin.webContents.print(
-        {
-          silent: true,
-          deviceName: 'POS58', // 👈 must match the printer name in Windows
-        },
-        (success, failureReason) => {
-          if (!success) console.error('Print failed:', failureReason)
-          printWin.close()
-        }
-      )
-    })
-  } catch (err) {
-    console.error('Error printing:', err)
-  }
-})
-//testprintreceipt//
-ipcMain.handle('print-receipt', async (event, data) => {
-  try {
-    // data will come as { header, items, totals, tendered, change }
-    const printer = new ThermalPrinter({
-      type: PrinterTypes.EPSON,
-      interface: new escposUSB(),  // auto-detect first USB printer
-      driver: escposUSB,
-      options: {
-        timeout: 5000
-      }
-    })
-
-    const isConnected = await printer.isPrinterConnected()
-    if (!isConnected) {
-      throw new Error('Thermal printer not connected')
-    }
-
-    printer.alignCenter()
-    printer.bold(true)
-    printer.println(data.header?.storeName || "FETHEA POS")
-    printer.bold(false)
-    printer.println(data.header?.address || "Pico, La Trinidad")
-    printer.println("VAT REG TIN: 001-001-001-000")
-    printer.drawLine()
-
-    printer.alignLeft()
-    printer.println(`Cashier: ${data.header?.cashier || "Unknown"}`)
-    printer.println(`Date: ${data.header?.date}`)
-    printer.println(`Invoice #: ${data.header?.invoiceNumber}`)
-    printer.drawLine()
-
-    printer.bold(true)
-    printer.println("QTY   ITEM                AMOUNT")
-    printer.bold(false)
-    printer.drawLine()
-
-    data.items.forEach(item => {
-      const name = item.productname?.substring(0, 15).padEnd(16, ' ')
-      const qty = String(item.quantity).padStart(2, ' ')
-      const total = item.total.toFixed(2).padStart(8, ' ')
-      printer.println(`${qty}x ${name} ₱${total}`)
-    })
-
-    printer.drawLine()
-    printer.bold(true)
-    printer.println(`TOTAL: ₱${data.totals.total.toFixed(2)}`)
-    printer.bold(false)
-    printer.println(`Discount: ${data.totals.discount}%`)
-    printer.println(`Tendered: ₱${data.tendered.toFixed(2)}`)
-    printer.println(`Change:   ₱${data.change.toFixed(2)}`)
-    printer.drawLine()
-
-    printer.alignCenter()
-    printer.println("Thank you for shopping!")
-    printer.println("No returns without receipt.")
-    printer.newLine()
-    printer.cut()
-    printer.openCashDrawer()
-
-    await printer.execute()
-
-    return true
-  } catch (err) {
-    console.error("Print failed:", err)
-    return false
-  }
-})
 //SAVE RECEIPTS AS PDF//
 ipcMain.handle("export-invoices-pdf", async (event, invoices) => {
   const rows = invoices.map(inv => `
@@ -443,6 +349,97 @@ ipcMain.handle("export-invoices-pdf", async (event, invoices) => {
   pdfWin.close();
 
   return filePath;
+});
+//check printers//
+ipcMain.handle("check-printer-status", async () => {
+  try {
+    const win = BrowserWindow.getAllWindows()[0];
+    if (!win) throw new Error("No active window");
+
+    const printers = await win.webContents.getPrintersAsync();
+    console.log("🖨 Installed printers:", printers.map(p => p.name));
+
+    const posPrinter = printers.find(p => p.name === "POS58_Generic");
+    if (!posPrinter) {
+      console.warn("⚠️ POS58 printer not found in system.");
+      return { success: true, connected: false, message: "Printer not found" };
+    }
+
+    return { success: true, connected: true, message: "POS58 printer is available" };
+  } catch (err) {
+    console.error("Printer check error:", err);
+    return { success: false, message: err.message };
+  }
+});
+//PrintReceipts//
+ipcMain.handle("print-receipt", async (event, html) => {
+  console.log("🧾 Received print request from renderer");
+
+  try {
+    // Sanitize the HTML (no scripts/styles)
+    const cleanHTML = html
+      .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, "")
+      .replace(/<style[\s\S]*?>[\s\S]*?<\/style>/gi, "")
+      .replace(/<link[^>]*>/gi, "")
+      .replace(/on\w+="[^"]*"/gi, "");
+
+    // Wrap in minimal printable document
+    const wrappedHTML = `
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  body { margin: 0; font-family: Arial, sans-serif; font-size: 12px; }
+  table { border-collapse: collapse; width: 100%; }
+  td, th { padding: 2px; text-align: left; }
+</style>
+</head>
+<body>
+${cleanHTML}
+</body>
+</html>`;
+
+    // Write to temporary local file
+    const debugFile = path.join(os.tmpdir(), "receipt_print.html");
+    fs.writeFileSync(debugFile, wrappedHTML, "utf8");
+
+    // Load hidden window
+    const printWin = new BrowserWindow({
+      width: 300,
+      height: 600,
+      show: false,
+    });
+
+    await printWin.loadFile(debugFile);
+
+    // Silent print
+    const printerName = "POS58_Generic";
+    await new Promise((resolve) => {
+      printWin.webContents.print(
+        {
+          silent: true,
+          printBackground: false,
+          deviceName: printerName,
+        },
+        (success, failureReason) => {
+          if (!success) {
+            console.error("⚠️ Print failed:", failureReason);
+            resolve({ success: false, message: failureReason });
+          } else {
+            console.log("🎉 Receipt printed successfully");
+            resolve({ success: true });
+          }
+          setTimeout(() => printWin.close(), 1000);
+        }
+      );
+    });
+
+    return { success: true, message: "Printed successfully" };
+  } catch (err) {
+    console.error("❌ Print handler error:", err);
+    return { success: false, message: err.message };
+  }
 });
 // -------------------- APP CLOSE --------------------
 app.on('window-all-closed', () => {

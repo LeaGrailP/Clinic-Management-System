@@ -157,10 +157,11 @@
       <button @click="clearInvoice" class="w-full bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg shadow">Cancel Transaction</button>
       <button class="w-full bg-gray-500 hover:bg-gray-600 text-white py-2 px-4 rounded-lg shadow">Open Drawer</button>
       <button @click="printReceipt" class="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg shadow">Print Receipt</button>
+      <button @click="checkPrinter">Check Printer</button>
     </div>
 
 <!-- POS Receipt Template (hidden, for printing) -->
-<div ref="receipt" class="receipt-container p-4 font-mono hidden">
+<div ref="receipt" class="receipt-container font-mono hidden">
   <div class="text-center mb-2">
     <div class="text-lg font-bold">FETHEA POS</div>
     <div>Pico, La Trinidad</div>
@@ -172,52 +173,89 @@
 
   <hr />
 
-  <!-- Receipt Header -->
+  <!-- Header -->
   <div class="flex font-bold border-b border-black pb-1 mb-1">
     <span class="w-8 text-left">Qty</span>
-    <span class="flex-1 text-left">Description</span>
+    <span class="flex-1 text-left">Item</span>
     <span class="w-12 text-right">Price</span>
-    <span class="w-12 text-right">Amount</span>
+    <span class="w-12 text-right">Total</span>
   </div>
 
-  <!-- Receipt Items -->
-  <div v-for="p in selectedProducts" :key="p.id" class="mb-1">
-    <div class="flex">
-      <span class="w-8">{{ p.quantity }}</span>
-      <span class="flex-1 break-words">
-        {{ p.productname }}
-      </span>
-      <span class="w-12 text-right">{{ formatCurrency(p.price) }}</span>
-      <span class="w-12 text-right">{{ formatCurrency(p.total) }}</span>
-    </div>
+  <!-- Items -->
+  <div
+    v-for="p in selectedProducts"
+    :key="p.id"
+    class="mb-1 flex justify-between"
+  >
+    <span class="w-8 text-left">{{ p.quantity }}</span>
+    <span class="flex-1 text-left">{{ p.productname }}</span>
+    <span class="w-12 text-right">PHP {{ p.price.toFixed(2) }}</span>
+    <span class="w-12 text-right">PHP {{ p.total.toFixed(2) }}</span>
   </div>
 
   <hr />
 
   <!-- Totals -->
-  <div class="flex justify-between"><span>Discount:</span><span>{{ formatCurrency(discount) }}</span></div>
-  <div class="flex justify-between"><span>Subtotal:</span><span>{{ formatCurrency(subtotal) }}</span></div>
-  <div class="flex justify-between font-bold text-lg"><span>Total:</span><span>{{ formatCurrency(totals.total) }}</span></div>
+  <div class="space-y-1">
+    <div class="flex justify-between">
+      <span>Discount:</span>
+      <span>PHP {{ discount.toFixed(2) }}</span>
+    </div>
+    <div class="flex justify-between">
+      <span>Subtotal:</span>
+      <span>PHP {{ subtotal.toFixed(2) }}</span>
+    </div>
+    <div class="flex justify-between font-bold text-lg">
+      <span>Total:</span>
+      <span>PHP {{ totals.total.toFixed(2) }}</span>
+    </div>
+  </div>
 
   <hr />
 
-  <!-- Payment -->
-  <div class="flex justify-between"><span>Payment:</span><span>Cash</span></div>
-  <div class="flex justify-between"><span>Tendered:</span><span>{{ formatCurrency(tendered) }}</span></div>
-  <div class="flex justify-between"><span>Change:</span><span>{{ formatCurrency(change) }}</span></div>
+  <!-- Payment Info -->
+  <div class="space-y-1">
+    <div class="flex justify-between">
+      <span>Payment:</span>
+      <span>Cash</span>
+    </div>
+    <div class="flex justify-between">
+      <span>Tendered:</span>
+      <span>PHP {{ tendered.toFixed(2) }}</span>
+    </div>
+    <div class="flex justify-between">
+      <span>Change:</span>
+      <span>PHP {{ change.toFixed(2) }}</span>
+    </div>
+  </div>
 
   <hr />
 
-  <!-- VAT breakdown -->
-  <div class="flex justify-between"><span>VAT SALES:</span><span>{{ formatCurrency(totals.vat_sales) }}</span></div>
-  <div class="flex justify-between"><span>12% VAT Amount:</span><span>{{ formatCurrency(totals.vat_amount) }}</span></div>
-  <div class="flex justify-between"><span>VAT EXEMPT SALES:</span><span>{{ formatCurrency(totals.vat_exempt_sales) }}</span></div>
-  <div class="flex justify-between"><span>ZERO RATED SALES:</span><span>{{ formatCurrency(totals.zero_rated_sales) }}</span></div>
+  <!-- VAT -->
+  <div class="space-y-1 text-xs">
+    <div class="flex justify-between">
+      <span>VAT Sales:</span>
+      <span>PHP {{ totals.vat_sales.toFixed(2) }}</span>
+    </div>
+    <div class="flex justify-between">
+      <span>12% VAT:</span>
+      <span>PHP {{ totals.vat_amount.toFixed(2) }}</span>
+    </div>
+    <div class="flex justify-between">
+      <span>VAT Exempt:</span>
+      <span>PHP {{ totals.vat_exempt_sales.toFixed(2) }}</span>
+    </div>
+    <div class="flex justify-between">
+      <span>Zero Rated:</span>
+      <span>PHP {{ totals.zero_rated_sales.toFixed(2) }}</span>
+    </div>
+  </div>
 
   <hr />
 
-  <div class="text-center text-sm mt-2">
-    Thank you for shopping!<br/>
+  <!-- Footer -->
+  <div class="text-center text-xs mt-2 leading-tight">
+    Thank you for shopping!<br />
     No returns without receipt.
   </div>
 </div>
@@ -281,7 +319,7 @@ function addProductToInvoice(product) {
     selectedProducts.value.push({
       ...product,
       quantity: 1,
-      unitPrice: product.price || product.total, // ensure per-unit price
+      unitPrice: product.price || product.total, 
       total: product.price || product.total
     })
   }
@@ -370,36 +408,41 @@ async function saveInvoice() {
     console.error("Failed to save invoice:", err);
   }
 }
-
-async function printReceipt() {
-  if (!selectedProducts.value.length) {
-    return alert("No products to print!");
-  }
-
-  const data = {
-    header: {
-      storeName: "FETHEA POS",
-      address: "Pico, La Trinidad",
-      cashier: issuedBy.value,
-      date: `${invoiceDate.value} ${invoiceTime.value}`,
-      invoiceNumber: invoiceNumber.value,
-    },
-    items: selectedProducts.value,
-    totals: totals,
-    tendered: tendered.value,
-    change: change.value,
-  }
-
+async function checkPrinter() {
   try {
-    const success = await window.electron.invoke("print-receipt", data)
-    if (success) {
-      console.log("Receipt printed successfully!")
+    const result = await window.electron.invoke('check-printer-status')
+    if (result.success) {
+      alert(result.connected ? '✅ Printer detected!' : '❌ Printer not detected.')
     } else {
-      alert("Printer error — please check connection.")
+      alert('⚠️ Error: ' + result.error)
     }
   } catch (err) {
-    console.error("Failed to print receipt:", err)
-    alert("Failed to print receipt.")
+    console.error('Printer check failed:', err)
+  }
+}
+async function printReceipt() {
+  try {
+    console.log("🖨 printReceipt() clicked");
+
+    const html = receipt.value?.outerHTML;
+    if (!html) {
+      alert("Receipt template not found!");
+      return;
+    }
+
+    console.log("📤 Sending receipt HTML to main process...");
+    const result = await window.electron.printReceipt(html); // send raw HTML
+
+    console.log("✅ Result from main:", result);
+
+    if (result === "printed successfully" || result?.success) {
+      alert("🖨 Receipt printed successfully!");
+    } else {
+      alert("⚠️ Print failed: " + (result?.message || result));
+    }
+  } catch (err) {
+    console.error("❌ Error printing:", err);
+    alert("Error printing: " + err.message);
   }
 }
 
@@ -417,19 +460,31 @@ onMounted(() => {
 .receipt-container {
   width: 280px;
   font-size: 12px;
-  line-height: 1.2;
+  line-height: 1.4;
+  padding: 8px;
 }
+
 .flex {
   display: flex;
   justify-content: space-between;
+  align-items: baseline;
 }
-.break-words {
-  white-space: normal;
-  word-break: break-word;
-}
+
 hr {
   border: none;
   border-top: 1px dashed black;
-  margin: 4px 0;
+  margin: 6px 0;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.space-y-1 > * + * {
+  margin-top: 4px;
+}
+
+.mb-1 {
+  margin-bottom: 4px;
 }
 </style>
