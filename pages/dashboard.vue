@@ -160,104 +160,67 @@
       <button @click="checkPrinter">Check Printer</button>
     </div>
 
-<!-- POS Receipt Template (hidden, for printing) -->
-<div ref="receipt" class="receipt-container font-mono hidden">
-  <div class="text-center mb-2">
-    <div class="text-lg font-bold">FETHEA POS</div>
-    <div>Pico, La Trinidad</div>
-    <div>VAT REG TIN: 001-001-001-000</div>
-    <div>CASHIER: {{ issuedBy }}</div>
-    <div>Date: {{ invoiceDate }} {{ invoiceTime }}</div>
-    <div>Invoice #: {{ invoiceNumber }}</div>
+<!-- POS Receipt Template (optimized for 58mm text-only printer) -->
+<div ref="receipt" style="font-family: monospace; font-size:12px; width:280px;">
+  <div style="text-align:center;">
+    FELTHEA POS<br>
+    Pico, La Trinidad<br>
+    VAT REG TIN: 001-001-001-000<br>
+    CASHIER: {{ issuedBy }}<br>
+    DATE: {{ invoiceDate }} {{ invoiceTime }}<br>
+    INVOICE #: {{ invoiceNumber }}<br>
   </div>
 
-  <hr />
+  <div style="text-align:center;">--------------------------------</div>
 
   <!-- Header -->
-  <div class="flex font-bold border-b border-black pb-1 mb-1">
-    <span class="w-8 text-left">Qty</span>
-    <span class="flex-1 text-left">Item</span>
-    <span class="w-12 text-right">Price</span>
-    <span class="w-12 text-right">Total</span>
+  <div style="font-weight:bold;">
+    QTY ITEM                 AMT
   </div>
+  <div style="text-align:center;">--------------------------------</div>
 
-  <!-- Items -->
-  <div
-    v-for="p in selectedProducts"
-    :key="p.id"
-    class="mb-1 flex justify-between"
-  >
-    <span class="w-8 text-left">{{ p.quantity }}</span>
-    <span class="flex-1 text-left">{{ p.productname }}</span>
-    <span class="w-12 text-right">PHP {{ p.price.toFixed(2) }}</span>
-    <span class="w-12 text-right">PHP {{ p.total.toFixed(2) }}</span>
-  </div>
-
-  <hr />
+  <!-- Product List -->
+ <div v-for="(line, i) in formattedLines" :key="i">{{ line }}</div>
+  <div style="text-align:center;">--------------------------------</div>
 
   <!-- Totals -->
-  <div class="space-y-1">
-    <div class="flex justify-between">
-      <span>Discount:</span>
-      <span>PHP {{ discount.toFixed(2) }}</span>
-    </div>
-    <div class="flex justify-between">
-      <span>Subtotal:</span>
-      <span>PHP {{ subtotal.toFixed(2) }}</span>
-    </div>
-    <div class="flex justify-between font-bold text-lg">
-      <span>Total:</span>
-      <span>PHP {{ totals.total.toFixed(2) }}</span>
-    </div>
+  <div>
+    Discount:       {{ discount.toFixed(2).padStart(10) }}<br>
+    Subtotal:       {{ subtotal.toFixed(2).padStart(10) }}<br>
+    TOTAL:          {{ totals.total.toFixed(2).padStart(10) }}<br>
   </div>
 
-  <hr />
+  <div style="text-align:center;">--------------------------------</div>
 
   <!-- Payment Info -->
-  <div class="space-y-1">
-    <div class="flex justify-between">
-      <span>Payment:</span>
-      <span>Cash</span>
-    </div>
-    <div class="flex justify-between">
-      <span>Tendered:</span>
-      <span>PHP {{ tendered.toFixed(2) }}</span>
-    </div>
-    <div class="flex justify-between">
-      <span>Change:</span>
-      <span>PHP {{ change.toFixed(2) }}</span>
-    </div>
+  <div>
+    Tendered:       {{ tendered.toFixed(2).padStart(10) }}<br>
+    Change:         {{ change.toFixed(2).padStart(10) }}<br>
   </div>
 
-  <hr />
+  <div style="text-align:center;">--------------------------------</div>
 
-  <!-- VAT -->
-  <div class="space-y-1 text-xs">
-    <div class="flex justify-between">
-      <span>VAT Sales:</span>
-      <span>PHP {{ totals.vat_sales.toFixed(2) }}</span>
-    </div>
-    <div class="flex justify-between">
-      <span>12% VAT:</span>
-      <span>PHP {{ totals.vat_amount.toFixed(2) }}</span>
-    </div>
-    <div class="flex justify-between">
-      <span>VAT Exempt:</span>
-      <span>PHP {{ totals.vat_exempt_sales.toFixed(2) }}</span>
-    </div>
-    <div class="flex justify-between">
-      <span>Zero Rated:</span>
-      <span>PHP {{ totals.zero_rated_sales.toFixed(2) }}</span>
-    </div>
+  <!-- VAT Info -->
+  <div style="font-size:11px;">
+    VAT SALES:      {{ totals.vat_sales.toFixed(2).padStart(10) }}<br>
+    12% VAT:        {{ totals.vat_amount.toFixed(2).padStart(10) }}<br>
+    VAT EXEMPT:     {{ totals.vat_exempt_sales.toFixed(2).padStart(10) }}<br>
+    ZERO RATED:     {{ totals.zero_rated_sales.toFixed(2).padStart(10) }}<br>
   </div>
 
-  <hr />
+  <div style="text-align:center;">--------------------------------</div>
+
+  <!-- Buyer Info -->
+  <div style="font-size:11px;">
+    BUYER NAME:<br>
+    BUYER ADDRESS:<br>
+    BUYER TIN:<br>
+  </div>
 
   <!-- Footer -->
-  <div class="text-center text-xs mt-2 leading-tight">
-    Thank you for shopping!<br />
-    No returns without receipt.
-  </div>
+  <div style="text-align:center;">Thank you for shopping!</div>
+  <div style="height:80px;"></div>
+  <br><br><br><br><br>
 </div>
   </div>
 </template>
@@ -431,7 +394,7 @@ async function printReceipt() {
     }
 
     console.log("📤 Sending receipt HTML to main process...");
-    const result = await window.electron.printReceipt(html); // send raw HTML
+    const result = await window.electron.printReceipt(html);
 
     console.log("✅ Result from main:", result);
 
@@ -445,7 +408,20 @@ async function printReceipt() {
     alert("Error printing: " + err.message);
   }
 }
+function formatLine(qty, name, total) {
+  qty = qty || 0
+  name = name || ''
+  total = total || 0
 
+  const qtyStr = String(qty).padEnd(4, ' ')
+  const nameStr = name.length > 18 ? name.slice(0, 18) : name.padEnd(18, ' ')
+  const totalStr = total.toFixed(2).padStart(10, ' ')
+  return `${qtyStr}${nameStr}${totalStr}`
+}
+
+const formattedLines = computed(() =>
+  selectedProducts.value.map(p => formatLine(p.quantity, p.productname, p.total))
+)
 onMounted(() => {
   updateClockAndDate()
   const clockInterval = setInterval(updateClockAndDate, 1000)
@@ -454,6 +430,7 @@ onMounted(() => {
   fetchProducts()
   generateInvoiceNumber()
 })
+
 </script>
 
 <style scoped>

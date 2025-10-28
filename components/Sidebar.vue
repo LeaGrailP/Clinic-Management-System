@@ -80,14 +80,6 @@ onMounted(() => {
         <span v-if="!props.collapsed">Create Account</span>
       </NuxtLink> 
       <NuxtLink
-        to="/appointment"
-        class="flex items-center space-x-3 px-3 py-2 rounded-md text-gray-700 hover:bg-sky-400 hover:text-black"
-        exact-active-class="bg-sky-400 text-black font-semibold"
-      >
-        <ListTodo class="w-5 h-5" />
-        <span v-if="!props.collapsed">Appointment</span>
-      </NuxtLink>
-      <NuxtLink
         to="/about"
         class="flex items-center space-x-3 px-3 py-2 rounded-md text-gray-700 hover:bg-sky-400 hover:text-black"
         exact-active-class="bg-sky-400 text-black font-semibold"

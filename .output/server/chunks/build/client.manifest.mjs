@@ -198,20 +198,6 @@ const client_manifest = {
       "node_modules/nuxt/dist/app/entry.js"
     ]
   },
-  "pages/appointment.vue": {
-    "resourceType": "script",
-    "module": true,
-    "prefetch": true,
-    "preload": true,
-    "file": "CoC55Xhu.js",
-    "name": "appointment",
-    "src": "pages/appointment.vue",
-    "isDynamicEntry": true,
-    "imports": [
-      "node_modules/nuxt/dist/app/entry.js",
-      "_Ca7fC-ZQ.js"
-    ]
-  },
   "pages/customer.vue": {
     "resourceType": "script",
     "module": true,

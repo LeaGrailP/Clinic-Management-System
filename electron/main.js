@@ -376,50 +376,65 @@ ipcMain.handle("print-receipt", async (event, html) => {
   console.log("🧾 Received print request from renderer");
 
   try {
-    // Sanitize the HTML (no scripts/styles)
+    // 🧹 Clean HTML but preserve layout elements
     const cleanHTML = html
       .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, "")
-      .replace(/<style[\s\S]*?>[\s\S]*?<\/style>/gi, "")
-      .replace(/<link[^>]*>/gi, "")
-      .replace(/on\w+="[^"]*"/gi, "");
+      .replace(/on\w+="[^"]*"/gi, ""); // remove inline JS
 
-    // Wrap in minimal printable document
-    const wrappedHTML = `
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<style>
-  body { margin: 0; font-family: Arial, sans-serif; font-size: 12px; }
-  table { border-collapse: collapse; width: 100%; }
-  td, th { padding: 2px; text-align: left; }
-</style>
-</head>
-<body>
-${cleanHTML}
-</body>
-</html>`;
+    // 🧩 Wrap inside consistent 58mm layout with print-safe CSS
+    const styledHTML = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="UTF-8" />
+          <style>
+            @page { margin: 0; size: 58mm auto; }
+            body {
+              font-family: 'Courier New', monospace;
+              font-size: 11px;
+              width: 58mm;
+              padding: 4px;
+              margin: 0;
+              white-space: pre-wrap;
+              line-height: 1.2;
+            }
+            div, p, span {
+              margin: 0;
+              padding: 0;
+            }
+            .center { text-align: center; }
+            .line { border-top: 1px dashed #000; margin: 4px 0; }
+          </style>
+        </head>
+        <body>
+          ${cleanHTML}
+          <div class="center line"></div>
+          <div class="center">*** END OF RECEIPT ***</div>
+          <div style="height:40px;"></div>
+        </body>
+      </html>
+    `;
 
-    // Write to temporary local file
-    const debugFile = path.join(os.tmpdir(), "receipt_print.html");
-    fs.writeFileSync(debugFile, wrappedHTML, "utf8");
+    // 📝 Write to temp file for debugging
+    const tmpFile = path.join(os.tmpdir(), "receipt_preview.html");
+    fs.writeFileSync(tmpFile, styledHTML, "utf8");
 
-    // Load hidden window
+    // 🪟 Hidden print window
     const printWin = new BrowserWindow({
       width: 300,
       height: 600,
       show: false,
     });
 
-    await printWin.loadFile(debugFile);
+    await printWin.loadFile(tmpFile);
 
-    // Silent print
+    // 🖨️ Print silently to POS printer
     const printerName = "POS58_Generic";
     await new Promise((resolve) => {
       printWin.webContents.print(
         {
           silent: true,
-          printBackground: false,
+          printBackground: true,
           deviceName: printerName,
         },
         (success, failureReason) => {
