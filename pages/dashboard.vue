@@ -156,8 +156,18 @@
       <button @click="saveInvoice" class="w-full bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg shadow">Save</button>
       <button @click="clearInvoice" class="w-full bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg shadow">Cancel Transaction</button>
       <button class="w-full bg-gray-500 hover:bg-gray-600 text-white py-2 px-4 rounded-lg shadow">Open Drawer</button>
+      <button @click="manualOpenDrawer" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-4 rounded-lg shadow">Open Cash Drawer</button>
       <button @click="printReceipt" class="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg shadow">Print Receipt</button>
       <button @click="checkPrinter">Check Printer</button>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <label>
+      Select Printer:
+      <select v-model="selectedPrinter" @change="savePrinter">
+      <option v-for="p in availablePrinters" :key="p" :value="p">{{ p }}</option>
+      </select>
+      </label>
     </div>
 
 <!-- POS Receipt Template (optimized for 58mm text-only printer) -->
@@ -247,6 +257,43 @@ const totals = reactive({
 const tendered = ref(0)
 const receipt = ref(null)
 
+const availablePrinters = ref([])
+const selectedPrinter = ref(localStorage.getItem("printerName") || "")
+
+// ---------- PRINTERS ----------
+async function fetchPrinters() {
+  try {
+    const result = await window.electron.invoke("list-printers")
+    if (!result.success) return console.warn("Failed to list printers:", result.message)
+
+    availablePrinters.value = result.printers
+
+    // Auto-select printer
+    if (!selectedPrinter.value || !availablePrinters.value.includes(selectedPrinter.value)) {
+      // fallback: first printer matching /pos/i
+      const fallback = availablePrinters.value.find(p => /pos/i.test(p)) || availablePrinters.value[0]
+      if (fallback) {
+        selectedPrinter.value = fallback
+        localStorage.setItem("printerName", fallback)
+        console.log("Auto-selected printer:", fallback)
+      } else {
+        selectedPrinter.value = ""
+        console.warn("No printers available for fallback")
+      }
+    }
+  } catch (err) {
+    console.error("Failed to fetch printers:", err)
+  }
+}
+
+function savePrinter() {
+  if (selectedPrinter.value) {
+    localStorage.setItem("printerName", selectedPrinter.value)
+    console.log("Printer saved:", selectedPrinter.value)
+  }
+}
+
+// ---------- FORMAT & UTILS ----------
 function formatCurrency(amount) {
   return new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(amount || 0)
 }
@@ -257,6 +304,7 @@ function updateClockAndDate() {
   invoiceTime.value = now.toTimeString().slice(0,5)
 }
 
+// ---------- PRODUCTS ----------
 async function fetchProducts() {
   try {
     products.value = await window.electron.invoke('get-products')
@@ -265,6 +313,7 @@ async function fetchProducts() {
   }
 }
 
+// ---------- INVOICES ----------
 async function generateInvoiceNumber() {
   try {
     invoiceNumber.value = await window.electron.invoke('generate-invoice-number')
@@ -299,11 +348,8 @@ function increaseQuantity(index) {
 function decreaseQuantity(index) {
   const p = selectedProducts.value[index]
   p.quantity -= 1
-  if (p.quantity <= 0) {
-    selectedProducts.value.splice(index, 1)
-  } else {
-    p.total = p.quantity * p.unitPrice
-  }
+  if (p.quantity <= 0) selectedProducts.value.splice(index, 1)
+  else p.total = p.quantity * p.unitPrice
   recalculateTotals()
 }
 
@@ -346,7 +392,7 @@ function clearInvoice() {
 }
 
 async function saveInvoice() {
-  if (!selectedProducts.value.length) return alert("No products added!");
+  if (!selectedProducts.value.length) return alert("No products added!")
 
   const payload = {
     date: invoiceDate.value,
@@ -358,61 +404,53 @@ async function saveInvoice() {
     zero_rated_sales: totals.zero_rated_sales,
     customer_name: issuedBy.value,
     items: JSON.stringify(selectedProducts.value),
-  };
+  }
 
   try {
-    const result = await window.electron.invoke("add-invoice", payload);
-
-    alert(`Invoice saved! Number: ${result.invoice_number}`);
-
-    clearInvoice();
-    generateInvoiceNumber();
+    const result = await window.electron.invoke("add-invoice", payload)
+    alert(`Invoice saved! Number: ${result.invoice_number}`)
+    clearInvoice()
+    generateInvoiceNumber()
   } catch (err) {
-    console.error("Failed to save invoice:", err);
+    console.error("Failed to save invoice:", err)
   }
 }
-async function checkPrinter() {
-  try {
-    const result = await window.electron.invoke('check-printer-status')
-    if (result.success) {
-      alert(result.connected ? '✅ Printer detected!' : '❌ Printer not detected.')
-    } else {
-      alert('⚠️ Error: ' + result.error)
-    }
-  } catch (err) {
-    console.error('Printer check failed:', err)
-  }
-}
+
+// ---------- PRINT ----------
 async function printReceipt() {
   try {
-    console.log("🖨 printReceipt() clicked");
+    if (!selectedPrinter.value) return alert("No printer selected!")
 
-    const html = receipt.value?.outerHTML;
-    if (!html) {
-      alert("Receipt template not found!");
-      return;
-    }
+    const html = receipt.value?.outerHTML
+    if (!html) return alert("Receipt template not found!")
 
-    console.log("📤 Sending receipt HTML to main process...");
-    const result = await window.electron.printReceipt(html);
+    const result = await window.electron.invoke("print-receipt", {
+      html,
+      printerName: selectedPrinter.value
+    })
 
-    console.log("✅ Result from main:", result);
-
-    if (result === "printed successfully" || result?.success) {
-      alert("🖨 Receipt printed successfully!");
-    } else {
-      alert("⚠️ Print failed: " + (result?.message || result));
-    }
+    if (!result.success) console.error("Print failed:", result.message)
+    else console.log("🖨 Receipt printed successfully")
   } catch (err) {
-    console.error("❌ Error printing:", err);
-    alert("Error printing: " + err.message);
+    console.error("❌ Error printing:", err)
   }
 }
+async function manualOpenDrawer() {
+  try {
+    const result = await window.electron.invoke("open-cash-drawer", selectedPrinter.value);
+    if (!result.success) {
+      alert("Failed to open drawer: " + result.message);
+    }
+  } catch (err) {
+    console.error(err);
+    alert("Error opening drawer: " + err.message);
+  }
+}
+
 function formatLine(qty, name, total) {
   qty = qty || 0
   name = name || ''
   total = total || 0
-
   const qtyStr = String(qty).padEnd(4, ' ')
   const nameStr = name.length > 18 ? name.slice(0, 18) : name.padEnd(18, ' ')
   const totalStr = total.toFixed(2).padStart(10, ' ')
@@ -422,15 +460,19 @@ function formatLine(qty, name, total) {
 const formattedLines = computed(() =>
   selectedProducts.value.map(p => formatLine(p.quantity, p.productname, p.total))
 )
+
+// ---------- INIT ----------
 onMounted(() => {
+  fetchPrinters()
+  fetchProducts()
+  generateInvoiceNumber()
   updateClockAndDate()
   const clockInterval = setInterval(updateClockAndDate, 1000)
   onBeforeUnmount(() => clearInterval(clockInterval))
 
-  fetchProducts()
-  generateInvoiceNumber()
+  // Optional: auto-refresh printers every 5 minutes
+  setInterval(fetchPrinters, 5 * 60 * 1000)
 })
-
 </script>
 
 <style scoped>
