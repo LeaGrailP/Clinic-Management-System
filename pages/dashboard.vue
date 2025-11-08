@@ -21,13 +21,13 @@
     </div>
 
     <!-- Sales Table + Totals -->
-    <div class="bg-sky-100 rounded-lg shadow p-6 border border-slate-400">
+    <div class="bg-sky-200 rounded-lg shadow p-6 border border-slate-200">
       <div class="flex flex-col lg:flex-row gap-6">
 
         <!-- Product List -->
         <div class="flex-1 overflow-auto">
           <table class="min-w-full border text-sm text-left">
-            <thead class="bg-sky-400 text-gray-800">
+            <thead class="bg-slate-200 text-gray-800">
               <tr>
                 <th class="px-4 py-2 border border-slate-400">Product List</th>
               </tr>
@@ -36,7 +36,7 @@
               <tr
                 v-for="product in products"
                 :key="product.id"
-                class="text-center hover:bg-sky-50 cursor-pointer"
+                class="text-center hover:bg-slate-200 cursor-pointer"
                 @click="addProductToInvoice(product)"
               >
                 <td class="p-2 border border-slate-400">{{ product.productname }}</td>
@@ -48,7 +48,7 @@
         <!-- Sales Table -->
         <div class="flex-1 overflow-auto">
           <table class="min-w-full border border-slate-400 text-sm text-left">
-            <thead class="bg-sky-300 text-gray-800">
+            <thead class="bg-slate-200 text-gray-800">
               <tr>
                 <th class="px-4 py-2 border border-slate-400">Product</th>
                 <th class="px-4 py-2 border border-slate-400">Quantity</th>
@@ -60,7 +60,7 @@
               <tr
                 v-for="(p, index) in selectedProducts"
                 :key="p.id"
-                class="text-center hover:bg-sky-50"
+                class="text-center hover:bg-slate-200"
               >
                 <td class="p-2 border border-slate-400">{{ p.productname }}</td>
                 <td class="p-2 border border-slate-400">{{ p.quantity }}</td>
