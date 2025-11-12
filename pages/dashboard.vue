@@ -187,7 +187,6 @@ onMounted(() => {
   window.addEventListener('footer-save', saveInvoice)
   window.addEventListener('footer-cancel', clearInvoice)
   window.addEventListener('footer-open-drawer', openCashDrawer)
-  window.addEventListener('footer-print', printReceipt)
   window.addEventListener('footer-check-printer', checkPrinter)
   window.addEventListener('footer-preview-receipt', () => showPreview.value = true)
 
@@ -196,7 +195,6 @@ onMounted(() => {
     window.removeEventListener('footer-save', saveInvoice)
     window.removeEventListener('footer-cancel', clearInvoice)
     window.removeEventListener('footer-open-drawer', openCashDrawer)
-    window.removeEventListener('footer-print', printReceipt)
     window.removeEventListener('footer-check-printer', checkPrinter)
     window.removeEventListener('footer-preview-receipt', () => showPreview.value = true)
   })
@@ -209,19 +207,19 @@ onMounted(() => {
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
       <div>
         <label class="block text-sm font-medium text-gray-700">Invoice Number:</label>
-        <input type="text" :value="invoiceNumber" readonly class="mt-1 w-full rounded-lg border-gray-300 shadow-sm focus:ring-sky-500 focus:border-sky-500"/>
+        <input type="text" :value="invoiceNumber" readonly class="mt-1 w-full rounded-lg bg-slate-200 border-slate-400 shadow-sm"/>
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-700">Issued By:</label>
-        <input type="text" :value="issuedBy" readonly class="mt-1 w-full rounded-lg border-gray-300 shadow-sm focus:ring-sky-500 focus:border-sky-500"/>
+        <input type="text" :value="issuedBy" readonly class="mt-1 w-full rounded-lg bg-slate-200 border-slate-400 shadow-sm"/>
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-700">Invoice Date:</label>
-        <input type="date" v-model="invoiceDate" readonly class="mt-1 w-full rounded-lg border-gray-300 shadow-sm focus:ring-sky-500 focus:border-sky-500"/>
+        <input type="date" v-model="invoiceDate" readonly class="mt-1 w-full rounded-lg bg-slate-200 border-slate-400 shadow-sm"/>
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-700">Invoice Time:</label>
-        <input type="time" v-model="invoiceTime" readonly class="mt-1 w-full rounded-lg border-gray-300 shadow-sm focus:ring-sky-500 focus:border-sky-500"/>
+        <input type="time" v-model="invoiceTime" readonly class="mt-1 w-full rounded-lg bg-slate-200 border-slate-400 shadow-sm"/>
       </div>
     </div>
 
@@ -268,14 +266,14 @@ onMounted(() => {
 
       <!-- Totals & Actions -->
       <div class="w-full lg:w-1/3 space-y-4">
-        <div class="bg-white p-4 rounded-lg shadow border border-gray-200 space-y-2">
+        <div class="bg-slate-50 p-4 rounded-lg shadow border border-gray-200 space-y-2">
           <div class="flex justify-between"><p class="font-bold text-lg">Total VAT Sales</p><p class="text-xl">{{ formatCurrency(totals.vat_sales) }}</p></div>
           <div class="flex justify-between"><p class="font-bold text-lg">Total VAT Amount</p><p class="text-xl">{{ formatCurrency(totals.vat_amount) }}</p></div>
           <div class="flex justify-between"><p class="font-bold text-lg">Total VAT-Exempt Sales</p><p class="text-xl">{{ formatCurrency(totals.vat_exempt_sales) }}</p></div>
           <div class="flex justify-between"><p class="font-bold text-lg">Total Zero-Rated Sales</p><p class="text-xl">{{ formatCurrency(totals.zero_rated_sales) }}</p></div>
         </div>
 
-        <div class="bg-white p-4 rounded-lg shadow border border-gray-200 space-y-2">
+        <div class="bg-slate-50 p-4 rounded-lg shadow border border-gray-200 space-y-2">
           <div class="flex justify-between items-center">
             <span class="font-bold">DISCOUNT</span>
             <input type="text" :value="totals.discount" @input="handleDiscountInput($event)" placeholder="0" class="w-28 text-right border rounded px-2 py-1"/>
@@ -287,11 +285,11 @@ onMounted(() => {
           <div class="flex justify-between items-center"><span class="font-bold">CHANGE</span><span>{{ formatCurrency(change) }}</span></div>
         </div>
 
-        <div class="bg-white p-4 rounded-lg shadow border border-gray-200 flex justify-between">
+        <div class="bg-slate-50 p-4 rounded-lg shadow border border-gray-200 flex justify-between">
           <span>TOTAL</span><span>{{ formatCurrency(totals.total || 0) }}</span>
         </div>
 
-        <div><router-link to="/transactions" class="text-blue-500 hover:underline">View All Invoices →</router-link></div>
+        <div><router-link to="/customer" class="text-blue-500 hover:underline">Add Customer →</router-link></div>
       </div>
     </div>
 

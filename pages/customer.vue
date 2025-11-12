@@ -1,5 +1,5 @@
 <template>
-  <div class="p-6 bg-gray-100 min-h-screen">
+  <div class="p-6 min-h-screen">
     <!-- Page Title -->
     <h1 class="text-2xl font-bold mb-4">Patient Records</h1>
 
@@ -239,6 +239,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+definePageMeta({ layout: 'default' })
 
 const showModal = ref(false) 
 

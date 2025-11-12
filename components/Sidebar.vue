@@ -39,8 +39,8 @@ onMounted(() => {
     <nav class="flex-1 p-2 space-y-1">
         <NuxtLink
         to="/dashboard"
-        class="flex items-center space-x-3 px-3 py-2 rounded-md text-gray-700 hover:bg-sky-400 hover:text-black"
-        exact-active-class="bg-sky-400 text-black font-semibold"
+        class="flex items-center space-x-3 px-3 py-2 rounded-md text-gray-700 hover:bg-slate-200 hover:text-black"
+        exact-active-class="bg-slate-100 text-black font-semibold"
       >
         <Home class="w-5 h-5" />
         <span v-if="!props.collapsed">Dashboard</span>
@@ -49,24 +49,24 @@ onMounted(() => {
       <NuxtLink
         v-if="user.role === 'admin'"
         to="/products"
-        class="flex items-center space-x-3 px-3 py-2 rounded-md text-gray-700 hover:bg-sky-400 hover:text-black"
-        exact-active-class="bg-sky-400 text-black font-semibold"
+        class="flex items-center space-x-3 px-3 py-2 rounded-md text-gray-700 hover:bg-slate-200 hover:text-black"
+        exact-active-class="bg-slate-100 text-black font-semibold"
       >
         <ShoppingCart class="w-5 h-5" />
         <span v-if="!props.collapsed">Products</span>
       </NuxtLink>
       <NuxtLink
         to="/customer"
-        class="flex items-center space-x-3 px-3 py-2 rounded-md text-gray-700 hover:bg-sky-400 hover:text-black"
-        exact-active-class="bg-sky-400 text-black font-semibold"
+        class="flex items-center space-x-3 px-3 py-2 rounded-md text-gray-700 hover:bg-slate-200 hover:text-black"
+        exact-active-class="bg-slate-100 text-black font-semibold"
       >
         <User class="w-5 h-5" />
         <span v-if="!props.collapsed">Customer</span>
       </NuxtLink>
       <NuxtLink
         to="/transactions"
-        class="flex items-center space-x-3 px-3 py-2 rounded-md text-gray-700 hover:bg-sky-400 hover:text-black"
-        exact-active-class="bg-sky-400 text-black font-semibold"
+        class="flex items-center space-x-3 px-3 py-2 rounded-md text-gray-700 hover:bg-slate-200 hover:text-black"
+        exact-active-class="bg-slate-100 text-black font-semibold"
       >
         <ArrowLeftRight class="w-5 h-5" />
         <span v-if="!props.collapsed">Transactions</span>
@@ -74,15 +74,15 @@ onMounted(() => {
       <NuxtLink
         v-if="user.role === 'admin'"
         to="/register"
-        class="flex items-center space-x-3 px-3 py-2 rounded-md text-gray-700 hover:bg-sky-400 hover:text-black"
-        exact-active-class="bg-sky-400 text-black font-semibold">
+        class="flex items-center space-x-3 px-3 py-2 rounded-md text-gray-700 hover:bg-slate-200 hover:text-black"
+        exact-active-class="bg-slate-100 text-black font-semibold">
         <LogIn class="w-5 h-5" />
         <span v-if="!props.collapsed">Create Account</span>
       </NuxtLink> 
       <NuxtLink
         to="/about"
-        class="flex items-center space-x-3 px-3 py-2 rounded-md text-gray-700 hover:bg-sky-400 hover:text-black"
-        exact-active-class="bg-sky-400 text-black font-semibold"
+        class="flex items-center space-x-3 px-3 py-2 rounded-md text-gray-700 hover:bg-slate-200 hover:text-black"
+        exact-active-class="bg-slate-100 text-black font-semibold"
       >
         <Info class="w-5 h-5" />
         <span v-if="!props.collapsed">About</span>
