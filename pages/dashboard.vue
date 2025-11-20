@@ -110,6 +110,31 @@ function formatLine(qty, name, total) {
   return `${qtyStr}${nameStr}${totalStr}`
 }
 
+// --- VALIDATION COMPUTED ---
+
+// no products added
+const isCartEmpty = computed(() => selectedProducts.value.length === 0);
+
+// tendered cash is invalid
+const isTenderInvalid = computed(() =>
+  !tendered.value || isNaN(tendered.value) || Number(tendered.value) <= 0
+);
+
+// tendered < total
+const isInsufficientCash = computed(() =>
+  Number(tendered.value) < Number(totals.total)
+);
+
+// main validation gate for printing
+const canPrint = computed(() =>
+  !isCartEmpty.value &&
+  !isTenderInvalid.value &&
+  !isInsufficientCash.value
+);
+
+// disables the Confirm/Print button
+const isPrintDisabled = computed(() => !canPrint.value);
+
 // --- ACTIONS ---
 function clearInvoice() {
   selectedProducts.value = []
@@ -149,14 +174,33 @@ async function checkPrinter() {
 }
 
 async function printReceipt() {
-  if (!receipt.value) return alert('Receipt template not found!')
+  if (!canPrint.value) return alert("Cannot print: missing or invalid inputs.");
+
+  if (!receipt.value) return alert("Receipt template not found!");
+
   try {
-    const html = receipt.value.outerHTML
-    const result = await window.electron.printReceipt(html)
-    alert(result.success ? '🖨 Receipt printed successfully!' : '❌ Print failed!')
+    const html = receipt.value.outerHTML;
+
+    // prevent double-click
+    if (isPrinting.value) return;
+    isPrinting.value = true;
+
+    const result = await window.electron.invoke("print-receipt", {
+      html,
+      openDrawer: true
+    });
+
+    if (!result.success) alert("❌ Print failed!");
+    else {
+      alert("🖨 Receipt printed successfully!");
+      clearInvoice(); // Auto-clear POS
+      generateInvoiceNumber(); // Next invoice number
+    }
   } catch (err) {
-    console.error(err)
-    alert('Error printing: ' + err.message)
+    console.error(err);
+    alert("Printing error: " + err.message);
+  } finally {
+    isPrinting.value = false;
   }
 }
 
@@ -205,21 +249,37 @@ onMounted(() => {
   <div class="bg-slate-50 min-h-screen p-6 space-y-6 pb-32">
     <!-- Invoice Info -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Invoice Number:</label>
-        <input type="text" :value="invoiceNumber" readonly class="mt-1 w-full rounded-lg bg-slate-200 border-slate-400 shadow-sm"/>
+      <div class="relative">
+        <input
+          v-model="invoiceNumber"
+          type="text"
+          readonly
+          class="peer block w-full appearance-none rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-0"/>
+        <label class="absolute left-3 -top-2 text-xs text-slate-600 bg-slate-50 px-1 transition-all peer-placeholder-shown:top-2 peer-placeholder-shown:text-sm peer-focus:-top-2 peer-focus:text-xs">Invoice Number</label>
       </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Issued By:</label>
-        <input type="text" :value="issuedBy" readonly class="mt-1 w-full rounded-lg bg-slate-200 border-slate-400 shadow-sm"/>
+      <div class="relative">
+        <input
+          v-model="issuedBy"
+          type="text"
+          readonly
+          class="peer block w-full appearance-none rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-0"/>
+        <label class="absolute left-3 -top-2 text-xs text-slate-600 bg-slate-50 px-1 transition-all peer-placeholder-shown:top-2 peer-placeholder-shown:text-sm peer-focus:-top-2 peer-focus:text-xs">Issued By</label>
       </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Invoice Date:</label>
-        <input type="date" v-model="invoiceDate" readonly class="mt-1 w-full rounded-lg bg-slate-200 border-slate-400 shadow-sm"/>
+      <div class="relative">
+        <input
+          v-model="invoiceDate"
+          type="text"
+          readonly
+          class="peer block w-full appearance-none rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-0"/>
+        <label class="absolute left-3 -top-2 text-xs text-slate-600 bg-slate-50 px-1 transition-all peer-placeholder-shown:top-2 peer-placeholder-shown:text-sm peer-focus:-top-2 peer-focus:text-xs">Date</label>
       </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Invoice Time:</label>
-        <input type="time" v-model="invoiceTime" readonly class="mt-1 w-full rounded-lg bg-slate-200 border-slate-400 shadow-sm"/>
+      <div class="relative">
+        <input
+          v-model="invoiceTime"
+          type="text"
+          readonly
+          class="peer block w-full appearance-none rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-0"/>
+        <label class="absolute left-3 -top-2 text-xs text-slate-600 bg-slate-50 px-1 transition-all peer-placeholder-shown:top-2 peer-placeholder-shown:text-sm peer-focus:-top-2 peer-focus:text-xs">Time</label>
       </div>
     </div>
 
@@ -263,7 +323,6 @@ onMounted(() => {
           </tbody>
         </table>
       </div>
-
       <!-- Totals & Actions -->
       <div class="w-full lg:w-1/3 space-y-4">
         <div class="bg-slate-50 p-4 rounded-lg shadow border border-gray-200 space-y-2">
@@ -282,7 +341,8 @@ onMounted(() => {
             <span class="font-bold">TENDERED</span>
             <input type="text" :value="tendered" @input="tendered = parseFloat($event.target.value) || 0; recalculateTotals()" placeholder="0.00" class="w-28 text-right border rounded px-2 py-1"/>
           </div>
-          <div class="flex justify-between items-center"><span class="font-bold">CHANGE</span><span>{{ formatCurrency(change) }}</span></div>
+          <div class="flex justify-between items-center space-y-2"><span class="font-bold">CHANGE</span><span>{{ formatCurrency(change) }}</span>
+          </div>
         </div>
 
         <div class="bg-slate-50 p-4 rounded-lg shadow border border-gray-200 flex justify-between">
@@ -348,16 +408,11 @@ onMounted(() => {
     <div class="flex justify-between mt-4">
       <button
         @click="showPreview = false"
-        class="w-1/2 mr-2 bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded shadow"
-      >
-        Cancel
+        class="w-1/2 mr-2 bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded shadow">Cancel
       </button>
 
-      <button
-        @click="printReceipt(); showPreview = false"
-        class="w-1/2 ml-2 bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded shadow"
-      >
-        Confirm
+      <button :disabled="isPrintDisabled" @click="if (canPrint) { printReceipt(); showPreview = false }"
+      class="w-1/2 ml-2 bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded shadow disabled:opacity-40">Confirm
       </button>
     </div>
   </div>

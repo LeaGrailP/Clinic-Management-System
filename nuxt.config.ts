@@ -16,7 +16,7 @@ export default defineNuxtConfig({
   ],
   postcss: {
     plugins: {
-      autoprefixer: {}, // ✅ only autoprefixer needed
+      autoprefixer: {}, 
     },
   },
   nitro: {
