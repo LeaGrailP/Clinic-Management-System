@@ -29,16 +29,16 @@ function forwardEvent(event) {
 </script>
 
 <template>
-  <div class="min-h-screen bg-slate-50">
+  <div class="min-h-screen bg-slate-50 dark:bg-slate-800">
     <Header
       v-if="!route.meta.hideHeader"
-      class="fixed top-0 left-0 right-0 h-12 z-20 bg-sky-100 shadow"
+      class="fixed top-0 left-0 right-0 h-12 z-20 "
     />
 
     <div class="pt-12 pb-8 flex">
       <Sidebar
         v-if="!route.meta.hideSidebar"
-        class="fixed top-12 bottom-8 left-0 z-10 bg-sky-200 border-r transition-all duration-300"
+        class="fixed top-12 bottom-8 left-0 z-10 bg-sky-200 dark:bg-gray-800 border-r transition-all duration-300"
         :collapsed="collapsed"
         @toggle="toggleSidebar"
       />

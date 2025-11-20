@@ -1,14 +1,20 @@
 <script setup>
-import { ref, reactive, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, reactive, computed, onMounted, onBeforeUnmount, watch } from 'vue'
+import BaseInput from '@/components/BaseInput.vue'
 
 definePageMeta({ showFooter: true })
 
-// --- STATE ---
-const issuedBy = ref(localStorage.getItem('name') || 'Unknown User')
-const invoiceDate = ref('')
-const invoiceTime = ref('')
-const invoiceNumber = ref('')
+const invoiceData = reactive({
+  invoiceNumber: '',
+  issuedBy: localStorage.getItem('name') || 'Unknown User',
+  invoiceDate: '',
+  invoiceTime: ''
+})
+
 const showPreview = ref(false)
+const productSearch = ref('')
+const debouncedSearch = ref('')       
+let searchDebounceTimer = null
 
 const products = ref([])
 const selectedProducts = ref([])
@@ -18,86 +24,229 @@ const totals = reactive({
   vat_amount: 0,
   vat_exempt_sales: 0,
   zero_rated_sales: 0,
-  discount: 0,
+  discount: 0, 
   total: 0
+})
+
+const discount = reactive({
+  type: '',   
+  name: '',
+  id_no: '',
+  manual: ''  
+})
+
+const customer = reactive({
+  name: '',
+  tin: ''
 })
 
 const tendered = ref(0)
 const receipt = ref(null)
+const isPrinting = ref(false)
 
-// --- UTILS ---
+//---UTILS---//
+function round(val) {
+  return Math.round(Number(val || 0) * 100) / 100
+}
+
 function formatCurrency(amount) {
-  return new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(amount || 0)
+  return new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(Number(amount) || 0)
 }
 
 function updateClockAndDate() {
   const now = new Date()
-  invoiceDate.value = now.toISOString().split('T')[0]
-  invoiceTime.value = now.toTimeString().slice(0, 5)
+  invoiceData.invoiceDate = now.toISOString().split('T')[0]
+  invoiceData.invoiceTime = now.toTimeString().slice(0, 5)
 }
 
-// --- FETCH & GENERATE ---
+watch(productSearch, (val) => {
+  if (searchDebounceTimer) clearTimeout(searchDebounceTimer)
+  searchDebounceTimer = setTimeout(() => {
+    debouncedSearch.value = String(val || '').trim().toLowerCase()
+  }, 250)
+})
+//---PRODUCTS---//
+const sortedProducts = computed(() => {
+  return products.value.slice().sort((a, b) =>
+    String(a.productname || '').localeCompare(String(b.productname || ''), undefined, { sensitivity: 'base' })
+  )
+})
+
+const filteredProducts = computed(() => {
+  if (!debouncedSearch.value) return sortedProducts.value
+  const q = debouncedSearch.value
+  return sortedProducts.value.filter(p =>
+    (p.productname || '').toLowerCase().includes(q) ||
+    (p.sku || '').toLowerCase().includes(q)
+  )
+})
+//---FETCH AND GENERATE---//
 async function fetchProducts() {
-  try { products.value = await window.electron.invoke('get-products') } 
-  catch (err) { console.error(err) }
+  try {
+    const res = await window.electron.invoke('get-products')
+    products.value = Array.isArray(res) ? res : []
+  } catch (err) {
+    console.error('fetchProducts:', err)
+  }
 }
 
 async function generateInvoiceNumber() {
-  try { invoiceNumber.value = await window.electron.invoke('generate-invoice-number') } 
-  catch (err) { console.error(err) }
+  try {
+    invoiceData.invoiceNumber = await window.electron.invoke('generate-invoice-number')
+  } catch (err) {
+    console.error('generateInvoiceNumber:', err)
+  }
 }
-
-// --- INVOICE FUNCTIONS ---
+//---CART AND QUANTITY---//
 function addProductToInvoice(product) {
+  if (!product || !product.id) return
   const existing = selectedProducts.value.find(p => p.id === product.id)
-  if (existing) { existing.quantity++; existing.total = existing.quantity * existing.unitPrice }
-  else selectedProducts.value.push({ ...product, quantity: 1, unitPrice: product.price || product.total, total: product.price || product.total })
-  recalculateTotals()
+  if (existing) {
+    existing.quantity += 1
+    existing.total = +(existing.quantity * existing.unitPrice)
+  } else {
+    const unitPrice = Number(product.price ?? product.total ?? 0)
+    selectedProducts.value.push({
+      ...product,
+      quantity: 1,
+      unitPrice,
+      total: unitPrice
+    })
+  }
 }
 
-function increaseQuantity(index) {
-  const p = selectedProducts.value[index]
-  p.quantity++; p.total = p.quantity * p.unitPrice
-  recalculateTotals()
+function increaseQuantity(i) {
+  const p = selectedProducts.value[i]
+  p.quantity++
+  p.total = round(p.quantity * p.price)
+  recalcTotals()
 }
 
-function decreaseQuantity(index) {
-  const p = selectedProducts.value[index]
-  p.quantity--; if (p.quantity <= 0) selectedProducts.value.splice(index, 1)
-  else p.total = p.quantity * p.unitPrice
-  recalculateTotals()
+function decreaseQuantity(i) {
+  const p = selectedProducts.value[i]
+  if (p.quantity > 1) {
+    p.quantity--
+    p.total = round(p.quantity * p.price)
+    recalcTotals()
+  }
+}
+//---CALCULATIONS---//
+function parseManualDiscount(value, baseAmount) {
+  if (value === null || value === undefined || value === '') return 0
+  const str = String(value).trim()
+  if (str.endsWith('%')) {
+    const pct = parseFloat(str.slice(0, -1))
+    if (isNaN(pct)) return 0
+    return Math.max(0, (baseAmount * pct) / 100)
+  }
+  const num = parseFloat(str)
+  if (isNaN(num)) return 0
+  if (num > 0 && num <= 100) {
+    return Math.max(0, (baseAmount * num) / 100)
+  }
+  return Math.max(0, num)
 }
 
-function recalculateTotals() {
-  totals.vat_sales = 0
-  totals.vat_amount = 0
-  totals.vat_exempt_sales = 0
-  totals.zero_rated_sales = 0
+function calculateDiscount() {
+  const subtotal = totals.subtotal
 
+  // Reset
+  discount.amount = 0
+  discount.rate = 0
+
+  if (!discount.type || subtotal === 0) return
+
+  // Senior Citizen / PWD (20% + VAT-exempt rule)
+  if (discount.type === 'SC' || discount.type === 'PWD') {
+    // Remove VAT first (divide by 1.12)
+    const base = subtotal / 1.12
+    discount.rate = 0.20
+    discount.amount = base * discount.rate
+    return
+  }
+
+  // Manual discount
+  if (discount.type === 'MANUAL') {
+    const raw = discount.raw.trim()
+
+    // If contains %, example: “10%”
+    if (raw.endsWith('%')) {
+      const num = parseFloat(raw.replace('%', ''))
+      if (!isNaN(num)) {
+        discount.rate = num / 100
+        discount.amount = subtotal * discount.rate
+      }
+    } 
+
+    // If fixed amount “50” or “100”
+    else {
+      const num = parseFloat(raw)
+      if (!isNaN(num)) {
+        discount.amount = num
+      }
+    }
+  }
+}
+
+function recalcTotalsInternal() {
   let subtotalVal = 0
-  selectedProducts.value.forEach(p => {
-    subtotalVal += p.total || 0
-    totals.vat_sales += (p.vatSales || 0) * (p.quantity || 1)
-    totals.vat_amount += (p.vatAmount || 0) * (p.quantity || 1)
-    totals.vat_exempt_sales += (p.vatExempt || 0) * (p.quantity || 1)
-    totals.zero_rated_sales += (p.zeroRated || 0) * (p.quantity || 1)
-  })
+  let vat_sales = 0
+  let vat_amount = 0
+  let vat_exempt_sales = 0
+  let zero_rated_sales = 0
 
-  totals.total = Math.max(subtotalVal - (subtotalVal * (totals.discount / 100)), 0)
+  for (const p of selectedProducts.value) {
+    const qty = Number(p.quantity || 0)
+    const unit = Number(p.unitPrice || p.price || 0)
+    const line = round(unit * qty)
+    p.total = line 
+    subtotalVal += line
+
+    vat_sales += (Number(p.vatSales || 0) * qty)
+    vat_amount += (Number(p.vatAmount || 0) * qty)
+    vat_exempt_sales += (Number(p.vatExempt || 0) * qty)
+    zero_rated_sales += (Number(p.zeroRated || 0) * qty)
+  }
+
+  let discountAmount = 0
+  if (discount.type === 'SC' || discount.type === 'PWD') {
+    const base = vat_sales
+    discountAmount = round(base * 0.20)
+  } else if (discount.type === 'MANUAL') {
+    discountAmount = round(parseManualDiscount(discount.manual, subtotalVal))
+  } else {
+    discountAmount = round(subtotalVal * (Number(totals.discount || 0) / 100))
+  }
+
+  if (discountAmount < 0) discountAmount = 0
+  if (discountAmount > subtotalVal) discountAmount = subtotalVal
+
+  const totalAfterDiscount = round(Math.max(0, subtotalVal - discountAmount))
+  const discountRatio = subtotalVal > 0 ? (totalAfterDiscount / subtotalVal) : 1
+
+  totals.vat_sales = round(vat_sales * discountRatio)
+  totals.vat_amount = round(vat_amount * discountRatio)
+  totals.vat_exempt_sales = round(vat_exempt_sales * discountRatio)
+  totals.zero_rated_sales = round(zero_rated_sales * discountRatio)
+  totals.total = totalAfterDiscount
+  totals._discountAmount = discountAmount
 }
+watch(selectedProducts, () => recalcTotalsInternal(), { deep: true })
+watch(() => [discount.type, discount.manual, totals.discount], () => recalcTotalsInternal())
+//---COMPUTED VALUES---//
+const subtotal = computed(() => selectedProducts.value.reduce((s, p) => s + Number(p.total || 0), 0))
 
-function handleDiscountInput(e) {
-  let val = parseFloat(e.target.value)
-  if (isNaN(val) || val < 0) val = 0
-  if (val > 100) val = 100
-  totals.discount = val
-  recalculateTotals()
-}
+const discountAmount = computed(() => {
+  const subtotalVal = subtotal.value
+  if (discount.type === 'SC' || discount.type === 'PWD') return +(totals.vat_sales * 0.20)
+  if (discount.type === 'MANUAL') return parseManualDiscount(discount.manual, subtotalVal)
+  return +(subtotalVal * (Number(totals.discount || 0) / 100))
+})
 
-// --- COMPUTED ---
-const subtotal = computed(() => selectedProducts.value.reduce((sum, p) => sum + p.total, 0))
-const discount = computed(() => subtotal.value * (totals.discount / 100))
-const change = computed(() => Math.max(tendered.value - totals.total, 0))
+const change = computed(() => {
+  const numTender = Number(tendered.value || 0)
+  return Math.max(0, numTender - Number(totals.total || 0))
+})
 
 const formattedLines = computed(() =>
   selectedProducts.value.map(p => formatLine(p.quantity, p.productname, p.total))
@@ -106,101 +255,75 @@ const formattedLines = computed(() =>
 function formatLine(qty, name, total) {
   const qtyStr = String(qty).padEnd(4, ' ')
   const nameStr = name.length > 18 ? name.slice(0, 18) : name.padEnd(18, ' ')
-  const totalStr = total.toFixed(2).padStart(10, ' ')
+  const totalStr = Number(total || 0).toFixed(2).padStart(10, ' ')
   return `${qtyStr}${nameStr}${totalStr}`
 }
+//---VALIDATION AND ACTIONS---//
+const isCartEmpty = computed(() => selectedProducts.value.length === 0)
+const isTenderInvalid = computed(() => !tendered.value || isNaN(tendered.value) || Number(tendered.value) <= 0)
+const isInsufficientCash = computed(() => Number(tendered.value) < Number(totals.total))
+const canPrint = computed(() => !isCartEmpty.value && !isTenderInvalid.value && !isInsufficientCash.value)
+const isPrintDisabled = computed(() => !canPrint.value)
 
-// --- VALIDATION COMPUTED ---
-
-// no products added
-const isCartEmpty = computed(() => selectedProducts.value.length === 0);
-
-// tendered cash is invalid
-const isTenderInvalid = computed(() =>
-  !tendered.value || isNaN(tendered.value) || Number(tendered.value) <= 0
-);
-
-// tendered < total
-const isInsufficientCash = computed(() =>
-  Number(tendered.value) < Number(totals.total)
-);
-
-// main validation gate for printing
-const canPrint = computed(() =>
-  !isCartEmpty.value &&
-  !isTenderInvalid.value &&
-  !isInsufficientCash.value
-);
-
-// disables the Confirm/Print button
-const isPrintDisabled = computed(() => !canPrint.value);
-
-// --- ACTIONS ---
 function clearInvoice() {
   selectedProducts.value = []
   totals.discount = 0
+  discount.type = ''
+  discount.manual = ''
   tendered.value = 0
-  recalculateTotals()
+  customer.name = ''
+  customer.tin = ''
+  recalcTotalsInternal()
 }
 
 async function saveInvoice() {
   if (!selectedProducts.value.length) return alert('No products added!')
-
   const payload = {
-    date: invoiceDate.value,
-    total: totals.total,
-    discount: totals.discount,
-    vat_sales: totals.vat_sales,
-    vat_amount: totals.vat_amount,
-    vat_exempt_sales: totals.vat_exempt_sales,
-    zero_rated_sales: totals.zero_rated_sales,
-    customer_name: issuedBy.value,
-    items: JSON.stringify(selectedProducts.value)
-  }
-
+  date: invoiceData.invoiceDate,
+  total: totals.total,
+  discount_amount: discountAmount.value,
+  discount_type: discount.type || 'NONE',
+  vat_sales: totals.vat_sales,
+  vat_amount: totals.vat_amount,
+  vat_exempt_sales: totals.vat_exempt_sales,
+  zero_rated_sales: totals.zero_rated_sales,
+  customer_name: customer.name || invoiceData.issuedBy,
+  items: JSON.stringify(selectedProducts.value)
+}
   try {
     const result = await window.electron.invoke('add-invoice', payload)
     alert(`Invoice saved! Number: ${result.invoice_number}`)
     clearInvoice()
     generateInvoiceNumber()
-  } catch (err) { console.error(err) }
+  } catch (err) { console.error('saveInvoice:', err) }
 }
 
 async function checkPrinter() {
   try {
     const result = await window.electron.invoke('check-printer-status')
     alert(result.connected ? '✅ Printer detected!' : '❌ Printer not detected.')
-  } catch (err) { console.error(err) }
+  } catch (err) { console.error('checkPrinter:', err) }
 }
 
 async function printReceipt() {
-  if (!canPrint.value) return alert("Cannot print: missing or invalid inputs.");
-
-  if (!receipt.value) return alert("Receipt template not found!");
-
+  if (!canPrint.value) return alert("Cannot print: missing or invalid inputs.")
+  if (!receipt.value) return alert("Receipt template not found!")
   try {
-    const html = receipt.value.outerHTML;
-
-    // prevent double-click
-    if (isPrinting.value) return;
-    isPrinting.value = true;
-
-    const result = await window.electron.invoke("print-receipt", {
-      html,
-      openDrawer: true
-    });
-
-    if (!result.success) alert("❌ Print failed!");
+    const html = receipt.value.outerHTML
+    if (isPrinting.value) return
+    isPrinting.value = true
+    const result = await window.electron.invoke("print-receipt", { html, openDrawer: true })
+    if (!result.success) alert("❌ Print failed!")
     else {
-      alert("🖨 Receipt printed successfully!");
-      clearInvoice(); // Auto-clear POS
-      generateInvoiceNumber(); // Next invoice number
+      alert("🖨 Receipt printed successfully!")
+      clearInvoice()
+      generateInvoiceNumber()
     }
   } catch (err) {
-    console.error(err);
-    alert("Printing error: " + err.message);
+    console.error('printReceipt:', err)
+    alert("Printing error: " + (err && err.message ? err.message : err))
   } finally {
-    isPrinting.value = false;
+    isPrinting.value = false
   }
 }
 
@@ -208,214 +331,244 @@ async function openCashDrawer() {
   try {
     await window.electron.invoke('open-cash-drawer')
     alert('Cash drawer opened!')
-  } catch (err) { alert('Failed to open drawer: ' + err.message) }
+  } catch (err) { alert('Failed to open drawer: ' + (err && err.message ? err.message : err)) }
 }
-
-// --- LIFECYCLE ---
-onMounted(() => {
-  updateClockAndDate()
-  const clockInterval = setInterval(updateClockAndDate, 1000)
-  onBeforeUnmount(() => clearInterval(clockInterval))
-
-  fetchProducts()
-  generateInvoiceNumber()
-})
+//---LIFECYCLE---//
 onMounted(() => {
   updateClockAndDate()
   const clockInterval = setInterval(updateClockAndDate, 1000)
 
   fetchProducts()
   generateInvoiceNumber()
+  recalcTotalsInternal()
 
-  // --- Listen to footer events ---
-  window.addEventListener('footer-save', saveInvoice)
-  window.addEventListener('footer-cancel', clearInvoice)
-  window.addEventListener('footer-open-drawer', openCashDrawer)
-  window.addEventListener('footer-check-printer', checkPrinter)
-  window.addEventListener('footer-preview-receipt', () => showPreview.value = true)
+  const handlers = {
+    save: saveInvoice,
+    cancel: clearInvoice,
+    drawer: openCashDrawer,
+    checkPrinter,
+    preview: () => (showPreview.value = true)
+  }
+
+  window.addEventListener('footer-save', handlers.save)
+  window.addEventListener('footer-cancel', handlers.cancel)
+  window.addEventListener('footer-open-drawer', handlers.drawer)
+  window.addEventListener('footer-check-printer', handlers.checkPrinter)
+  window.addEventListener('footer-preview-receipt', handlers.preview)
 
   onBeforeUnmount(() => {
     clearInterval(clockInterval)
-    window.removeEventListener('footer-save', saveInvoice)
-    window.removeEventListener('footer-cancel', clearInvoice)
-    window.removeEventListener('footer-open-drawer', openCashDrawer)
-    window.removeEventListener('footer-check-printer', checkPrinter)
-    window.removeEventListener('footer-preview-receipt', () => showPreview.value = true)
+    if (searchDebounceTimer) clearTimeout(searchDebounceTimer)
+    window.removeEventListener('footer-save', handlers.save)
+    window.removeEventListener('footer-cancel', handlers.cancel)
+    window.removeEventListener('footer-open-drawer', handlers.drawer)
+    window.removeEventListener('footer-check-printer', handlers.checkPrinter)
+    window.removeEventListener('footer-preview-receipt', handlers.preview)
   })
 })
+
+const invoiceFields = [
+  { label: 'Invoice Number', key: 'invoiceNumber' },
+  { label: 'Issued By', key: 'issuedBy' },
+  { label: 'Date', key: 'invoiceDate' },
+  { label: 'Time', key: 'invoiceTime' }
+]
 </script>
 
 <template>
-  <div class="bg-slate-50 min-h-screen p-6 space-y-6 pb-32">
+  <div class="min-h-screen p-6 space-y-6 pb-32 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100">
+
     <!-- Invoice Info -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-      <div class="relative">
-        <input
-          v-model="invoiceNumber"
-          type="text"
-          readonly
-          class="peer block w-full appearance-none rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-0"/>
-        <label class="absolute left-3 -top-2 text-xs text-slate-600 bg-slate-50 px-1 transition-all peer-placeholder-shown:top-2 peer-placeholder-shown:text-sm peer-focus:-top-2 peer-focus:text-xs">Invoice Number</label>
-      </div>
-      <div class="relative">
-        <input
-          v-model="issuedBy"
-          type="text"
-          readonly
-          class="peer block w-full appearance-none rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-0"/>
-        <label class="absolute left-3 -top-2 text-xs text-slate-600 bg-slate-50 px-1 transition-all peer-placeholder-shown:top-2 peer-placeholder-shown:text-sm peer-focus:-top-2 peer-focus:text-xs">Issued By</label>
-      </div>
-      <div class="relative">
-        <input
-          v-model="invoiceDate"
-          type="text"
-          readonly
-          class="peer block w-full appearance-none rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-0"/>
-        <label class="absolute left-3 -top-2 text-xs text-slate-600 bg-slate-50 px-1 transition-all peer-placeholder-shown:top-2 peer-placeholder-shown:text-sm peer-focus:-top-2 peer-focus:text-xs">Date</label>
-      </div>
-      <div class="relative">
-        <input
-          v-model="invoiceTime"
-          type="text"
-          readonly
-          class="peer block w-full appearance-none rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-0"/>
-        <label class="absolute left-3 -top-2 text-xs text-slate-600 bg-slate-50 px-1 transition-all peer-placeholder-shown:top-2 peer-placeholder-shown:text-sm peer-focus:-top-2 peer-focus:text-xs">Time</label>
-      </div>
+      <BaseInput
+        v-for="f in invoiceFields"
+        :key="f.key"
+        :label="f.label"
+        v-model="invoiceData[f.key]"
+        readonly
+        class="dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100"
+      />
     </div>
 
-    <!-- Sales Table & Totals -->
-    <div class="bg-sky-200 rounded-lg shadow p-6 border border-slate-200 flex flex-col lg:flex-row gap-6">
-      <!-- Product List -->
-      <div class="flex-1 overflow-auto">
-        <table class="min-w-full border text-sm text-left">
-          <thead class="bg-slate-200 text-gray-800">
-            <tr><th class="px-4 py-2 border border-slate-400">Product List</th></tr>
-          </thead>
-          <tbody>
-            <tr v-for="product in products" :key="product.id" class="text-center hover:bg-slate-200 cursor-pointer" @click="addProductToInvoice(product)">
-              <td class="p-2 border border-slate-400">{{ product.productname }}</td>
-            </tr>
-          </tbody>
-        </table>
+    <!-- Main grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+      <!-- PRODUCT CARD -->
+      <div class="p-4 rounded-xl shadow border bg-slate-100 dark:bg-slate-600 border-slate-200 dark:border-slate-700 flex flex-col gap-4">
+        <input
+          type="text"
+          v-model="productSearch"
+          placeholder="Search products..."
+          class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-sky-400"
+        />
+
+        <div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 overflow-auto max-h-[420px]">
+          <button
+            v-for="p in filteredProducts"
+            :key="p.id"
+            @click="addProductToInvoice(p)"
+            class="p-3 rounded-lg shadow transition bg-slate-100 dark:bg-slate-800 hover:bg-sky-200 dark:hover:bg-sky-600 text-center text-sm text-slate-800 dark:text-slate-100 break-words"
+          >
+            {{ p.productname }}
+          </button>
+        </div>
       </div>
 
-      <!-- Sales Table -->
-      <div class="flex-1 overflow-auto">
-        <table class="min-w-full border border-slate-400 text-sm text-left">
-          <thead class="bg-slate-200 text-gray-800">
+      <!-- CART CARD -->
+      <div class="p-4 rounded-xl shadow border overflow-auto bg-slate-100 dark:bg-slate-600 border-slate-200 dark:border-slate-700">
+        <table class="min-w-full text-sm border rounded-lg overflow-hidden text-slate-800 dark:text-slate-100 border-slate-300 dark:border-slate-700">
+          <thead class="bg-slate-100 dark:bg-slate-800">
             <tr>
-              <th class="px-4 py-2 border border-slate-400">Product</th>
-              <th class="px-4 py-2 border border-slate-400">Quantity</th>
-              <th class="px-4 py-2 border border-slate-400">Price</th>
-              <th class="px-4 py-2 border border-slate-400">Action</th>
+              <th class="px-4 py-2 border-b text-slate-800 dark:text-slate-100 dark:border-slate-600">Product</th>
+              <th class="px-4 py-2 border-b text-center text-slate-800 dark:text-slate-100 dark:border-slate-600">Qty</th>
+              <th class="px-4 py-2 border-b text-right text-slate-800 dark:text-slate-100 dark:border-slate-600">Price</th>
+              <th class="px-4 py-2 border-b text-center text-slate-800 dark:text-slate-100 dark:border-slate-600">Action</th>
             </tr>
           </thead>
+
           <tbody>
-            <tr v-for="(p,index) in selectedProducts" :key="p.id" class="text-center hover:bg-slate-200">
-              <td class="p-2 border border-slate-400">{{ p.productname }}</td>
-              <td class="p-2 border border-slate-400">{{ p.quantity }}</td>
-              <td class="p-2 border border-slate-400">₱{{ p.total.toFixed(2) }}</td>
-              <td class="p-2 flex justify-center space-x-2">
-                <button @click="decreaseQuantity(index)" class="px-2 py-1 bg-sky-200 rounded hover:bg-sky-400">−</button>
-                <button @click="increaseQuantity(index)" class="px-2 py-1 bg-sky-200 rounded hover:bg-sky-400">+</button>
+            <tr v-for="(p,index) in selectedProducts" :key="p.id" class="hover:bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 transition">
+              <td class="px-4 py-2 border-b text-slate-800 dark:text-slate-100 dark:border-slate-700">{{ p.productname }}</td>
+              <td class="px-4 py-2 border-b text-center text-slate-800 dark:text-slate-100 dark:border-slate-700">{{ p.quantity }}</td>
+              <td class="px-4 py-2 border-b text-right text-slate-800 dark:text-slate-100 dark:border-slate-700">₱{{ Number(p.total).toFixed(2) }}</td>
+              <td class="px-4 py-2 border-b dark:border-slate-700">
+                <div class="flex justify-center gap-2">
+                  <button @click="decreaseQuantity(index)" class="px-3 py-1 rounded-md font-bold bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-500">−</button>
+                  <button @click="increaseQuantity(index)" class="px-3 py-1 rounded-md font-bold bg-sky-300 dark:bg-sky-700 hover:bg-sky-400 dark:hover:bg-sky-600">+</button>
+                </div>
               </td>
             </tr>
           </tbody>
         </table>
       </div>
-      <!-- Totals & Actions -->
-      <div class="w-full lg:w-1/3 space-y-4">
-        <div class="bg-slate-50 p-4 rounded-lg shadow border border-gray-200 space-y-2">
-          <div class="flex justify-between"><p class="font-bold text-lg">Total VAT Sales</p><p class="text-xl">{{ formatCurrency(totals.vat_sales) }}</p></div>
-          <div class="flex justify-between"><p class="font-bold text-lg">Total VAT Amount</p><p class="text-xl">{{ formatCurrency(totals.vat_amount) }}</p></div>
-          <div class="flex justify-between"><p class="font-bold text-lg">Total VAT-Exempt Sales</p><p class="text-xl">{{ formatCurrency(totals.vat_exempt_sales) }}</p></div>
-          <div class="flex justify-between"><p class="font-bold text-lg">Total Zero-Rated Sales</p><p class="text-xl">{{ formatCurrency(totals.zero_rated_sales) }}</p></div>
+
+      <!-- TOTALS / DISCOUNT / CUSTOMER CARD -->
+      <div class="flex flex-col gap-4">
+
+        <!-- CUSTOMER -->
+        <div class="p-4 rounded-xl shadow border bg-slate-100 dark:bg-slate-700 border-slate-200 dark:border-slate-600 space-y-3">
+          <h2 class="font-semibold text-lg text-slate-800 dark:text-slate-100">Customer</h2>
+          <input v-model="customer.name" placeholder="Customer Name (Optional)"
+                 class="w-full text-sm px-3 py-2 rounded border bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-gray-900 dark:text-gray-100" />
+          <input v-model="customer.tin" placeholder="TIN (Optional)"
+                 class="w-full text-sm px-3 py-2 rounded border bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-gray-900 dark:text-gray-100" />
         </div>
 
-        <div class="bg-slate-50 p-4 rounded-lg shadow border border-gray-200 space-y-2">
+        <!-- DISCOUNT -->
+        <div class="p-4 rounded-xl shadow border bg-slate-100 dark:bg-slate-700 border-slate-200 dark:border-slate-600 space-y-3">
           <div class="flex justify-between items-center">
-            <span class="font-bold">DISCOUNT</span>
-            <input type="text" :value="totals.discount" @input="handleDiscountInput($event)" placeholder="0" class="w-28 text-right border rounded px-2 py-1"/>
+            <h2 class="font-semibold text-lg text-slate-800 dark:text-slate-100">Discount Type</h2>
+            <select v-model="discount.type" class="px-2 py-1 rounded border text-sm bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-gray-900 dark:text-gray-100">
+              <option value="">None</option>
+              <option value="SC">Senior Citizen (20%)</option>
+              <option value="PWD">PWD (20%)</option>
+              <option value="MANUAL">Manual Discount (₱ or %)</option>
+            </select>
           </div>
+
+          <div v-if="discount.type === 'SC' || discount.type === 'PWD'" class="space-y-2">
+            <input v-model="discount.name" placeholder="Name on ID" class="w-full text-sm px-3 py-2 rounded border bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-gray-900 dark:text-gray-100" />
+            <input v-model="discount.id_no" placeholder="ID Number" class="w-full text-sm px-3 py-2 rounded border bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-gray-900 dark:text-gray-100" />
+          </div>
+
+          <div v-if="discount.type === 'MANUAL'" class="flex justify-between items-center">
+            <span class="text-slate-700 dark:text-slate-200">Discount Amount</span>
+            <input v-model="discount.manual" placeholder="0 or 10%" @input="recalcTotalsInternal()" class="w-28 text-right px-2 py-1 rounded border text-sm bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-gray-900 dark:text-gray-100" />
+          </div>
+
+          <!-- legacy percent discount -->
+          <div v-if="!discount.type" class="flex justify-between items-center">
+            <span class="text-slate-700 dark:text-slate-200">Discount %</span>
+            <input :value="totals.discount" @input="handleDiscountInput($event)" placeholder="0" class="w-28 text-right px-2 py-1 rounded border text-sm bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-gray-900 dark:text-gray-100" />
+          </div>
+        </div>
+
+        <!-- VAT SUMMARY -->
+        <div class="p-4 rounded-xl shadow border bg-slate-100 dark:bg-slate-700 border-slate-200 dark:border-slate-600 space-y-2">
+          <h2 class="font-semibold text-lg text-slate-800 dark:text-slate-100">VAT Summary</h2>
+          <div class="flex justify-between text-sm"><p class="text-slate-700 dark:text-slate-200">VATable Sales</p><p>{{ formatCurrency(totals.vat_sales) }}</p></div>
+          <div class="flex justify-between text-sm"><p class="text-slate-700 dark:text-slate-200">VAT Amount (12%)</p><p>{{ formatCurrency(totals.vat_amount) }}</p></div>
+          <div class="flex justify-between text-sm"><p class="text-slate-700 dark:text-slate-200">VAT Exempt</p><p>{{ formatCurrency(totals.vat_exempt_sales) }}</p></div>
+          <div class="flex justify-between text-sm"><p class="text-slate-700 dark:text-slate-200">Zero-Rated</p><p>{{ formatCurrency(totals.zero_rated_sales) }}</p></div>
+        </div>
+
+        <!-- PAYMENT -->
+        <div class="p-4 rounded-xl shadow border bg-slate-100 dark:bg-slate-700 border-slate-200 dark:border-slate-600 space-y-3">
           <div class="flex justify-between items-center">
-            <span class="font-bold">TENDERED</span>
-            <input type="text" :value="tendered" @input="tendered = parseFloat($event.target.value) || 0; recalculateTotals()" placeholder="0.00" class="w-28 text-right border rounded px-2 py-1"/>
+            <span class="text-lg text-slate-800 dark:text-slate-100">TENDERED</span>
+            <input type="text" v-model="tendered" @input="recalcTotalsInternal()" class="w-32 text-right border rounded px-2 py-1 bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-gray-900 dark:text-gray-100" />
           </div>
-          <div class="flex justify-between items-center space-y-2"><span class="font-bold">CHANGE</span><span>{{ formatCurrency(change) }}</span>
-          </div>
+          <div class="flex justify-between text-lg"><span class="text-slate-800 dark:text-slate-100">CHANGE</span><span class="font-semibold">{{ formatCurrency(change) }}</span></div>
         </div>
 
-        <div class="bg-slate-50 p-4 rounded-lg shadow border border-gray-200 flex justify-between">
-          <span>TOTAL</span><span>{{ formatCurrency(totals.total || 0) }}</span>
+        <!-- GRAND TOTAL -->
+        <div class="p-4 rounded-xl shadow border flex justify-between items-center bg-slate-200 dark:bg-slate-800 border-slate-300 dark:border-slate-700">
+          <span class="text-xl font-semibold text-slate-900 dark:text-slate-100">TOTAL</span>
+          <span class="text-2xl font-bold text-slate-900 dark:text-slate-100">{{ formatCurrency(totals.total || 0) }}</span>
         </div>
-
-        <div><router-link to="/customer" class="text-blue-500 hover:underline">Add Customer →</router-link></div>
       </div>
     </div>
 
-    <!-- Receipt Preview Modal -->
-<div
-  v-if="showPreview"
-  class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
->
-  <div class="bg-white p-4 rounded-lg shadow-lg w-[320px] max-h-[90vh] overflow-auto">
-    <h2 class="text-lg font-bold mb-3 text-center">Receipt Preview</h2>
+    <!-- Receipt Preview Modal (unchanged layout, uses invoiceData & customer) -->
+    <div v-if="showPreview" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div class="p-4 rounded-lg shadow-lg w-[320px] max-h-[90vh] overflow-auto bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100">
+        <h2 class="text-lg font-bold mb-3 text-center">Receipt Preview</h2>
 
-    <div ref="receipt">
-      <!-- Only place where receipt template exists -->
-      <div style="font-family: monospace; font-size:12px; width:280px;">
-        <div style="text-align:center;">
-          FELTHEA POS<br>
-          Pico, La Trinidad<br>
-          VAT REG TIN: 001-001-001-000<br>
-          CASHIER: {{ issuedBy }}<br>
-          DATE: {{ invoiceDate }} {{ invoiceTime }}<br>
-          INVOICE #: {{ invoiceNumber }}<br>
+        <div ref="receipt">
+          <div style="font-family: monospace; font-size:12px; width:280px;">
+            <div class="text-center">
+              FELTHEA POS<br>
+              Pico, La Trinidad<br>
+              VAT REG TIN: 001-001-001-000<br>
+              CASHIER: {{ invoiceData.issuedBy }}<br>
+              DATE: {{ invoiceData.invoiceDate }} {{ invoiceData.invoiceTime }}<br>
+              INVOICE #: {{ invoiceData.invoiceNumber }}<br>
+            </div>
+
+            <div class="text-center">--------------------------------</div>
+            <div class="font-bold">QTY ITEM                 AMT</div>
+            <div class="text-center">--------------------------------</div>
+
+            <div v-for="(line,i) in formattedLines" :key="i">{{ line }}</div>
+
+            <div class="text-center">--------------------------------</div>
+            <div>
+              Discount ({{ discount.type || 'None' }}):
+                    {{ discountAmount.toFixed(2).padStart(10) }}<br>
+              Subtotal:  {{ subtotal.toFixed(2).padStart(10) }}<br>
+              TOTAL:     {{ totals.total.toFixed(2).padStart(10) }}<br>
+            </div>
+
+            <div class="text-center">--------------------------------</div>
+            <div>
+              Tendered:  {{ Number(tendered).toFixed(2).padStart(10) }}<br>
+              Change:    {{ change.toFixed(2).padStart(10) }}<br>
+            </div>
+
+            <div class="text-center">--------------------------------</div>
+            <div style="font-size:11px;">
+              VAT SALES:  {{ totals.vat_sales.toFixed(2).padStart(10) }}<br>
+              12% VAT:    {{ totals.vat_amount.toFixed(2).padStart(10) }}<br>
+              VAT EXEMPT: {{ totals.vat_exempt_sales.toFixed(2).padStart(10) }}<br>
+              ZERO RATED: {{ totals.zero_rated_sales.toFixed(2).padStart(10) }}<br>
+            </div>
+
+            <div class="text-center">--------------------------------</div>
+            <div style="font-size:11px;">
+              BUYER NAME: {{ customer.name || '' }}<br>
+              BUYER TIN: {{ customer.tin || '' }}<br>
+            </div>
+            <div class="text-center">Thank you for shopping!</div>
+          </div>
         </div>
-        <div style="text-align:center;">--------------------------------</div>
-        <div style="font-weight:bold;">QTY ITEM                 AMT</div>
-        <div style="text-align:center;">--------------------------------</div>
-        <div v-for="(line,i) in formattedLines" :key="i">{{ line }}</div>
-        <div style="text-align:center;">--------------------------------</div>
-        <div>
-          Discount:       {{ discount.toFixed(2).padStart(10) }}<br>
-          Subtotal:       {{ subtotal.toFixed(2).padStart(10) }}<br>
-          TOTAL:          {{ totals.total.toFixed(2).padStart(10) }}<br>
+
+        <div class="flex justify-between mt-4">
+          <button @click="showPreview = false" class="w-1/2 mr-2 py-2 px-4 rounded shadow bg-red-500 hover:bg-red-600 text-slate-100">Cancel</button>
+
+          <button :disabled="isPrintDisabled" @click="if (canPrint) { printReceipt(); showPreview = false }" class="w-1/2 ml-2 py-2 px-4 rounded shadow bg-green-500 hover:bg-green-600 text-slate-100 disabled:opacity-40">Confirm</button>
         </div>
-        <div style="text-align:center;">--------------------------------</div>
-        <div>
-          Tendered:       {{ tendered.toFixed(2).padStart(10) }}<br>
-          Change:         {{ change.toFixed(2).padStart(10) }}<br>
-        </div>
-        <div style="text-align:center;">--------------------------------</div>
-        <div style="font-size:11px;">
-          VAT SALES:      {{ totals.vat_sales.toFixed(2).padStart(10) }}<br>
-          12% VAT:        {{ totals.vat_amount.toFixed(2).padStart(10) }}<br>
-          VAT EXEMPT:     {{ totals.vat_exempt_sales.toFixed(2).padStart(10) }}<br>
-          ZERO RATED:     {{ totals.zero_rated_sales.toFixed(2).padStart(10) }}<br>
-        </div>
-        <div style="text-align:center;">--------------------------------</div>
-        <div style="font-size:11px;">
-          BUYER NAME:<br>
-          BUYER ADDRESS:<br>
-          BUYER TIN:<br>
-        </div>
-        <div style="text-align:center;">Thank you for shopping!</div>
       </div>
     </div>
 
-    <!-- Modal buttons -->
-    <div class="flex justify-between mt-4">
-      <button
-        @click="showPreview = false"
-        class="w-1/2 mr-2 bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded shadow">Cancel
-      </button>
-
-      <button :disabled="isPrintDisabled" @click="if (canPrint) { printReceipt(); showPreview = false }"
-      class="w-1/2 ml-2 bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded shadow disabled:opacity-40">Confirm
-      </button>
-    </div>
-  </div>
-</div>
   </div>
 </template>
