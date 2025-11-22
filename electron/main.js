@@ -255,12 +255,6 @@ function createWindow() {
     return { success: true }
   })
 
-ipcMain.handle('save-product-image', async (event, { imageName, buffer }) => {
-  const imagePath = path.join(app.getPath('userData'), 'images', imageName)
-  fs.writeFileSync(imagePath, Buffer.from(buffer))
-  return imagePath 
-})
-
   // -------------------- INVOICES --------------------
   ipcMain.handle('add-invoice', (_e, invoice) => {
     const lastInvoice = db.prepare(`SELECT invoice_number FROM invoice ORDER BY id DESC LIMIT 1`).get()

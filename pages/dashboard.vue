@@ -386,7 +386,7 @@ const invoiceFields = [
         :label="f.label"
         v-model="invoiceData[f.key]"
         readonly
-        class="dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100"
+        class="dark:bg-slate-800 border-gray-400 dark:text-slate-100"
       />
     </div>
 
@@ -394,12 +394,12 @@ const invoiceFields = [
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
       <!-- PRODUCT CARD -->
-      <div class="p-4 rounded-xl shadow border bg-slate-100 dark:bg-slate-600 border-slate-200 dark:border-slate-700 flex flex-col gap-4">
+      <div class="p-4 rounded-xl shadow bg-slate-100 dark:bg-slate-600 border-slate-200 dark:border-slate-700 flex flex-col gap-4">
         <input
           type="text"
           v-model="productSearch"
           placeholder="Search products..."
-          class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-sky-400"
+          class="w-full px-3 py-2 rounded-lg border border-gray-400 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-sky-400"
         />
 
         <div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 overflow-auto max-h-[420px]">
@@ -416,7 +416,7 @@ const invoiceFields = [
 
       <!-- CART CARD -->
       <div class="p-4 rounded-xl shadow border overflow-auto bg-slate-100 dark:bg-slate-600 border-slate-200 dark:border-slate-700">
-        <table class="min-w-full text-sm border rounded-lg overflow-hidden text-slate-800 dark:text-slate-100 border-slate-300 dark:border-slate-700">
+        <table class="min-w-full text-sm border rounded-lg overflow-hidden text-slate-800 dark:text-slate-100 border-gray-400 dark:border-slate-700">
           <thead class="bg-slate-100 dark:bg-slate-800">
             <tr>
               <th class="px-4 py-2 border-b text-slate-800 dark:text-slate-100 dark:border-slate-600">Product</th>
@@ -449,16 +449,16 @@ const invoiceFields = [
         <div class="p-4 rounded-xl shadow border bg-slate-100 dark:bg-slate-700 border-slate-200 dark:border-slate-600 space-y-3">
           <h2 class="font-semibold text-lg text-slate-800 dark:text-slate-100">Customer</h2>
           <input v-model="customer.name" placeholder="Customer Name (Optional)"
-                 class="w-full text-sm px-3 py-2 rounded border bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-gray-900 dark:text-gray-100" />
+                 class="w-full text-sm px-3 py-2 rounded border bg-white dark:bg-slate-800 border-gray-400 text-gray-900 dark:text-gray-100" />
           <input v-model="customer.tin" placeholder="TIN (Optional)"
-                 class="w-full text-sm px-3 py-2 rounded border bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-gray-900 dark:text-gray-100" />
+                 class="w-full text-sm px-3 py-2 rounded border bg-white dark:bg-slate-800 border-gray-400 text-gray-900 dark:text-gray-100" />
         </div>
 
         <!-- DISCOUNT -->
         <div class="p-4 rounded-xl shadow border bg-slate-100 dark:bg-slate-700 border-slate-200 dark:border-slate-600 space-y-3">
           <div class="flex justify-between items-center">
             <h2 class="font-semibold text-lg text-slate-800 dark:text-slate-100">Discount Type</h2>
-            <select v-model="discount.type" class="px-2 py-1 rounded border text-sm bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-gray-900 dark:text-gray-100">
+            <select v-model="discount.type" class="px-2 py-1 rounded border text-sm bg-white dark:bg-slate-800 border-gray-400 text-gray-900 dark:text-gray-100">
               <option value="">None</option>
               <option value="SC">Senior Citizen (20%)</option>
               <option value="PWD">PWD (20%)</option>
@@ -466,20 +466,20 @@ const invoiceFields = [
             </select>
           </div>
 
-          <div v-if="discount.type === 'SC' || discount.type === 'PWD'" class="space-y-2">
-            <input v-model="discount.name" placeholder="Name on ID" class="w-full text-sm px-3 py-2 rounded border bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-gray-900 dark:text-gray-100" />
-            <input v-model="discount.id_no" placeholder="ID Number" class="w-full text-sm px-3 py-2 rounded border bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-gray-900 dark:text-gray-100" />
+          <div v-if="discount.type === 'SC' || discount.type === 'PWD'" class="space-y-2 border-gray-400">
+            <input v-model="discount.name" placeholder="Name on ID" class="w-full text-sm px-3 py-2 rounded border bg-slate-50 dark:bg-slate-800 border-gray-400 text-gray-900 dark:text-gray-100" />
+            <input v-model="discount.id_no" placeholder="ID Number" class="w-full text-sm px-3 py-2 rounded border bg-slate-50 dark:bg-slate-800 border-gray-400 text-gray-900 dark:text-gray-100" />
           </div>
 
           <div v-if="discount.type === 'MANUAL'" class="flex justify-between items-center">
             <span class="text-slate-700 dark:text-slate-200">Discount Amount</span>
-            <input v-model="discount.manual" placeholder="0 or 10%" @input="recalcTotalsInternal()" class="w-28 text-right px-2 py-1 rounded border text-sm bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-gray-900 dark:text-gray-100" />
+            <input v-model="discount.manual" placeholder="0 or 10%" @input="recalcTotalsInternal()" class="w-28 text-right px-2 py-1 rounded border text-sm bg-slate-50 dark:bg-slate-800 border-gray-400 text-gray-900 dark:text-gray-100" />
           </div>
 
           <!-- legacy percent discount -->
           <div v-if="!discount.type" class="flex justify-between items-center">
             <span class="text-slate-700 dark:text-slate-200">Discount %</span>
-            <input :value="totals.discount" @input="handleDiscountInput($event)" placeholder="0" class="w-28 text-right px-2 py-1 rounded border text-sm bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-gray-900 dark:text-gray-100" />
+            <input :value="totals.discount" @input="handleDiscountInput($event)" placeholder="0" class="w-28 text-right px-2 py-1 rounded border text-sm bg-slate-50 dark:bg-slate-800 border-gray-400 text-gray-900 dark:text-gray-100" />
           </div>
         </div>
 
@@ -496,13 +496,13 @@ const invoiceFields = [
         <div class="p-4 rounded-xl shadow border bg-slate-100 dark:bg-slate-700 border-slate-200 dark:border-slate-600 space-y-3">
           <div class="flex justify-between items-center">
             <span class="text-lg text-slate-800 dark:text-slate-100">TENDERED</span>
-            <input type="text" v-model="tendered" @input="recalcTotalsInternal()" class="w-32 text-right border rounded px-2 py-1 bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-gray-900 dark:text-gray-100" />
+            <input type="text" v-model="tendered" @input="recalcTotalsInternal()" class="w-32 text-right border rounded px-2 py-1 bg-slate-50 dark:bg-slate-800 border-gray-400 text-gray-900 dark:text-gray-100" />
           </div>
           <div class="flex justify-between text-lg"><span class="text-slate-800 dark:text-slate-100">CHANGE</span><span class="font-semibold">{{ formatCurrency(change) }}</span></div>
         </div>
 
         <!-- GRAND TOTAL -->
-        <div class="p-4 rounded-xl shadow border flex justify-between items-center bg-slate-200 dark:bg-slate-800 border-slate-300 dark:border-slate-700">
+        <div class="p-4 rounded-xl shadow border flex justify-between items-center bg-sky-400 dark:bg-sky-800 border-slate-300 dark:border-slate-700">
           <span class="text-xl font-semibold text-slate-900 dark:text-slate-100">TOTAL</span>
           <span class="text-2xl font-bold text-slate-900 dark:text-slate-100">{{ formatCurrency(totals.total || 0) }}</span>
         </div>

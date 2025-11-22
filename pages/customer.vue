@@ -1,19 +1,15 @@
 <template>
   <div class="p-6 min-h-screen">
-    <!-- Page Title -->
-    <h1 class="text-2xl font-bold mb-4">Patient Records</h1>
-
-    <!-- Add Patient Button -->
     <button
       @click="showModal = true"
-      class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded mb-6"
+      class="bg-sky-600 hover:bg-sky-700 text-slate-50 px-4 py-2 rounded mb-6"
     >
-      Add New Patient
+      ADD NEW PATIENT
     </button>
 <!-- Modern Table -->
-<div class="bg-white shadow rounded-xl overflow-hidden">
+<div class="bg-slate-50 dark:bg-slate-600 border-gray-400 text-slate-800 dark:text-slate-100 p-4 rounded shadow">
   <table class="w-full">
-    <thead class="bg-gray-100 border-b">
+    <thead class="bg-slate-200 dark:bg-slate-800 border-gary-400">
       <tr>
         <th class="px-5 py-3 text-left font-medium">Name</th>
         <th class="px-5 py-3 text-left font-medium">Phone</th>
@@ -27,7 +23,7 @@
       <tr 
         v-for="index in clinicpatients" 
         :key="index" 
-        class="border-b hover:bg-gray-50 cursor-pointer transition"
+        class="border-b hover:bg-sky-200 cursor-pointer transition"
         @click="index.expanded = !index.expanded"
       >
         <!-- Simple Row View -->
@@ -39,7 +35,7 @@
         <td class="px-5 py-3">{{ index.isPWD ? "Yes" : "No" }}</td>
 
         <!-- Arrow Indicator -->
-        <td class="px-5 py-3 text-right text-gray-500">
+        <td class="px-5 py-3 text-right text-slate-400">
           <span :class="index.expanded ? 'rotate-180' : ''" 
                 class="inline-block transition-transform">
             ▼
@@ -52,39 +48,39 @@
         v-for="index in clinicpatients" 
         v-show="index.expanded" 
         :key="'details-' + index.firstName"
-        class="bg-gray-50 border-b"
+        class="bg-slate-50 dark:bg-slate-800 border-gray-400"
       >
         <td colspan="5" class="px-6 py-5">
 
           <div class="grid grid-cols-2 gap-4">
 
             <div>
-              <p class="text-sm text-gray-500">Middle Name</p>
+              <p class="text-sm text-slate-800 dark:text-slate-100">Middle Name</p>
               <p class="font-medium">{{ index.middleName || '-' }}</p>
             </div>
 
             <div>
-              <p class="text-sm text-gray-500">Address</p>
+              <p class="text-sm text-slate-800 dark:text-slate-100">Address</p>
               <p class="font-medium">{{ index.address }}</p>
             </div>
 
             <div>
-              <p class="text-sm text-gray-500">Business Style</p>
+              <p class="text-sm text-slate-800 dark:text-slate-100">Business Style</p>
               <p class="font-medium">{{ index.businessStyle }}</p>
             </div>
 
             <div>
-              <p class="text-sm text-gray-500">TIN</p>
+              <p class="text-sm text-slate-800 dark:text-slate-100">TIN</p>
               <p class="font-medium">{{ index.tin }}</p>
             </div>
 
             <div>
-              <p class="text-sm text-gray-500">Senior ID</p>
+              <p class="text-sm text-slate-800 dark:text-slate-100">Senior ID</p>
               <p class="font-medium">{{ index.isSenior ? index.seniorId : '-' }}</p>
             </div>
 
             <div>
-              <p class="text-sm text-gray-500">PWD ID</p>
+              <p class="text-sm text-slate-800 dark:text-slate-100">PWD ID</p>
               <p class="font-medium">{{ index.isPWD ? index.pwdId : '-' }}</p>
             </div>
 
@@ -95,7 +91,7 @@
 
       <!-- If empty -->
       <tr v-if="clinicpatients.length === 0">
-        <td colspan="5" class="text-center py-6 text-gray-500">
+        <td colspan="5" class="text-center py-6 text-slate-800 dark:text-slate-100">
           No patient records yet.
         </td>
       </tr>
@@ -107,11 +103,9 @@
     <!-- Modal -->
     <div
       v-if="showModal"
-      class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50"
-    >
+      class="fixed inset-0 flex items-center justify-center bg-slate-200 bg-opacity-50">
       <div
-        class="bg-white p-6 rounded-md shadow-md w-full max-w-3xl relative"
-      >
+        class="bg-slate-50 dark:bg-slate-600 text-slate-800 dark:text-slate-100 p-6 rounded-md shadow-md w-full max-w-3xl relative">
         <!-- Close Button -->
         <button
           @click="showModal = false"
@@ -130,7 +124,7 @@
               v-model="form.firstName"
               type="text"
               placeholder="Michael"
-              class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              class="w-full bg-slate-50 dark:bg-slate-800 border border-gray-400 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-600"
               required
             />
           </div>
@@ -142,7 +136,7 @@
               v-model="form.lastName"
               type="text"
               placeholder="Johnson"
-              class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              class="w-full bg-slate-50 dark:bg-slate-800 border border-gray-400 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-600"
               required
             />
           </div>
@@ -154,7 +148,7 @@
               v-model="form.middleName"
               type="text"
               placeholder="(Optional)"
-              class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              class="w-full bg-slate-50 dark:bg-slate-800 border border-gray-400 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-600"
             />
           </div>
 
@@ -165,7 +159,7 @@
               v-model="form.address"
               type="text"
               placeholder="Baguio City"
-              class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              class="w-full bg-slate-50 dark:bg-slate-800 border border-gray-400 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-600"
               required
             />
           </div>
@@ -177,7 +171,7 @@
               v-model="form.phone"
               type="text"
               placeholder="09234567890"
-              class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              class="w-full bg-slate-50 dark:bg-slate-800 border border-gray-400 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-600"
               required
             />
           </div>
@@ -189,7 +183,7 @@
               v-model="form.businessStyle"
               type="text"
               placeholder="Retail"
-              class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              class="w-full bg-slate-50 dark:bg-slate-800 border border-gray-400 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-600"
             />
           </div>
 
@@ -200,7 +194,7 @@
               v-model="form.tin"
               type="text"
               placeholder="1234 1234 1234"
-              class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              class="w-full bg-slate-50 dark:bg-slate-800 border border-gray-400 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-600"
             />
           </div>
 
@@ -227,13 +221,10 @@
               type="text"
               placeholder="Enter Senior ID Number"
               :required="form.isSenior"
-              class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              class="w-full bg-slate-50 dark:bg-slate-800 border border-gray-400 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-600"
             />
           </div>
 
-
-          <!-- PWD Information -->
-           <!-- PWD Checkbox -->
           <div class="col-span-3 flex items-center mt-2">
             <input
               v-model="form.isPWD"
@@ -254,23 +245,21 @@
               type="text"
               placeholder="Enter PWD ID Number"
               :required="form.isPWD"
-              class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              class="w-full bg-slate-50 dark:bg-slate-800 border border-gray-400 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-600"
             />
           </div>
 
-
-          <!-- Buttons -->
           <div class="col-span-3 mt-6 flex items-center space-x-4">
             <button
               type="submit"
-              class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded"
+              class="bg-orange-400 hover:bg-orange-600 text-slate-50 px-4 py-2 rounded"
             >
               Save Patient
             </button>
             <button
               type="button"
               @click="showModal = false"
-              class="text-blue-600 hover:underline"
+              class="bg-sky-400 hover:bg-sky-600 text-slate-50 px-4 py-2 rounded "
             >
               Cancel
             </button>

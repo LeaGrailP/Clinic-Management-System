@@ -1,7 +1,5 @@
 <template>
-  <div class="bg-slate-50 min-h-screen p-6 space-y-6">
-    <h1 class="text-4xl font-bold text-gray-800">Invoices</h1>
-
+  <div class="bg-slate-50 dark:bg-slate-600 min-h-screen p-6 space-y-6">
     <!-- Date Filter -->
     <div class="flex gap-4 items-end mb-4">
       <div>

@@ -1,55 +1,36 @@
 <template>
   <div class="p-6 mx-auto">
-    <h1 class="text-2xl font-bold mb-6">PRODUCT MANAGER</h1>
-
     <!-- Form -->
-    <form @submit.prevent="handleSubmit" class="bg-white p-4 rounded shadow mb-6 space-y-4">
+    <form @submit.prevent="handleSubmit" class="bg-slate-50 dark:bg-slate-600 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 p-4 rounded shadow mb-6 space-y-4">
       <!-- Name -->
       <div>
-        <label class="block font-semibold">Product Name</label>
+        <label class="block font-semibold ">Product Name</label>
         <input
           v-model="productname"
-          class="w-full border px-3 py-2 rounded"
+          class="w-full border-gray-400 px-3 py-2 rounded bg-slate-50 dark:bg-slate-800"
           placeholder="e.g. Services"
           required
         />
       </div>
-
-      <!-- Image -->
-      <div>
-        <label class="block font-semibold">Product Image</label>
-        <input
-          type="file"
-          accept="image/*"
-          @change="handleImageUpload"
-          class="w-full border px-3 py-2 rounded"
-        />
-        <!-- 🟢 Show preview before saving -->
-        <div v-if="imagePreview" class="mt-2">
-          <img :src="imagePreview" alt="Preview" class="w-20 h-20 object-cover rounded border" />
-        </div>
-      </div>
-
       <!-- Price -->
       <div>
-        <label class="block font-semibold">Price</label>
+        <label class="block font-semibold ">Price</label>
         <input
           v-model.number="price"
           type="number"
           step="0.01"
-          class="w-full border px-3 py-2 rounded"
+          class="w-full border-gray-400 px-3 py-2 rounded bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100"
           required
         />
       </div>
 
       <!-- VAT Type -->
-      <div>
+      <div class="text-slate-800 dark:text-slate-100">
         <label class="block font-semibold">VAT Classification</label>
         <select
           v-model="vatType"
-          class="w-full border px-3 py-2 rounded"
-          required
-        >
+          class="w-full border-gray-400 px-3 py-2 rounded bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100"
+          required>
           <option disabled value="">-- Select VAT Type --</option>
           <option value="vatable">VATable (12%)</option>
           <option value="exempt">VAT-Exempt</option>
@@ -58,7 +39,7 @@
       </div>
 
       <!-- Computed Fields -->
-      <div class="mt-2 space-y-1">
+      <div class="mt-2 space-y-1 ">
         <p>VAT Sales: <strong>₱{{ vatSales.toFixed(2) }}</strong></p>
         <p>VAT Amount: <strong>₱{{ vatAmount.toFixed(2) }}</strong></p>
         <p>VAT-Exempt Sales: <strong>₱{{ vatExempt.toFixed(2) }}</strong></p>
@@ -66,41 +47,36 @@
         <p>Total Price: <strong>₱{{ total.toFixed(2) }}</strong></p>
       </div>
 
-      <!-- Buttons -->
       <div class="flex items-center gap-2 mt-4">
         <button
           type="submit"
-          class="bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded"
-        >Save</button>
+          class="bg-sky-400 hover:bg-sky-600 font-semibold px-4 py-2 rounded"
+        >SAVE</button>
 
         <button
           v-if="editingId"
           @click="cancelEdit"
           type="button"
-          class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded"
-        >
-          Cancel
+          class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded">
+          CANCEL
         </button>
       </div>
     </form>
 
     <!-- Table -->
-    <div class="bg-white p-4 rounded shadow">
+    <div class="bg-slate-50 dark:bg-slate-600 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 p-4 rounded shadow">
       <div class="flex justify-between items-center mb-4">
-        <h2 class="text-xl font-bold">Product List</h2>
         <button
           @click="fetchProducts"
-          class="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-sm"
+          class="bg-sky-400 hover:bg-sky-600 px-2 py-1 rounded text-lg"
         >
           <RefreshCw class="w-4 h-4" />
         </button>
       </div>
 
-      <table class="table-auto w-full border-collapse border border-gray-300 text-sm">
+      <table class="table-auto w-full border-gray-400 text-sm">
         <thead>
-          <tr class="bg-gray-100 text-left">
-            <!-- 🟢 Added Image column -->
-            <th class="border p-2">Image</th>
+          <tr class="dark:bg-slate-800 text-left">
             <th class="border p-2">Name</th>
             <th class="border p-2">VAT Type</th>
             <th class="border p-2">Price</th>
@@ -114,11 +90,6 @@
         </thead>
         <tbody>
           <tr v-for="product in products" :key="product.id">
-            <!-- 🟢 Show saved image -->
-            <td class="border p-2">
-              <img v-if="product.image" :src="product.image" class="w-12 h-12 object-cover rounded" />
-              <span v-else class="text-gray-400 italic">No Image</span>
-            </td>
             <td class="border p-2">{{ product.productname }}</td>
             <td class="border p-2">{{ product.vatType }}</td>
             <td class="border p-2">₱{{ Number(product.price || 0).toFixed(2) }}</td>
@@ -128,7 +99,7 @@
             <td class="border p-2">₱{{ Number(product.zeroRated || 0).toFixed(2) }}</td>
             <td class="border p-2">₱{{ Number(product.total || 0).toFixed(2) }}</td>
             <td class="border p-2 space-x-2">
-              <button @click="startEdit(product)" class="text-blue-600 hover:underline text-sm">
+              <button @click="startEdit(product)" class="text-sky-600 hover:underline text-sm">
                 <Pencil class="w-4 h-4" />
               </button>
               <button @click="deleteProduct(product.id)" class="text-red-600 hover:underline text-sm">
@@ -158,8 +129,6 @@ const price = ref(0)
 const vatType = ref('')
 const products = ref([])
 const editingId = ref(null)
-const imageFile = ref(null)
-const imagePreview = ref(null) // 🟢 For preview
 
 definePageMeta({ layout: 'default' })
 const router = useRouter()
@@ -197,17 +166,6 @@ async function fetchProducts() {
 }
 
 async function handleSubmit() {
-  let imagePath = null
-
-  if (imageFile.value) {
-    const buffer = await imageFile.value.arrayBuffer()
-    const imageName = `${Date.now()}_${imageFile.value.name}`
-    imagePath = await window.electron.invoke('save-product-image', {
-      imageName,
-      buffer: [...new Uint8Array(buffer)]
-    })
-  }
-
   const payload = {
     productname: productname.value,
     price: price.value,
@@ -217,7 +175,6 @@ async function handleSubmit() {
     vatExempt: vatExempt.value,
     zeroRated: zeroRated.value,
     total: total.value,
-    image: imagePath
   }
 
   if (editingId.value) {
@@ -236,7 +193,6 @@ function startEdit(product) {
   productname.value = product.productname
   price.value = product.price
   vatType.value = product.vatType
-  imagePreview.value = product.image // 🟢 Load existing image in preview
 }
 
 function cancelEdit() {
@@ -248,8 +204,6 @@ function clearForm() {
   productname.value = ''
   price.value = 0
   vatType.value = ''
-  imageFile.value = null
-  imagePreview.value = null
 }
 
 async function deleteProduct(id) {
