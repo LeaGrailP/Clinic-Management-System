@@ -10,55 +10,99 @@
     >
       Add New Patient
     </button>
+<!-- Modern Table -->
+<div class="bg-white shadow rounded-xl overflow-hidden">
+  <table class="w-full">
+    <thead class="bg-gray-100 border-b">
+      <tr>
+        <th class="px-5 py-3 text-left font-medium">Name</th>
+        <th class="px-5 py-3 text-left font-medium">Phone</th>
+        <th class="px-5 py-3 text-left font-medium">Senior</th>
+        <th class="px-5 py-3 text-left font-medium">PWD</th>
+        <th class="px-5 py-3"></th>
+      </tr>
+    </thead>
 
-    <!-- Patient Table -->
-    <div class="bg-white shadow rounded-lg overflow-x-auto">
-      <table class="w-full border-collapse">
-        <thead class="bg-gray-200">
-          <tr>
-            <th class="px-4 py-2 text-left">First Name</th>
-            <th class="px-4 py-2 text-left">Last Name</th>
-            <th class="px-4 py-2 text-left">Middle Name</th>
-            <th class="px-4 py-2 text-left">Address</th>
-            <th class="px-4 py-2 text-left">Phone</th>
-            <th class="px-4 py-2 text-left">Business Style</th>
-            <th class="px-4 py-2 text-left">TIN</th>
-            <th class="px-4 py-2 text-left">Senior</th>
-            <th class="px-4 py-2 text-left">Senior ID Number</th>
-            <th class="px-4 py-2 text-left">PWD</th>
-            <th class="px-4 py-2 text-left">PWD ID Number</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr
-            v-for="index in clinicpatients"
-            :key="index"
-            class="border-b"
-          >
-            <td class="px-4 py-2">{{ index.firstName }}</td>
-            <td class="px-4 py-2">{{ index.lastName }}</td>
-            <td class="px-4 py-2">{{ index.middleName }}</td>
-            <td class="px-4 py-2">{{ index.address }}</td>
-            <td class="px-4 py-2">{{ index.phone }}</td>
-            <td class="px-4 py-2">{{ index.businessStyle }}</td>
-            <td class="px-4 py-2">{{ index.tin }}</td>
-            <td class="px-4 py-2">{{ index.isSenior ? "Yes" : "No" }}</td>
-            <td class="px-4 py-2">
-              {{ index.isSenior ? index.seniorId : "-" }}
-            </td>
-            <td class="px-4 py-2">{{ index.isPWD ? "Yes" : "No" }}</td>
-            <td class="px-4 py-2">
-              {{ index.isPWD ? index.pwdId : "-" }}
-            </td>
-          </tr>
-          <tr v-if="clinicpatients.length === 0">
-            <td colspan="9" class="text-center py-4 text-gray-500">
-              No patient records yet.
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+    <tbody>
+      <tr 
+        v-for="index in clinicpatients" 
+        :key="index" 
+        class="border-b hover:bg-gray-50 cursor-pointer transition"
+        @click="index.expanded = !index.expanded"
+      >
+        <!-- Simple Row View -->
+        <td class="px-5 py-3 font-medium">
+          {{ index.firstName }} {{ index.lastName }}
+        </td>
+        <td class="px-5 py-3">{{ index.phone }}</td>
+        <td class="px-5 py-3">{{ index.isSenior ? "Yes" : "No" }}</td>
+        <td class="px-5 py-3">{{ index.isPWD ? "Yes" : "No" }}</td>
+
+        <!-- Arrow Indicator -->
+        <td class="px-5 py-3 text-right text-gray-500">
+          <span :class="index.expanded ? 'rotate-180' : ''" 
+                class="inline-block transition-transform">
+            ▼
+          </span>
+        </td>
+      </tr>
+
+      <!-- Expanded Details -->
+      <tr 
+        v-for="index in clinicpatients" 
+        v-show="index.expanded" 
+        :key="'details-' + index.firstName"
+        class="bg-gray-50 border-b"
+      >
+        <td colspan="5" class="px-6 py-5">
+
+          <div class="grid grid-cols-2 gap-4">
+
+            <div>
+              <p class="text-sm text-gray-500">Middle Name</p>
+              <p class="font-medium">{{ index.middleName || '-' }}</p>
+            </div>
+
+            <div>
+              <p class="text-sm text-gray-500">Address</p>
+              <p class="font-medium">{{ index.address }}</p>
+            </div>
+
+            <div>
+              <p class="text-sm text-gray-500">Business Style</p>
+              <p class="font-medium">{{ index.businessStyle }}</p>
+            </div>
+
+            <div>
+              <p class="text-sm text-gray-500">TIN</p>
+              <p class="font-medium">{{ index.tin }}</p>
+            </div>
+
+            <div>
+              <p class="text-sm text-gray-500">Senior ID</p>
+              <p class="font-medium">{{ index.isSenior ? index.seniorId : '-' }}</p>
+            </div>
+
+            <div>
+              <p class="text-sm text-gray-500">PWD ID</p>
+              <p class="font-medium">{{ index.isPWD ? index.pwdId : '-' }}</p>
+            </div>
+
+          </div>
+
+        </td>
+      </tr>
+
+      <!-- If empty -->
+      <tr v-if="clinicpatients.length === 0">
+        <td colspan="5" class="text-center py-6 text-gray-500">
+          No patient records yet.
+        </td>
+      </tr>
+
+    </tbody>
+  </table>
+</div>
 
     <!-- Modal -->
     <div
