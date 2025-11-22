@@ -1,7 +1,6 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center">
-    <background />
-    <div class="z-10 p-8 border-sky-500 bg-opacity-10 backdrop-blur-md rounded-lg shadow-lg w-full max-w-md">
+  <div class="bg-slate-50 min-h-screen flex items-center justify-center">
+    <div class="p-8 bg-sky-200 border-slate-200 rounded-lg w-full max-w-md">
       <h1 class="text-3xl font-bold text-center mb-6">Create an Account</h1>
 
       <form @submit.prevent="register">
@@ -70,7 +69,6 @@
 </template>
 
 <script setup>
-import background from '~/components/background.vue'
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUser } from '~/composables/useUser'

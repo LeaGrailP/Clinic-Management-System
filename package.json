@@ -4,7 +4,7 @@
   "description": "electron-nuxt project",
   "main": "electron/main.js",
   "scripts": {
-    "dev": "nuxt dev --host",
+    "dev": "nuxt dev",
     "build": "nuxt build",
     "rebuild": "electron-rebuild -f -w better-sqlite3",
     "generate": "nuxt generate",

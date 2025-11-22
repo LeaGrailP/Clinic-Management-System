@@ -4,9 +4,7 @@ const os = require("os")
 const path = require('path')
 const bcrypt = require('bcryptjs')
 const Database = require('better-sqlite3')
-const { Printer, Image } = require("@node-escpos/core")
-const USB = require("@node-escpos/usb-adapter")
-const { JSDOM } = require("jsdom")
+const { setupPrinterHandlers } = require('./printer')
 
 let db
 
@@ -14,6 +12,8 @@ let db
 app.whenReady().then(() => {
   db = initDB()
   createWindow()
+
+  setupPrinterHandlers(ipcMain, BrowserWindow, app)
 
 // -------------------- DATABASE INIT --------------------
 function initDB() {
@@ -294,191 +294,6 @@ ipcMain.handle('save-product-image', async (event, { imageName, buffer }) => {
 
   console.log('All IPC handlers registered')
 })
-//SAVE RECEIPTS AS PDF//
-ipcMain.handle("export-invoices-pdf", async (event, invoices) => {
-  const rows = invoices.map(inv => `
-    <div style="border-bottom:1px dashed #000; margin:6px 0; padding-bottom:4px;">
-      <div><strong>Invoice #:</strong> ${inv.invoice_number}</div>
-      <div><strong>Date:</strong> ${inv.date}</div>
-      <div><strong>Customer:</strong> ${inv.customer_name || "-"}</div>
-      <div><strong>VAT Sales:</strong> ₱${Number(inv.vat_sales).toFixed(2)}</div>
-      <div><strong>VAT Amount:</strong> ₱${Number(inv.vat_amount).toFixed(2)}</div>
-      <div><strong>Exempt Sales:</strong> ₱${Number(inv.vat_exempt_sales).toFixed(2)}</div>
-      <div><strong>Zero-Rated:</strong> ₱${Number(inv.zero_rated_sales).toFixed(2)}</div>
-      <div><strong>Discount:</strong> ₱${Number(inv.discount).toFixed(2)}</div>
-      <div><strong>Total:</strong> <strong>₱${Number(inv.total).toFixed(2)}</strong></div>
-    </div>
-  `).join("");
-
-  const htmlContent = `
-    <html>
-      <head>
-        <style>
-          body {
-            font-family: monospace;
-            font-size: 11px;
-            margin: 0;
-            padding: 8px;
-            width: 58mm;
-          }
-          h2 {
-            text-align: center;
-            margin-bottom: 8px;
-          }
-        </style>
-      </head>
-      <body>
-        <h2>Invoice Report</h2>
-        ${rows}
-        <div style="border-top:1px dashed #000; margin-top:10px; text-align:center;">
-          Exported: ${new Date().toLocaleString()}
-        </div>
-      </body>
-    </html>
-  `;
-
-  const pdfWin = new BrowserWindow({ show: false });
-  await pdfWin.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`);
-
-  const pdfBuffer = await pdfWin.webContents.printToPDF({
-    marginsType: 1,
-    pageSize: { width: 58000, height: 2000000 }, // 58mm wide roll, long page
-    printBackground: true
-  });
-
-  const filePath = path.join(app.getPath("documents"), `invoices_${Date.now()}.pdf`);
-  fs.writeFileSync(filePath, pdfBuffer);
-
-  pdfWin.close();
-
-  return filePath;
-});
-//check printers//
-ipcMain.handle("check-printer-status", async () => {
-  try {
-    const win = BrowserWindow.getAllWindows()[0];
-    if (!win) throw new Error("No active window");
-
-    const printers = await win.webContents.getPrintersAsync();
-    console.log("🖨 Installed printers:", printers.map(p => p.name));
-
-    const posPrinter = printers.find(p => p.name === "POS58_Generic");
-    if (!posPrinter) {
-      console.warn("⚠️ POS58 printer not found in system.");
-      return { success: true, connected: false, message: "Printer not found" };
-    }
-
-    return { success: true, connected: true, message: "POS58 printer is available" };
-  } catch (err) {
-    console.error("Printer check error:", err);
-    return { success: false, message: err.message };
-  }
-});
-// List all installed printers
-ipcMain.handle("list-printers", async () => {
-  try {
-    const win = BrowserWindow.getAllWindows()[0];
-    if (!win) throw new Error("No active window");
-    const printers = await win.webContents.getPrintersAsync();
-    return { success: true, printers: printers.map(p => p.name) };
-  } catch (err) {
-    console.error("Error listing printers:", err);
-    return { success: false, message: err.message, printers: [] };
-  }
-});
-
-// Print receipt using a specific printer name
-ipcMain.handle("print-receipt", async (event, { html, printerName }) => {
-  try {
-    const win = BrowserWindow.getAllWindows()[0];
-    if (!win) throw new Error("No active window");
-
-    // Sanitize the HTML
-    const cleanHTML = html
-      .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, "")
-      .replace(/on\w+="[^"]*"/gi, "");
-
-    // Wrap HTML in 58mm-friendly CSS
-    const styledHTML = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="UTF-8" />
-          <style>
-            @page { margin: 0; size: 58mm auto; }
-            body {
-              font-family: 'Courier New', monospace;
-              font-size: 11px;
-              width: 58mm;
-              padding: 4px;
-              margin: 0;
-              white-space: pre-wrap;
-              line-height: 1.2;
-            }
-            div, p, span { margin:0; padding:0; }
-            .center { text-align: center; }
-            .line { border-top:1px dashed #000; margin:4px 0; }
-          </style>
-        </head>
-        <body>
-          ${cleanHTML}
-          <div class="center line"></div>
-          <div class="center">*** END OF RECEIPT ***</div>
-          <div style="height:40px;"></div>
-        </body>
-      </html>
-    `;
-
-    const tmpFile = path.join(os.tmpdir(), `receipt-${Date.now()}.html`);
-    fs.writeFileSync(tmpFile, styledHTML, "utf8");
-
-    const printWin = new BrowserWindow({ show: false, width: 300, height: 600 });
-    await printWin.loadFile(tmpFile);
-
-    // Silent print using the selected printer
-    await new Promise((resolve) => {
-      printWin.webContents.print(
-        { silent: true, printBackground: true, deviceName: printerName },
-        (success, failureReason) => {
-          if (!success) console.error("Print failed:", failureReason);
-          resolve();
-          printWin.close();
-        }
-      );
-    });
-
-    return { success: true, message: "Receipt printed successfully" };
-  } catch (err) {
-    console.error("PRINT ERROR:", err);
-    return { success: false, message: err.message };
-  }
-});
-ipcMain.handle("open-cash-drawer", async (event, printerName) => {
-  try {
-    const win = BrowserWindow.getAllWindows()[0];
-    if (!win) throw new Error("No active window");
-    if (!printerName) throw new Error("No printer selected");
-
-    // ESC/POS drawer kick command
-    const escposKick = Buffer.from([0x1B, 0x70, 0x00, 0x19, 0xFA]);
-
-    // Write raw bytes to a temp file
-    const tmpFile = path.join(os.tmpdir(), "open_cashdrawer.bin");
-    fs.writeFileSync(tmpFile, escposKick);
-
-    // Print using raw file (Windows will send untouched bytes)
-    await win.webContents.print({
-      silent: true,
-      deviceName: printerName,
-      printBackground: false,
-    });
-
-    return { success: true };
-  } catch (err) {
-    console.error("CASH DRAWER ERROR:", err);
-    return { success: false, message: err.message };
-  }
-});
 // -------------------- APP CLOSE --------------------
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()
