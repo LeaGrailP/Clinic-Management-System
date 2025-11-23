@@ -6,10 +6,9 @@
     >
       ADD NEW PATIENT
     </button>
-<!-- Modern Table -->
 <div class="bg-slate-50 dark:bg-slate-600 border-gray-400 text-slate-800 dark:text-slate-100 p-4 rounded shadow">
   <table class="w-full">
-    <thead class="bg-slate-200 dark:bg-slate-800 border-gary-400">
+    <thead class="bg-slate-400 border-gary-400">
       <tr>
         <th class="px-5 py-3 text-left font-medium">Name</th>
         <th class="px-5 py-3 text-left font-medium">Phone</th>
@@ -26,15 +25,12 @@
         class="border-b hover:bg-sky-200 cursor-pointer transition"
         @click="index.expanded = !index.expanded"
       >
-        <!-- Simple Row View -->
         <td class="px-5 py-3 font-medium">
           {{ index.firstName }} {{ index.lastName }}
         </td>
         <td class="px-5 py-3">{{ index.phone }}</td>
         <td class="px-5 py-3">{{ index.isSenior ? "Yes" : "No" }}</td>
         <td class="px-5 py-3">{{ index.isPWD ? "Yes" : "No" }}</td>
-
-        <!-- Arrow Indicator -->
         <td class="px-5 py-3 text-right text-slate-400">
           <span :class="index.expanded ? 'rotate-180' : ''" 
                 class="inline-block transition-transform">
@@ -42,8 +38,6 @@
           </span>
         </td>
       </tr>
-
-      <!-- Expanded Details -->
       <tr 
         v-for="index in clinicpatients" 
         v-show="index.expanded" 
@@ -88,8 +82,6 @@
 
         </td>
       </tr>
-
-      <!-- If empty -->
       <tr v-if="clinicpatients.length === 0">
         <td colspan="5" class="text-center py-6 text-slate-800 dark:text-slate-100">
           No patient records yet.
@@ -100,24 +92,19 @@
   </table>
 </div>
 
-    <!-- Modal -->
     <div
       v-if="showModal"
       class="fixed inset-0 flex items-center justify-center bg-slate-200 bg-opacity-50">
       <div
         class="bg-slate-50 dark:bg-slate-600 text-slate-800 dark:text-slate-100 p-6 rounded-md shadow-md w-full max-w-3xl relative">
-        <!-- Close Button -->
         <button
           @click="showModal = false"
-          class="absolute top-3 right-3 text-gray-500 hover:text-gray-700"
-        >
-          ✖
+          class="absolute top-3 right-3 text-gray-500 hover:text-gray-700">✖
         </button>
 
         <h2 class="text-lg font-semibold mb-4">Add New Patient</h2>
 
         <form @submit.prevent="submitForm" class="grid grid-cols-3 gap-4">
-          <!-- First Name -->
           <div>
             <label class="block text-sm font-medium mb-1">First Name</label>
             <input
@@ -128,8 +115,6 @@
               required
             />
           </div>
-
-          <!-- Last Name -->
           <div>
             <label class="block text-sm font-medium mb-1">Last Name</label>
             <input
@@ -140,8 +125,6 @@
               required
             />
           </div>
-
-          <!-- Middle Name -->
           <div>
             <label class="block text-sm font-medium mb-1">Middle Name</label>
             <input
@@ -151,8 +134,6 @@
               class="w-full bg-slate-50 dark:bg-slate-800 border border-gray-400 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-600"
             />
           </div>
-
-          <!-- Address -->
           <div>
             <label class="block text-sm font-medium mb-1">Address</label>
             <input
@@ -163,8 +144,6 @@
               required
             />
           </div>
-
-          <!-- Phone -->
           <div>
             <label class="block text-sm font-medium mb-1">Phone</label>
             <input
@@ -175,8 +154,6 @@
               required
             />
           </div>
-
-          <!-- Business Style -->
           <div>
             <label class="block text-sm font-medium mb-1">Business Style</label>
             <input
@@ -186,8 +163,6 @@
               class="w-full bg-slate-50 dark:bg-slate-800 border border-gray-400 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-600"
             />
           </div>
-
-          <!-- TIN -->
           <div>
             <label class="block text-sm font-medium mb-1">TIN</label>
             <input
@@ -197,10 +172,6 @@
               class="w-full bg-slate-50 dark:bg-slate-800 border border-gray-400 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-600"
             />
           </div>
-
-
-          <!-- Senior Information -->
-          <!-- Senior Checkbox -->
           <div class="col-span-3 flex items-center mt-2">
             <input
               v-model="form.isSenior"

@@ -1,24 +1,24 @@
 <template>
-  <div class="bg-slate-50 dark:bg-slate-600 min-h-screen p-6 space-y-6">
+  <div class="border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100">
     <!-- Date Filter -->
     <div class="flex gap-4 items-end mb-4">
       <div>
-        <label class="block text-sm font-medium text-gray-700">From</label>
-        <input type="date" v-model="filterFrom" class="mt-1 border rounded px-2 py-1" />
+        <label class="block text-sm font-medium">From</label>
+        <input type="date" v-model="filterFrom" class="mt-1 border rounded px-2 py-1 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100" />
       </div>
       <div>
-        <label class="block text-sm font-medium text-gray-700">To</label>
-        <input type="date" v-model="filterTo" class="mt-1 border rounded px-2 py-1" />
+        <label class="block text-sm font-medium">To</label>
+        <input type="date" v-model="filterTo" class="mt-1 border rounded px-2 py-1 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100" />
       </div>
-      <button @click="clearFilter" class="px-4 py-2 bg-gray-300 rounded">Clear</button>
-      <button @click="saveAsFile" class="px-4 py-2 bg-blue-500 text-white rounded">Save as CSV</button>
-      <button @click="saveAsPDF" class="px-4 py-2 bg-red-500 text-white rounded">Save as PDF</button>
+      <button @click="clearFilter" class="px-4 py-2 bg-gray-400 rounded">Clear</button>
+      <button @click="saveAsFile" class="px-4 py-2 bg-sky-400 text-white rounded">Save as CSV</button>
+      <button @click="saveAsPDF" class="px-4 py-2 bg-orange-400 text-white rounded">Save as PDF</button>
     </div>
 
     <!-- Invoice Table -->
-    <div class="bg-white shadow rounded overflow-x-auto">
+    <div class="bg-slate-50 dark:bg-slate-600 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 p-4 rounded shadow mb-6 space-y-6">
       <table class="min-w-full border-collapse">
-        <thead class="bg-gray-100">
+        <thead class="bg-slate-400">
           <tr>
             <th class="px-4 py-2 border">Invoice #</th>
             <th class="px-4 py-2 border">Date</th>

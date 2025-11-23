@@ -75,7 +75,7 @@
       </div>
 
       <table class="table-auto w-full border-gray-400 text-sm">
-        <thead>
+        <thead class="bg-slate-400">
           <tr class="dark:bg-slate-800 text-left">
             <th class="border p-2">Name</th>
             <th class="border p-2">VAT Type</th>

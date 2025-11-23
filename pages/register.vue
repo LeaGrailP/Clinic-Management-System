@@ -1,6 +1,6 @@
 <template>
-  <div class="bg-slate-50 min-h-screen flex items-center justify-center">
-    <div class="p-8 bg-sky-200 border-slate-200 rounded-lg w-full max-w-md">
+  <div class="bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 min-h-screen flex items-center justify-center">
+    <div class="p-8 bg-sky-200 dark:bg-slate-600 border-slate-200 rounded-lg w-full max-w-md">
       <h1 class="text-3xl font-bold text-center mb-6">Create an Account</h1>
 
       <form @submit.prevent="register">
@@ -13,19 +13,19 @@
               type="text" 
               placeholder="Juan De la Cruz" 
               required 
-              class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-400 outline-none" 
+              class="bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-sky-400 outline-none" 
             />
           </div> 
 
           <!-- Role -->
           <div>
-            <label class="block text-sm font-medium mb-1">Role</label>
+            <label class="text-sm font-medium mb-1">Role</label>
             <select 
               v-model="role" 
               required 
-              class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-400 outline-none"
+              class="w-full px-4 py-2 border bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-lg outline-none"
             >
-              <option disabled value="">Select role</option>
+              <option class="bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100" disabled value="">Select role</option>
               <option value="admin">Admin</option>
               <option value="cashier">Cashier</option>
             </select>
@@ -39,7 +39,7 @@
               type="password" 
               placeholder="••••••••" 
               required 
-              class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-400 outline-none" 
+              class="bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-sky-400 outline-none" 
             />
           </div>
 
@@ -51,14 +51,14 @@
               type="password" 
               placeholder="••••••••" 
               required 
-              class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-400 outline-none" 
+              class="bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-sky-400 outline-none" 
             />
           </div>
 
           <!-- Submit -->
           <button 
             type="submit" 
-            class="w-full bg-blue-600 text-white font-semibold py-2 rounded-lg hover:bg-blue-700 transition"
+            class="w-full bg-sky-600 text-white font-semibold py-2 rounded-lg hover:bg-sky-800 transition"
           >
             Sign Up
           </button>
