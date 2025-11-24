@@ -458,7 +458,7 @@ const invoiceFields = [
         <div class="p-4 rounded-xl shadow border bg-slate-100 dark:bg-slate-700 border-slate-200 dark:border-slate-600 space-y-3">
           <div class="flex justify-between items-center">
             <h2 class="font-semibold text-lg text-slate-800 dark:text-slate-100">Discount Type</h2>
-            <select v-model="discount.type" class="px-2 py-1 rounded border text-sm bg-white dark:bg-slate-800 border-gray-400 text-gray-900 dark:text-gray-100">
+            <select v-model="discount.type" class="px-2 py-1 rounded border text-sm bg-slate-50 dark:bg-slate-800 border-gray-400 text-gray-900 dark:text-gray-100">
               <option value="">None</option>
               <option value="SC">Senior Citizen (20%)</option>
               <option value="PWD">PWD (20%)</option>

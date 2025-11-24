@@ -39,9 +39,8 @@ onMounted(() => {
     <nav class="flex-1 p-2 space-y-1">
         <NuxtLink
         to="/dashboard"
-        class="flex items-center space-x-3 px-3 py-2 rounded-md text-gray-700 hover:bg-sky-200 hover:text-slate-800"
-        exact-active-class="bg-sky-200 text-black font-semibold"
-      >
+        class="flex items-center space-x-3 px-3 py-2 rounded-md text-gray-700 hover:bg-sky-50 hover:text-slate-800 dark:text-gray-300 dark:hover:bg-slate-700 dark:hover:text-white"
+        exact-active-class="bg-sky-100 text-black font-semibold dark:bg-slate-700 dark:text-white" >
         <Home class="w-5 h-5" />
         <span v-if="!props.collapsed">Dashboard</span>
       </NuxtLink>
@@ -49,41 +48,37 @@ onMounted(() => {
       <NuxtLink
         v-if="user.role === 'admin'"
         to="/products"
-        class="flex items-center space-x-3 px-3 py-2 rounded-md text-gray-700 hover:bg-sky-200 hover:text-slate-800"
-        exact-active-class="bg-sky-200 text-black font-semibold"
-      >
+        class="flex items-center space-x-3 px-3 py-2 rounded-md text-gray-700 hover:bg-sky-50 hover:text-slate-800 dark:text-gray-300 dark:hover:bg-slate-700 dark:hover:text-white"
+        exact-active-class="bg-sky-100 text-black font-semibold dark:bg-slate-700 dark:text-white" >
         <ShoppingCart class="w-5 h-5" />
         <span v-if="!props.collapsed">Products</span>
       </NuxtLink>
       <NuxtLink
         to="/customer"
-        class="flex items-center space-x-3 px-3 py-2 rounded-md text-gray-700 hover:bg-sky-200 hover:text-black"
-        exact-active-class="bg-sky-200 text-black font-semibold"
-      >
+        class="flex items-center space-x-3 px-3 py-2 rounded-md text-gray-700 hover:bg-sky-50 hover:text-slate-800 dark:text-gray-300 dark:hover:bg-slate-700 dark:hover:text-white"
+        exact-active-class="bg-sky-100 text-black font-semibold dark:bg-slate-700 dark:text-white" >
         <User class="w-5 h-5" />
         <span v-if="!props.collapsed">Customer</span>
       </NuxtLink>
       <NuxtLink
         to="/transactions"
-        class="flex items-center space-x-3 px-3 py-2 rounded-md text-gray-700 hover:bg-sky-200 hover:text-black"
-        exact-active-class="bg-sky-200 text-black font-semibold"
-      >
+        class="flex items-center space-x-3 px-3 py-2 rounded-md text-gray-700 hover:bg-sky-50 hover:text-slate-800 dark:text-gray-300 dark:hover:bg-slate-700 dark:hover:text-white"
+        exact-active-class="bg-sky-100 text-black font-semibold dark:bg-slate-700 dark:text-white" >
         <ArrowLeftRight class="w-5 h-5" />
         <span v-if="!props.collapsed">Transactions</span>
       </NuxtLink>
       <NuxtLink
         v-if="user.role === 'admin'"
         to="/register"
-        class="flex items-center space-x-3 px-3 py-2 rounded-md text-gray-700 hover:bg-sky-200 hover:text-black"
-        exact-active-class="bg-sky-200 text-black font-semibold">
+        class="flex items-center space-x-3 px-3 py-2 rounded-md text-gray-700 hover:bg-sky-50 hover:text-slate-800 dark:text-gray-300 dark:hover:bg-slate-700 dark:hover:text-white"
+        exact-active-class="bg-sky-100 text-black font-semibold dark:bg-slate-700 dark:text-white" >
         <LogIn class="w-5 h-5" />
         <span v-if="!props.collapsed">Create Account</span>
       </NuxtLink> 
       <NuxtLink
         to="/about"
-        class="flex items-center space-x-3 px-3 py-2 rounded-md text-gray-700 hover:bg-sky-200 hover:text-black"
-        exact-active-class="bg-sky-200 text-black font-semibold"
-      >
+        class="flex items-center space-x-3 px-3 py-2 rounded-md text-gray-700 hover:bg-sky-50 hover:text-slate-800 dark:text-gray-300 dark:hover:bg-slate-700 dark:hover:text-white"
+        exact-active-class="bg-sky-100 text-black font-semibold dark:bg-slate-700 dark:text-white" >
         <Info class="w-5 h-5" />
         <span v-if="!props.collapsed">About</span>
       </Nuxtlink>

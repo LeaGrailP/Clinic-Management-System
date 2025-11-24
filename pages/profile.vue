@@ -1,7 +1,7 @@
 <template>
-  <div class="min-h-screen bg-slate-50 py-12 px-6">
-    <div class="max-w-xl mx-auto bg-sky-100 shadow rounded-lg p-8">
-      <h2 class="text-2xl font-bold mb-6 text-center">My Profile</h2>
+  <div class="min-h-screen bg-slate-50 dark:bg-slate-800 py-12 px-6">
+    <div class="max-w-xl mx-auto dark:bg-slate-600 bg-sky-200 shadow rounded-lg p-8 text-slate-800 dark:text-slate-100">
+      <h2 class="text-2xl font-bold mb-6 text-center">Profile</h2>
 
       <!-- View Mode -->
       <div v-if="!isEditing">
@@ -9,10 +9,10 @@
         <p class="mb-4"><strong>Role:</strong> {{ user.role }}</p>
 
         <div class="flex justify-between mt-6">
-          <button @click="isEditing = true" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+          <button @click="isEditing = true" class="bg-sky-400 text-white px-4 py-2 rounded hover:bg-sky-600">
             Edit
           </button>
-          <button @click="confirmDelete" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">
+          <button @click="confirmDelete" class="bg-orange-400 text-white px-4 py-2 rounded hover:bg-orange-600">
             Delete Account
           </button>
         </div>
