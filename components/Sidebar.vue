@@ -46,8 +46,8 @@ const menuItems = computed(() => {
         v-for="item in menuItems"
         :key="item.to"
         :to="item.to"
-        class="flex items-center space-x-3 px-3 py-2 hover:bg-gray-200 rounded-md"
-      >
+        class="flex items-center space-x-3 px-3 py-2 rounded-md text-gray-700 hover:bg-sky-50 hover:text-slate-800 dark:text-gray-300 dark:hover:bg-slate-700 dark:hover:text-white"
+        exact-active-class="bg-sky-100 text-black font-semibold dark:bg-slate-700 dark:text-white" >
         <component :is="item.icon" class="w-5 h-5" />
         <span v-if="!props.collapsed">{{ item.label }}</span>
       </NuxtLink>
