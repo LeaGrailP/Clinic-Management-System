@@ -35,8 +35,9 @@ async function handleRegister() {
 </script>
 
 <template>
-  <div class="p-6 max-w-md mx-auto">
-    <h2 class="text-xl font-bold mb-4">Register New Cashier</h2>
+  <div class="min-h-screen bg-slate-50 dark:bg-slate-800 py-12 px-6">
+    <div class="max-w-xl mx-auto dark:bg-slate-600 bg-sky-200 shadow rounded-lg p-8 text-slate-800 dark:text-slate-100">
+    <h2 class="text-2xl font-bold mb-6 text-center">Register New Cashier</h2>
     <form @submit.prevent="handleRegister" class="flex flex-col gap-4">
       <input
         v-model="name"
@@ -53,15 +54,15 @@ async function handleRegister() {
         required
       />
 
-      <!-- Hidden field for clarity, optional -->
       <input v-model="role" type="hidden" />
 
       <button
         type="submit"
-        class="bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition"
+        class="bg-sky-400  py-2 rounded hover:bg-sky-600 transition"
       >
         Register Cashier
       </button>
     </form>
+  </div>
   </div>
 </template>

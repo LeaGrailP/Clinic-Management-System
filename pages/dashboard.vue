@@ -40,6 +40,11 @@ const customer = reactive({
   tin: ''
 })
 
+const progress = reactive({
+  active: false,
+  value: 0
+})
+
 const tendered = ref(0)
 const receipt = ref(null)
 const isPrinting = ref(false)
@@ -65,6 +70,31 @@ watch(productSearch, (val) => {
     debouncedSearch.value = String(val || '').trim().toLowerCase()
   }, 250)
 })
+// --- PROGRESS BAR --- //
+function startProgress(duration = 600) {
+  return new Promise(resolve => {
+
+    progress.active = true
+    progress.value = 0
+
+    const start = performance.now()
+
+    function animate(now) {
+      const elapsed = now - start
+      const percent = Math.min(80, (elapsed / duration) * 80)
+
+      progress.value = percent
+
+      if (percent < 80) {
+        requestAnimationFrame(animate)
+      } else {
+        resolve()
+      }
+    }
+
+    requestAnimationFrame(animate)
+  })
+}
 //---PRODUCTS---//
 const sortedProducts = computed(() => {
   return products.value.slice().sort((a, b) =>
@@ -350,11 +380,35 @@ onMounted(() => {
     preview: () => (showPreview.value = true)
   }
 
-  window.addEventListener('footer-save', handlers.save)
-  window.addEventListener('footer-cancel', handlers.cancel)
-  window.addEventListener('footer-open-drawer', handlers.drawer)
-  window.addEventListener('footer-check-printer', handlers.checkPrinter)
-  window.addEventListener('footer-preview-receipt', handlers.preview)
+  window.addEventListener('footer-save', async () => {
+  await startProgress(800)        // show progress bar first
+  await saveInvoice()             // then run the action
+  await finishProgress()          // finish progress bar
+})
+
+window.addEventListener('footer-cancel', async () => {
+  await startProgress(400)
+  clearInvoice()
+  await finishProgress()
+})
+
+window.addEventListener('footer-open-drawer', async () => {
+  await startProgress(500)
+  await openCashDrawer()
+  await finishProgress()
+})
+
+window.addEventListener('footer-check-printer', async () => {
+  await startProgress(600)
+  await checkPrinter()
+  await finishProgress()
+})
+
+window.addEventListener('footer-preview-receipt', async () => {
+  await startProgress(300)
+  showPreview.value = true         // open pop-up AFTER progress
+  await finishProgress()
+})
 
   onBeforeUnmount(() => {
     clearInterval(clockInterval)
@@ -367,6 +421,18 @@ onMounted(() => {
   })
 })
 
+async function finishProgress() {
+  progress.value = 100
+  setTimeout(() => {
+    progress.active = false
+    progress.value = 0
+  }, 150)
+}
+defineExpose({
+  progress,
+  startProgress,
+  finishProgress
+})
 const invoiceFields = [
   { label: 'Invoice Number', key: 'invoiceNumber' },
   { label: 'Issued By', key: 'issuedBy' },
@@ -376,6 +442,11 @@ const invoiceFields = [
 </script>
 
 <template>
+  <div v-if="progress.active"
+      class="w-full h-2 bg-slate-300 dark:bg-slate-700 rounded-b">
+    <div class="h-full bg-sky-500 dark:bg-sky-400 transition-all"
+        :style="{ width: progress.value + '%' }"></div>
+  </div>
   <div class="min-h-screen p-6 space-y-6 pb-32 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100">
 
     <!-- Invoice Info -->

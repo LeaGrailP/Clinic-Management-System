@@ -12,8 +12,8 @@ const name = ref('')
 const password = ref('')
 const loginRole = ref('admin')
 const showSetup = ref(false)
+const loading = ref(false)
 
-// 🔍 Check if admin exists on mount
 onMounted(async () => {
   try {
     const exists = await window.electronAPI.checkAdmin()
@@ -23,7 +23,6 @@ onMounted(async () => {
   }
 })
 
-/** 🛠 Setup Admin Account */
 async function handleSetup() {
   try {
     const result = await window.electronAPI.createAdmin({
@@ -43,8 +42,8 @@ async function handleSetup() {
   }
 }
 
-/** 🔑 Handle normal login */
 async function handleLogin() {
+  loading.value = true
   try {
     const result = await window.electronAPI.login({
       role: loginRole.value,
@@ -58,7 +57,7 @@ async function handleLogin() {
       localStorage.setItem('role', result.role)
 
       const user = useState('user')
-user.value = { name: result.name, role: result.role }
+      user.value = { name: result.name, role: result.role }
 
       if (result.role === 'admin') router.push('/dashboard')
       else if (result.role === 'cashier') router.push('/dashboard')
@@ -68,53 +67,54 @@ user.value = { name: result.name, role: result.role }
   } catch (err) {
     console.error('Login error:', err)
     alert('Something went wrong during login.')
+  } finally {
+    loading.value = false
   }
 }
 </script>
 
-
 <template>
   <div class="min-h-screen flex items-center justify-center">
     <background />
-    <div class="z-10 p-8 bg-white bg-opacity-10 backdrop-blur-md rounded-lg shadow-lg">
-      
-      <!-- 🔑 Setup Admin Form (shown only if no admin exists) -->
+    <div class="z-10 p-8 bg-slate-50 bg-opacity-10 backdrop-blur-md rounded-lg shadow-lg">
       <form v-if="showSetup" @submit.prevent="handleSetup" class="p-8 rounded w-full max-w-sm">
-        <h2 class="text-2xl font-bold mb-6 text-center text-white">
+        <h2 class="text-2xl font-bold mb-6 text-center text-slate-50">
           Setup Admin Account
         </h2>
         <input
           v-model="name"
           type="text"
           placeholder="Admin Name"
-          class="w-full p-2 border border-gray-300 rounded mb-4"
+          class="w-full p-2 border border-gray-400 rounded mb-4"
           required
         />
         <input
           v-model="password"
           type="password"
           placeholder="Password"
-          class="w-full p-2 border border-gray-300 rounded mb-6"
+          class="w-full p-2 border border-gray-400 rounded mb-6"
           required
         />
         <button
           type="submit"
-          class="w-full bg-green-500 text-white py-2 rounded hover:bg-green-600"
+          class="w-full bg-green-500 text-slate-50 py-2 rounded hover:bg-green-600"
         >
           Create Admin
         </button>
       </form>
+      <form @submit.prevent="handleLogin" class="p-8 rounded w-full max-w-sm">
+        <!-- Progress Bar (shows on top of form, not replacing it) -->
+        <div v-if="loading" class="w-full h-1 bg-gray-400 rounded overflow-hidden mb-4">
+          <div class="h-full bg-sky-600 animate-pulse"></div>
+        </div>
 
-      <!-- 🔑 Normal Login Form -->
-      <form v-else @submit.prevent="handleLogin" class="p-8 rounded w-full max-w-sm">
-        <h2 class="text-2xl font-bold mb-6 text-center text-white">
+        <h2 class="text-2xl font-bold mb-6 text-center text-slate-50">
           {{ loginRole.charAt(0).toUpperCase() + loginRole.slice(1) }} Login
         </h2>
 
-        <!-- Role chooser -->
         <select
           v-model="loginRole"
-          class="w-full p-2 border border-gray-300 rounded mb-4 bg-white text-black"
+          class="w-full p-2 border border-gray-400 rounded mb-4 bg-slate-50 text-slate-800"
         >
           <option value="admin">Admin</option>
           <option value="cashier">Cashier</option>
@@ -124,24 +124,26 @@ user.value = { name: result.name, role: result.role }
           v-model="name"
           type="text"
           placeholder="Name"
-          class="w-full p-2 border border-gray-300 rounded mb-4"
+          class="w-full p-2 border border-gray-400 rounded mb-4"
           required
         />
         <input
           v-model="password"
           type="password"
           placeholder="Password"
-          class="w-full p-2 border border-gray-300 rounded mb-6"
+          class="w-full p-2 border border-gray-400 rounded mb-6"
           required
         />
+
         <button
           type="submit"
-          class="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600"
+          :disabled="loading"
+          class="w-full bg-sky-600 text-slate-50 py-2 rounded hover:bg-sky-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
         >
-          Login
+          <span v-if="!loading">Login</span>
+          <span v-else>Processing...</span>
         </button>
       </form>
-
     </div>
   </div>
 </template>
