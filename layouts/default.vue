@@ -7,6 +7,7 @@ import Footer from '@/components/Footer.vue'
 
 const collapsed = ref(false)
 const route = useRoute()
+const user = useState('user')
 
 function toggleSidebar() {
   collapsed.value = !collapsed.value
@@ -40,6 +41,7 @@ function forwardEvent(event) {
         v-if="!route.meta.hideSidebar"
         class="fixed top-12 bottom-8 left-0 z-10 bg-sky-200 dark:bg-gray-800 border-r transition-all duration-300"
         :collapsed="collapsed"
+        :role="user?.role"
         @toggle="toggleSidebar"
       />
 

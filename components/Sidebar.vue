@@ -1,35 +1,56 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import AdminSidebar from '~/components/AdminSidebar.vue'
-import CashierSidebar from '~/components/CashierSidebar.vue'
+import { defineProps, computed } from 'vue'
+import { Menu, ChevronLeft, ShoppingCart, ArrowLeftRight, Info, User, Home, LogIn } from 'lucide-vue-next'
 
-const collapsed = ref(false)
-const user = ref({ role: null })
-
-onMounted(() => {
-  const stored = localStorage.getItem('user')
-  if (stored) {
-    try {
-      const parsed = JSON.parse(stored)
-      user.value = parsed.role ? parsed : { role: stored }
-    } catch {
-      user.value = { role: stored }
-    }
-  }
+const props = defineProps({
+  collapsed: Boolean,
+  role: String
 })
 
-const sidebarComponent = computed(() => {
-  if (user.value.role === 'admin') return AdminSidebar
-  if (user.value.role === 'cashier') return CashierSidebar
-  return null
+const menuItems = computed(() => {
+  const adminMenu = [
+    { label: "Dashboard", icon: Home, to: "/dashboard" },
+    { label: "Transactions", icon: ArrowLeftRight, to: "/transactions" },
+    { label: "Customer", icon: User, to: "/customer" },
+    { label: "Products", icon: ShoppingCart, to: "/products" },
+    { label: "Create Account", icon: LogIn, to: "/register" },
+    { label: "About", icon: Info, to: "/about" }
+  ]
+
+  const cashierMenu = [
+    { label: "Dashboard", icon: Home, to: "/dashboard" },
+    { label: "Transactions", icon: ArrowLeftRight, to: "/transactions" },
+    { label: "Customer", icon: User, to: "/customer" },
+    { label: "About", icon: Info, to: "/about" }
+  ]
+
+  return props.role === "admin" ? adminMenu : cashierMenu
 })
 </script>
 
 <template>
-  <component
-    :is="sidebarComponent"
-    v-if="sidebarComponent"
-    :collapsed="collapsed"
-    @toggle="collapsed = !collapsed"
-  />
+  <aside
+    :class="[
+      'h-full flex flex-col transition-all duration-300 bg-white border-r',
+      props.collapsed ? 'w-16' : 'w-64'
+    ]"
+  >
+    <div class="flex items-center justify-between p-4 border-b">
+      <button @click="$emit('toggle')" class="text-gray-600 hover:text-black">
+        <component :is="props.collapsed ? Menu : ChevronLeft" class="w-5 h-5" />
+      </button>
+    </div>
+
+    <nav class="flex-1 p-2 space-y-1">
+      <NuxtLink
+        v-for="item in menuItems"
+        :key="item.to"
+        :to="item.to"
+        class="flex items-center space-x-3 px-3 py-2 hover:bg-gray-200 rounded-md"
+      >
+        <component :is="item.icon" class="w-5 h-5" />
+        <span v-if="!props.collapsed">{{ item.label }}</span>
+      </NuxtLink>
+    </nav>
+  </aside>
 </template>

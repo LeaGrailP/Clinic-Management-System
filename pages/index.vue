@@ -57,8 +57,8 @@ async function handleLogin() {
       localStorage.setItem('name', result.name)
       localStorage.setItem('role', result.role)
 
-      const user = useState('user', () => null)
-      user.value = { name: result.name, role: result.role }
+      const user = useState('user')
+user.value = { name: result.name, role: result.role }
 
       if (result.role === 'admin') router.push('/dashboard')
       else if (result.role === 'cashier') router.push('/dashboard')
