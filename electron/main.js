@@ -17,24 +17,24 @@ app.whenReady().then(() => {
 
 // -------------------- DATABASE INIT --------------------
 function initDB() {
-  // Always relative to THIS file's folder (electron/main.js)
-  const dbPath = path.resolve(__dirname, 'userData', 'database.db');
-  const dbDir = path.dirname(dbPath);
+  // ✅ Ensure database directory exists
+  const dbDir = path.resolve('C:ClinicPOS/userData')
+  if (!fs.existsSync(dbDir)) {
+    fs.mkdirSync(dbDir, { recursive: true })
+    console.log('📁 Created missing userData directory.')
+  }
 
-  console.log('📂 Electron is trying to open DB at:', dbPath);
-
-  if (!fs.existsSync(dbDir)) fs.mkdirSync(dbDir, { recursive: true });
-
-  db = new Database(dbPath);
-
+  const dbPath = path.join(dbDir, 'database.db')
+  const db = new Database(dbPath)
+  console.log('🧭 Using DB at:', dbPath)
 
   // Users table
   db.exec(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT UNIQUE NOT NULL,
-      password TEXT NOT NULL,
-      role TEXT NOT NULL
+      name TEXT UNIQUE,
+      password TEXT,
+      role TEXT
     )
   `)
 
@@ -93,6 +93,7 @@ function initDB() {
     )
   `)
 
+    console.log('✅ Tables verified / created')
   return db
 }
 
@@ -111,30 +112,77 @@ function createWindow() {
   win.loadURL('http://localhost:3000') // Nuxt dev/build URL
 }
   // -------------------- USERS --------------------
-  ipcMain.handle('login', async (_event, { name, password }) => {
-    try {
-      const user = db.prepare('SELECT * FROM users WHERE name = ?').get(name)
-      if (!user) return { success: false, error: 'User not found' }
-      const match = await bcrypt.compare(password, user.password)
-      if (!match) return { success: false, error: 'Incorrect password' }
-      return { success: true, name: user.name, role: user.role }
-    } catch (err) {
-      console.error('Login error:', err)
-      return { success: false, error: 'Internal login error' }
-    }
-  })
+  ipcMain.handle('auth:register', async (event, { name, password, role }) => {
+  try {
+    const hashed = await bcrypt.hash(password, 10)
 
-  ipcMain.handle('auth:register', async (_event, { name, password, role }) => {
-    try {
-      const hash = await bcrypt.hash(password, 10)
-      db.prepare(`INSERT INTO users (name, password, role) VALUES (?, ?, ?)`).run(name, hash, role)
-      return { success: true }
-    } catch (err) {
-      if (err.code === 'SQLITE_CONSTRAINT') return { success: false, error: 'Name already exists' }
-      console.error('Register error:', err)
-      return { success: false, error: 'Registration failed' }
+    // Prepare insert
+    const insert = db.prepare(
+      'INSERT INTO users (name, password, role) VALUES (?, ?, ?)'
+    )
+
+    // Transaction ensures DB isn’t locked by partial writes
+    const transaction = db.transaction((name, hashed, role) => {
+      insert.run(name, hashed, role)
+    })
+
+    transaction(name, hashed, role)
+
+    return { success: true }
+  } catch (err) {
+    console.error('Register error:', err)
+    return { success: false, error: err.message }
+  }
+})
+
+ipcMain.handle('checkAdmin', () => {
+  try {
+    const row = db.prepare("SELECT 1 FROM users WHERE role = 'admin' LIMIT 1").get()
+    return !!row
+  } catch (err) {
+    console.error('checkAdmin error:', err)
+    throw err
+  }
+})
+
+// 🛠 Create admin user
+ipcMain.handle('createAdmin', (event, { name, password }) => {
+  try {
+    const hash = bcrypt.hashSync(password, 10)
+    db.prepare(
+      "INSERT INTO users (name, password, role) VALUES (?, ?, 'admin')"
+    ).run(name, hash)
+    return { success: true }
+  } catch (err) {
+    console.error('createAdmin error:', err)
+    return { success: false, error: err.message }
+  }
+})
+
+// 🔑 Login
+ipcMain.handle('login', (event, { role, name, password }) => {
+  try {
+    // ✅ role comes from client, must be quoted properly
+    const user = db.prepare(
+      'SELECT * FROM users WHERE role = ? AND name = ? LIMIT 1'
+    ).get(role, name)
+
+    if (!user) {
+      return { success: false, error: 'User not found' }
     }
-  })
+
+    const valid = bcrypt.compareSync(password, user.password)
+    if (!valid) {
+      return { success: false, error: 'Invalid password' }
+    }
+
+    return { success: true, name: user.name, role: user.role }
+  } catch (err) {
+    console.error('login error:', err)
+    return { success: false, error: err.message }
+  }
+})
+
 
   // -------------------- PATIENTS --------------------
   ipcMain.handle('get-patients', () => db.prepare('SELECT * FROM clinicpatients').all())

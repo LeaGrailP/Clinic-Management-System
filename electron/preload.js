@@ -5,10 +5,13 @@ contextBridge.exposeInMainWorld('electron', {
   printReceipt: (html) => ipcRenderer.invoke('print-receipt', html),
 })
 
-contextBridge.exposeInMainWorld('auth', {
-  login: (credentials) => ipcRenderer.invoke('login', credentials),
-  register: (account) => ipcRenderer.invoke('auth:register', account),
+contextBridge.exposeInMainWorld('electronAPI', {
+  checkAdmin: () => ipcRenderer.invoke('checkAdmin'),
+  createAdmin: (data) => ipcRenderer.invoke('createAdmin', data),
+  register: (data) => ipcRenderer.invoke('auth:register', data),
+  login: (data) => ipcRenderer.invoke('login', data)
 });
+
 
 contextBridge.exposeInMainWorld('patientAPI', {
   get: () => ipcRenderer.invoke('get-patients'),
