@@ -1,4 +1,3 @@
-
 export default defineNuxtRouteMiddleware((to) => {
   const user = useState<any>('user')
 
@@ -14,4 +13,3 @@ export default defineNuxtRouteMiddleware((to) => {
     return navigateTo('/unauthorized')
   }
 })
-
