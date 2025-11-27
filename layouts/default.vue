@@ -33,8 +33,7 @@ function forwardEvent(event) {
   <div class="min-h-screen bg-slate-50 dark:bg-slate-800">
     <Header
       v-if="!route.meta.hideHeader"
-      class="fixed top-0 left-0 right-0 h-12 z-20 "
-    />
+      class="fixed top-0 left-0 right-0 h-12 z-20 "/>
 
     <div class="pt-12 pb-8 flex">
       <Sidebar
@@ -42,8 +41,7 @@ function forwardEvent(event) {
         class="fixed top-12 bottom-8 left-0 z-10 bg-sky-200 dark:bg-gray-800 border-r transition-all duration-300"
         :collapsed="collapsed"
         :role="user?.role"
-        @toggle="toggleSidebar"
-      />
+        @toggle="toggleSidebar"/>
 
       <main
         :class="[
@@ -53,8 +51,7 @@ function forwardEvent(event) {
             ? 'ml-16'
             : 'ml-64',
           'flex-1 p-4 transition-all duration-300 w-full'
-        ]"
-      >
+        ]">
         <slot />
       </main>
 

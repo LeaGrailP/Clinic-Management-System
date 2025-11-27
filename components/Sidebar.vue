@@ -31,12 +31,11 @@ const menuItems = computed(() => {
 <template>
   <aside
     :class="[
-      'h-full flex flex-col transition-all duration-300 bg-white border-r',
+      'h-full flex flex-col transition-all duration-300 bg-slate-50 border-r',
       props.collapsed ? 'w-16' : 'w-64'
-    ]"
-  >
+    ]">
     <div class="flex items-center justify-between p-4 border-b">
-      <button @click="$emit('toggle')" class="text-gray-600 hover:text-black">
+      <button @click="$emit('toggle')" class="text-gray-600 hover:text-slate-800 dark:text-gray-300">
         <component :is="props.collapsed ? Menu : ChevronLeft" class="w-5 h-5" />
       </button>
     </div>
