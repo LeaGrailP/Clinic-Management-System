@@ -19,76 +19,80 @@
     </thead>
 
     <tbody>
-      <tr 
-        v-for="index in clinicpatients" 
-        :key="index" 
-        class="border-b hover:bg-sky-200 cursor-pointer transition"
-        @click="index.expanded = !index.expanded"
-      >
-        <td class="px-5 py-3 font-medium">
-          {{ index.firstName }} {{ index.lastName }}
-        </td>
-        <td class="px-5 py-3">{{ index.phone }}</td>
-        <td class="px-5 py-3">{{ index.isSenior ? "Yes" : "No" }}</td>
-        <td class="px-5 py-3">{{ index.isPWD ? "Yes" : "No" }}</td>
-        <td class="px-5 py-3 text-right text-slate-400">
-          <span :class="index.expanded ? 'rotate-180' : ''" 
-                class="inline-block transition-transform">
-            ▼
-          </span>
-        </td>
-      </tr>
-      <tr 
-        v-for="index in clinicpatients" 
-        v-show="index.expanded" 
-        :key="'details-' + index.firstName"
-        class="bg-slate-50 dark:bg-slate-800 border-gray-400"
-      >
-        <td colspan="5" class="px-6 py-5">
+  <template v-for="patient in clinicpatients" :key="patient.id">
+    
+    <!-- MAIN ROW -->
+    <tr
+      class="border-b hover:bg-sky-200 cursor-pointer transition"
+      @click="patient.expanded = !patient.expanded"
+    >
+      <td class="px-5 py-3 font-medium">
+        {{ patient.firstName }} {{ patient.lastName }}
+      </td>
+      <td class="px-5 py-3">{{ patient.phone }}</td>
+      <td class="px-5 py-3">{{ patient.isSenior ? "Yes" : "No" }}</td>
+      <td class="px-5 py-3">{{ patient.isPWD ? "Yes" : "No" }}</td>
 
-          <div class="grid grid-cols-2 gap-4">
+      <td class="px-5 py-3 text-right text-slate-400">
+        <span :class="patient.expanded ? 'rotate-180' : ''"
+              class="inline-block transition-transform">▼
+        </span>
+      </td>
+    </tr>
 
-            <div>
-              <p class="text-sm text-slate-800 dark:text-slate-100">Middle Name</p>
-              <p class="font-medium">{{ index.middleName || '-' }}</p>
-            </div>
+    <!-- DROPDOWN ROW -->
+    <tr v-show="patient.expanded" class="bg-slate-50 dark:bg-slate-800">
+      <td colspan="5" class="px-6 py-5">
 
-            <div>
-              <p class="text-sm text-slate-800 dark:text-slate-100">Address</p>
-              <p class="font-medium">{{ index.address }}</p>
-            </div>
+        <div class="grid grid-cols-2 gap-4">
 
-            <div>
-              <p class="text-sm text-slate-800 dark:text-slate-100">Business Style</p>
-              <p class="font-medium">{{ index.businessStyle }}</p>
-            </div>
-
-            <div>
-              <p class="text-sm text-slate-800 dark:text-slate-100">TIN</p>
-              <p class="font-medium">{{ index.tin }}</p>
-            </div>
-
-            <div>
-              <p class="text-sm text-slate-800 dark:text-slate-100">Senior ID</p>
-              <p class="font-medium">{{ index.isSenior ? index.seniorId : '-' }}</p>
-            </div>
-
-            <div>
-              <p class="text-sm text-slate-800 dark:text-slate-100">PWD ID</p>
-              <p class="font-medium">{{ index.isPWD ? index.pwdId : '-' }}</p>
-            </div>
-
+          <div>
+            <p class="text-sm">Middle Name</p>
+            <p class="font-medium">{{ patient.middleName || '-' }}</p>
           </div>
 
-        </td>
-      </tr>
-      <tr v-if="clinicpatients.length === 0">
-        <td colspan="5" class="text-center py-6 text-slate-800 dark:text-slate-100">
-          No patient records yet.
-        </td>
-      </tr>
+          <div>
+            <p class="text-sm">Address</p>
+            <p class="font-medium">{{ patient.address }}</p>
+          </div>
 
-    </tbody>
+          <div>
+            <p class="text-sm">Business Style</p>
+            <p class="font-medium">{{ patient.businessStyle || '-' }}</p>
+          </div>
+
+          <div>
+            <p class="text-sm">TIN</p>
+            <p class="font-medium">{{ patient.tin || '-' }}</p>
+          </div>
+
+          <div>
+            <p class="text-sm">Senior ID</p>
+            <p class="font-medium">
+              {{ patient.isSenior ? patient.seniorId : '-' }}
+            </p>
+          </div>
+
+          <div>
+            <p class="text-sm">PWD ID</p>
+            <p class="font-medium">
+              {{ patient.isPWD ? patient.pwdId : '-' }}
+            </p>
+          </div>
+
+        </div>
+
+      </td>
+    </tr>
+
+  </template>
+
+  <!-- EMPTY STATE -->
+  <tr v-if="clinicpatients.length === 0">
+    <td colspan="5" class="text-center py-6">No patient records yet.</td>
+  </tr>
+</tbody>
+
   </table>
 </div>
 
@@ -295,8 +299,6 @@ async function submitForm() {
     console.error('Error adding patient:', err)
   }
 }
-
-
 
 
 onMounted(fetchClinicpatients)
