@@ -121,42 +121,31 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useUser } from '~/composables/useUser'
 import { Trash2, Pencil, RefreshCw } from 'lucide-vue-next'
 
+// --- STATE ---
 const productname = ref('')
 const price = ref(0)
 const vatType = ref('')
 const products = ref([])
 const editingId = ref(null)
 
-definePageMeta({ layout: 'default' })
-const router = useRouter()
-const { isAdmin } = useUser()
-
-onMounted(() => {
-  if (!isAdmin.value) {
-    alert('Access denied. Admins only.')
-    router.push('/')
-  }
+// --- PAGE META ---
+definePageMeta({
+  middleware: ['auth'],
+  requiresAdmin: true
 })
 
-// VAT COMPUTATIONS
+const router = useRouter()
+
+// --- COMPUTED VAT FIELDS ---
 const vatSales = computed(() => (vatType.value === 'vatable' ? price.value : 0))
-const vatAmount = computed(() =>
-  vatType.value === 'vatable' ? (price.value * 0.12) : 0
-)
+const vatAmount = computed(() => (vatType.value === 'vatable' ? price.value * 0.12 : 0))
 const vatExempt = computed(() => (vatType.value === 'exempt' ? price.value : 0))
 const zeroRated = computed(() => (vatType.value === 'zero' ? price.value : 0))
 const total = computed(() => price.value + vatAmount.value)
 
-function handleImageUpload(event) {
-  const file = event.target.files[0]
-  if (!file) return
-  imageFile.value = file
-  imagePreview.value = URL.createObjectURL(file) // 🟢 Preview before save
-}
-
+// --- FUNCTIONS ---
 async function fetchProducts() {
   try {
     products.value = await window.electron.invoke('get-products')
@@ -165,27 +154,11 @@ async function fetchProducts() {
   }
 }
 
-async function handleSubmit() {
-  const payload = {
-    productname: productname.value,
-    price: price.value,
-    vatType: vatType.value,
-    vatSales: vatSales.value,
-    vatAmount: vatAmount.value,
-    vatExempt: vatExempt.value,
-    zeroRated: zeroRated.value,
-    total: total.value,
-  }
-
-  if (editingId.value) {
-    payload.id = editingId.value
-    await window.electron.invoke('update-product', payload)
-  } else {
-    await window.electron.invoke('add-product', payload)
-  }
-
-  clearForm()
-  fetchProducts()
+function clearForm() {
+  editingId.value = null
+  productname.value = ''
+  price.value = 0
+  vatType.value = ''
 }
 
 function startEdit(product) {
@@ -199,11 +172,27 @@ function cancelEdit() {
   clearForm()
 }
 
-function clearForm() {
-  editingId.value = null
-  productname.value = ''
-  price.value = 0
-  vatType.value = ''
+async function handleSubmit() {
+  const payload = {
+    productname: productname.value,
+    price: price.value,
+    vatType: vatType.value,
+    vatSales: vatSales.value,
+    vatAmount: vatAmount.value,
+    vatExempt: vatExempt.value,
+    zeroRated: zeroRated.value,
+    total: total.value
+  }
+
+  if (editingId.value) {
+    payload.id = editingId.value
+    await window.electron.invoke('update-product', payload)
+  } else {
+    await window.electron.invoke('add-product', payload)
+  }
+
+  clearForm()
+  fetchProducts()
 }
 
 async function deleteProduct(id) {
@@ -212,5 +201,6 @@ async function deleteProduct(id) {
   fetchProducts()
 }
 
+// --- ON MOUNT ---
 onMounted(fetchProducts)
 </script>
