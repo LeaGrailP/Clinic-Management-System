@@ -18,6 +18,7 @@ contextBridge.exposeInMainWorld('patientAPI', {
   add: (data) => ipcRenderer.invoke('add-patient', data),
   update: (data) => ipcRenderer.invoke('update-patient', data),
   delete: (id) => ipcRenderer.invoke('delete-patient', id),
+  searchPatients: (query) => ipcRenderer.invoke('search-patients', query),
 });
 
 contextBridge.exposeInMainWorld('productAPI', {
