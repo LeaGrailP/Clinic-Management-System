@@ -1,0 +1,1 @@
+import{C as t,D as a}from"#entry";import{u}from"./CT9M6TF9.js";const s=t(e=>{const r=u("user");if(!r.value&&e.path!=="/login"&&e.path!=="/register")return a("/login");if(e.meta.requiresAdmin&&r.value?.role!=="admin")return a("/unauthorized");if(e.meta.requiresStaff&&r.value?.role!=="cashier")return a("/unauthorized")});export{s as default};

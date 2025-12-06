@@ -16,7 +16,7 @@ const loading = ref(false)
 
 onMounted(async () => {
   try {
-    const exists = await window.electronAPI.checkAdmin()
+    const exists = await window.api.checkAdmin()
     showSetup.value = !exists
   } catch (err) {
     console.error('Error checking admin:', err) 
@@ -25,7 +25,7 @@ onMounted(async () => {
 
 async function handleSetup() {
   try {
-    const result = await window.electronAPI.createAdmin({
+    const result = await window.api.createAdmin({
       name: name.value,
       password: password.value
     })
@@ -45,7 +45,7 @@ async function handleSetup() {
 async function handleLogin() {
   loading.value = true
   try {
-    const result = await window.electronAPI.login({
+    const result = await window.api.login({
       role: loginRole.value,
       name: name.value,
       password: password.value
@@ -59,8 +59,7 @@ async function handleLogin() {
       const user = useState('user')
       user.value = { name: result.name, role: result.role }
 
-      if (result.role === 'admin') router.push('/dashboard')
-      else if (result.role === 'cashier') router.push('/dashboard')
+      router.push('/dashboard')
     } else {
       alert(result?.error || 'Login failed.')
     }
@@ -102,8 +101,8 @@ async function handleLogin() {
           Create Admin
         </button>
       </form>
+
       <form @submit.prevent="handleLogin" class="p-8 rounded w-full max-w-sm">
-        <!-- Progress Bar (shows on top of form, not replacing it) -->
         <div v-if="loading" class="w-full h-1 bg-gray-400 rounded overflow-hidden mb-4">
           <div class="h-full bg-sky-600 animate-pulse"></div>
         </div>
