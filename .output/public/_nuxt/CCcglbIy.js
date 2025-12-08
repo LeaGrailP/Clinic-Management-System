@@ -1,4 +1,4 @@
-import{J as a}from"#entry";/**
+import{K as a}from"#entry";/**
  * @license lucide-vue-next v0.513.0 - ISC
  *
  * This source code is licensed under the ISC license.

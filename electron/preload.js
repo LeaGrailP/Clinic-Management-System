@@ -14,6 +14,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   register: (data) => ipcRenderer.invoke('auth:register', data),
   login: (data) => ipcRenderer.invoke('login', data),
   resetPassword: (data) => ipcRenderer.invoke('reset-password', data),
+  updateName: (data) => ipcRenderer.invoke('user:updateName', data),
 });
 
 
@@ -29,5 +30,5 @@ contextBridge.exposeInMainWorld('productAPI', {
   get: () => ipcRenderer.invoke('get-products'),
   add: (data) => ipcRenderer.invoke('add-product', data),
   update: (data) => ipcRenderer.invoke('update-product', data),
-  delete: (id) => ipcRenderer.invoke('delete-product', id),
-});
+  delete: (id) => ipcRenderer.invoke('delete-product', id)
+})

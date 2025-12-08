@@ -1,48 +1,44 @@
 <script setup>
 import background from '~/components/background.vue'
 import { useRouter } from 'vue-router'
+import { Eye, EyeOff } from 'lucide-vue-next'
 import { ref, onMounted } from 'vue'
 
-definePageMeta({
-  layout: 'login'
-})
+definePageMeta({ layout: 'login' })
 
 const router = useRouter()
 
-// Form fields
+// --- Form Data ---
 const name = ref('')
 const password = ref('')
-
-// UI state
 const loginRole = ref('admin')
-const showSetup = ref(false)
-const checkingAdmin = ref(true)
-const loading = ref(false)
-const passwordVisible = ref(false)     // 👁 Password toggle
+const passwordVisible = ref(false)
 
-// Forgot password UI state
-const showForgot = ref(false)
+// Forgot password data
 const forgotName = ref('')
 const forgotNewPassword = ref('')
 const forgotLoading = ref(false)
+const loading = ref(false)
 
-// Reset inputs when switching forms
-function resetFields() {
-  name.value = ''
-  password.value = ''
-}
+// --- Single UI Controller ---
+const currentView = ref('checking')  
+// possible values: checking, setup, login, forgot
 
 onMounted(async () => {
   try {
     const exists = await window.electronAPI.checkAdmin()
-    showSetup.value = !exists
+    currentView.value = exists ? 'login' : 'setup'
   } catch (err) {
-    console.error('Error checking admin:', err)
-    showSetup.value = true
-  } finally {
-    checkingAdmin.value = false
+    console.error(err)
+    currentView.value = 'setup'  // fallback
   }
 })
+
+// Reset fields:
+function resetFields() {
+  name.value = ''
+  password.value = ''
+}
 
 // ---------------------- SETUP ADMIN ----------------------
 async function handleSetup() {
@@ -53,14 +49,14 @@ async function handleSetup() {
     })
 
     if (result?.success) {
-      alert('Admin account created successfully!')
-      showSetup.value = false
+      alert('Admin account created!')
       resetFields()
+      currentView.value = 'login'
     } else {
       alert(result?.error || 'Failed to create admin.')
     }
   } catch (err) {
-    console.error('Setup error:', err)
+    console.error(err)
   }
 }
 
@@ -87,7 +83,7 @@ async function handleLogin() {
       alert(result?.error || 'Login failed.')
     }
   } catch (err) {
-    console.error('Login error:', err)
+    console.error(err)
   } finally {
     loading.value = false
   }
@@ -103,20 +99,21 @@ async function handleForgotPassword() {
     })
 
     if (result?.success) {
-      alert('Password reset successfully!')
-      showForgot.value = false
+      alert('Password updated!')
+      currentView.value = 'login'
       forgotName.value = ''
       forgotNewPassword.value = ''
     } else {
       alert(result?.error || 'Reset failed.')
     }
   } catch (err) {
-    console.error('Forgot password error:', err)
+    console.error(err)
   } finally {
     forgotLoading.value = false
   }
 }
 </script>
+
 
 <template>
   <div class="min-h-screen flex items-center justify-center relative">
@@ -124,82 +121,68 @@ async function handleForgotPassword() {
 
     <div class="z-10 p-8 bg-white/10 backdrop-blur-lg rounded-xl shadow-2xl w-[380px]">
 
-      <!-- LOADING ADMIN CHECK -->
-      <template v-if="checkingAdmin">
+      <!-- CHECKING -->
+      <template v-if="currentView === 'checking'">
         <div class="text-white text-center text-lg py-4">Loading...</div>
       </template>
 
-      <!-- SETUP ADMIN FORM -->
-      <template v-else-if="showSetup">
-
+      <!-- SETUP -->
+      <template v-else-if="currentView === 'setup'">
         <h2 class="text-2xl font-semibold text-center text-white mb-6">
           Setup Admin Account
         </h2>
 
         <form @submit.prevent="handleSetup" class="space-y-4">
 
-          <!-- Admin Name -->
-          <input v-model="name"
-                 type="text"
-                 placeholder="Admin Name"
-                 class="w-full p-3 rounded bg-white/80 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400" />
+          <input v-model="name" type="text" placeholder="Admin Name"
+                 class="w-full p-3 rounded bg-white/80 text-gray-900" />
 
-          <!-- Password -->
-          <div class="relative">
-            <input :type="passwordVisible ? 'text' : 'password'"
-                   v-model="password"
-                   placeholder="Password"
-                   class="w-full p-3 rounded bg-white/80 text-gray-900 focus:ring-2 focus:ring-green-400" />
-
-            <button type="button"
-                    @click="passwordVisible = !passwordVisible"
-                    class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600">
-              {{ passwordVisible ? '🙈' : '👁' }}
-            </button>
-          </div>
+         <div class="relative">
+    <input 
+      :type="passwordVisible ? 'text' : 'password'" 
+      placeholder="Enter password"
+      class="border px-3 py-2 rounded w-full"
+    />
+    <button 
+      type="button"
+      @click="passwordVisible = !passwordVisible"
+      class="absolute right-3 top-1/2 -translate-y-1/2"
+    >
+      <component :is="passwordVisible ? EyeOff : Eye" class="w-5 h-5 text-black" />
+    </button>
+  </div>
 
           <button class="w-full bg-green-500 text-white py-2 rounded hover:bg-green-600">
             Create Admin
           </button>
-
         </form>
-
       </template>
 
-      <!-- LOGIN FORM -->
-      <template v-else-if="!showForgot">
-
+      <!-- LOGIN -->
+      <template v-else-if="currentView === 'login'">
         <h2 class="text-2xl font-semibold text-center text-white mb-6">
-         To Login
+          Login
         </h2>
 
         <form @submit.prevent="handleLogin" class="space-y-4">
 
-          <!-- Role dropdown only if admin exists -->
           <select v-model="loginRole"
-                  class="w-full p-3 rounded bg-white/80 text-gray-900"
-          >
+                  class="w-full p-3 rounded bg-white/80 text-gray-900">
             <option value="admin">Admin</option>
             <option value="cashier">Cashier</option>
           </select>
 
-          <!-- Username -->
-          <input v-model="name"
-                 type="text"
-                 placeholder="Name"
+          <input v-model="name" type="text" placeholder="Name"
                  class="w-full p-3 rounded bg-white/80 text-gray-900" />
 
-          <!-- Password w/ toggle -->
           <div class="relative">
-            <input
-              :type="passwordVisible ? 'text' : 'password'"
-              v-model="password"
-              placeholder="Password"
-              class="w-full p-3 rounded bg-white/80 text-gray-900"
-            />
+            <input :type="passwordVisible ? 'text' : 'password'"
+                   v-model="password" placeholder="Password"
+                   class="w-full p-3 rounded bg-white/80 text-gray-900" />
+
             <button type="button"
                     @click="passwordVisible = !passwordVisible"
-                    class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600">
+                    class="absolute right-3 top-1/2 -translate-y-1/2">
               {{ passwordVisible ? '🙈' : '👁' }}
             </button>
           </div>
@@ -210,29 +193,26 @@ async function handleForgotPassword() {
           </button>
 
           <p class="text-center text-white underline cursor-pointer"
-             @click="showForgot = true">
+             @click="currentView = 'forgot'">
             Forgot Password?
           </p>
 
         </form>
       </template>
 
-      <!-- FORGOT PASSWORD SCREEN -->
-      <template v-else>
-
+      <!-- FORGOT -->
+      <template v-else-if="currentView === 'forgot'">
         <h2 class="text-2xl font-semibold text-center text-white mb-6">
           Reset Password
         </h2>
 
         <form @submit.prevent="handleForgotPassword" class="space-y-4">
 
-          <input v-model="forgotName"
-                 type="text"
+          <input v-model="forgotName" type="text"
                  placeholder="Existing Username"
                  class="w-full p-3 rounded bg-white/80 text-gray-900" />
 
-          <input v-model="forgotNewPassword"
-                 type="password"
+          <input v-model="forgotNewPassword" type="password"
                  placeholder="New Password"
                  class="w-full p-3 rounded bg-white/80 text-gray-900" />
 
@@ -242,14 +222,14 @@ async function handleForgotPassword() {
           </button>
 
           <p class="text-center text-white underline cursor-pointer"
-             @click="showForgot = false">
+             @click="currentView = 'login'">
             Back to Login
           </p>
 
         </form>
-
       </template>
 
     </div>
   </div>
 </template>
+

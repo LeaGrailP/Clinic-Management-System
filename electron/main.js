@@ -27,7 +27,7 @@ function initDB() {
     fs.mkdirSync(dbDir, { recursive: true })
   }
 
-  const dbPath = path.join(dbDir, 'FeltheaPOS.db')
+  const dbPath = path.join(dbDir, 'DBTrial.db')
   const db = new Database(dbPath)
 
   console.log('🧭 Using DB at:', dbPath)
@@ -44,7 +44,9 @@ function initDB() {
       name TEXT UNIQUE,
       password TEXT,
       role TEXT,
-      newPassword TEXT
+      newPassword TEXT,
+      oldName TEXT,
+      newName TEXT
     )
   `)
 
@@ -186,9 +188,22 @@ function registerIPCHandlers() {
     }
   })
 
+  ipcMain.handle('user:updateName', (_event, { oldName, newName }) => {
+  try {
+    const stmt = db.prepare("UPDATE users SET name = ? WHERE name = ?");
+    const info = stmt.run(newName, oldName);
+
+    return { success: info.changes > 0 };
+  } catch (err) {
+    console.error("Update name error:", err);
+    return { success: false, error: err.message };
+  }
+});
+
+
   ipcMain.handle('reset-password', (event, { name, newPassword }) => {
   const hashed = bcrypt.hashSync(newPassword, 10)
-  const stmt = db.prepare(`UPDATE admin_users SET password = ? WHERE name = ?`)
+  const stmt = db.prepare(`UPDATE users SET password = ? WHERE name = ?`)
   const info = stmt.run(hashed, name)
 
   return { success: info.changes > 0 }
