@@ -27,7 +27,7 @@ function initDB() {
     fs.mkdirSync(dbDir, { recursive: true })
   }
 
-  const dbPath = path.join(dbDir, 'DBTrial.db')
+  const dbPath = path.join(dbDir, 'DBTrial2.db')
   const db = new Database(dbPath)
 
   console.log('🧭 Using DB at:', dbPath)
