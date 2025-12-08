@@ -21,20 +21,30 @@ app.whenReady().then(() => {
 
 // -------------------- DATABASE INIT --------------------
 function initDB() {
-  const dbDir = app.getPath('userData') // safe, cross-platform
-  if (!fs.existsSync(dbDir)) fs.mkdirSync(dbDir, { recursive: true })
+  const dbDir = app.getPath('userData')
 
-  const dbPath = path.join(dbDir, 'database.db')
+  if (!fs.existsSync(dbDir)) {
+    fs.mkdirSync(dbDir, { recursive: true })
+  }
+
+  const dbPath = path.join(dbDir, 'FeltheaPOS.db')
   const db = new Database(dbPath)
+
   console.log('🧭 Using DB at:', dbPath)
 
-  // Users table
+  // Optimize SQLite
+  db.pragma('journal_mode = WAL')
+  db.pragma('busy_timeout = 5000')
+
+
+  // ---------------------Users table------------------
   db.exec(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT UNIQUE,
       password TEXT,
-      role TEXT
+      role TEXT,
+      newPassword TEXT
     )
   `)
 
@@ -114,7 +124,9 @@ function createWindow() {
   webPreferences: {
     preload: path.join(__dirname, "preload.js"),
     contextIsolation: true,
-    nodeIntegration: false
+    nodeIntegration: false,
+    sandbox: false
+
   }
 });
 
@@ -125,6 +137,8 @@ function createWindow() {
 
 // -------------------- IPC HANDLERS --------------------
 function registerIPCHandlers() {
+
+
   // ---------- USERS ----------
   ipcMain.handle('auth:register', async (_event, { name, password, role }) => {
     try {
@@ -171,6 +185,15 @@ function registerIPCHandlers() {
       return { success: false, error: err.message }
     }
   })
+
+  ipcMain.handle('reset-password', (event, { name, newPassword }) => {
+  const hashed = bcrypt.hashSync(newPassword, 10)
+  const stmt = db.prepare(`UPDATE admin_users SET password = ? WHERE name = ?`)
+  const info = stmt.run(hashed, name)
+
+  return { success: info.changes > 0 }
+})
+
 
   // ---------- PATIENTS ----------
   ipcMain.handle('get-patients', () => db.prepare('SELECT * FROM clinicpatients').all())

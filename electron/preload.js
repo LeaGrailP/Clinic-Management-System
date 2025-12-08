@@ -1,3 +1,6 @@
+console.log("PRELOAD LOADED");
+
+
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('electron', {
@@ -9,7 +12,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   checkAdmin: () => ipcRenderer.invoke('checkAdmin'),
   createAdmin: (data) => ipcRenderer.invoke('createAdmin', data),
   register: (data) => ipcRenderer.invoke('auth:register', data),
-  login: (data) => ipcRenderer.invoke('login', data)
+  login: (data) => ipcRenderer.invoke('login', data),
+  resetPassword: (data) => ipcRenderer.invoke('reset-password', data),
 });
 
 
