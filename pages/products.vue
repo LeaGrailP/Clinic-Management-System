@@ -1,10 +1,12 @@
 <template>
   <div class="p-6 mx-auto">
     <!-- Form -->
-    <form @submit.prevent="handleSubmit" class="bg-slate-50 dark:bg-slate-600 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 p-4 rounded shadow mb-6 space-y-4">
+    <form @submit.prevent="handleSubmit"
+      class="bg-slate-50 dark:bg-slate-600 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 p-4 rounded shadow mb-6 space-y-4">
+      
       <!-- Name -->
       <div>
-        <label class="block font-semibold ">Product Name</label>
+        <label class="block font-semibold">Product Name</label>
         <input
           v-model="productname"
           class="w-full border-gray-400 px-3 py-2 rounded bg-slate-50 dark:bg-slate-800"
@@ -12,9 +14,10 @@
           required
         />
       </div>
+
       <!-- Price -->
       <div>
-        <label class="block font-semibold ">Price</label>
+        <label class="block font-semibold">Price</label>
         <input
           v-model.number="price"
           type="number"
@@ -30,7 +33,8 @@
         <select
           v-model="vatType"
           class="w-full border-gray-400 px-3 py-2 rounded bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100"
-          required>
+          required
+        >
           <option disabled value="">-- Select VAT Type --</option>
           <option value="vatable">VATable (12%)</option>
           <option value="exempt">VAT-Exempt</option>
@@ -39,24 +43,17 @@
       </div>
 
       <!-- Computed Fields -->
-      <div class="mt-2 space-y-1 ">
-        <p>VAT Sales: <strong>₱{{ vatSales.toFixed(2) }}</strong></p>
-        <p>VAT Amount: <strong>₱{{ vatAmount.toFixed(2) }}</strong></p>
-        <p>VAT-Exempt Sales: <strong>₱{{ vatExempt.toFixed(2) }}</strong></p>
-        <p>Zero-Rated Sales: <strong>₱{{ zeroRated.toFixed(2) }}</strong></p>
-        <p>Total Price: <strong>₱{{ total.toFixed(2) }}</strong></p>
+      <div class="mt-2 space-y-1">
+        <p>VAT Sales: <strong>₱{{ Number(vatSales).toFixed(2) }}</strong></p>
+        <p>VAT Amount: <strong>₱{{ Number(vatAmount).toFixed(2) }}</strong></p>
+        <p>VAT-Exempt Sales: <strong>₱{{ Number(vatExempt).toFixed(2) }}</strong></p>
+        <p>Zero-Rated Sales: <strong>₱{{ Number(zeroRated).toFixed(2) }}</strong></p>
+        <p>Total Price: <strong>₱{{ Number(total).toFixed(2) }}</strong></p>
       </div>
 
       <div class="flex items-center gap-2 mt-4">
-        <button
-          type="submit"
-          class="bg-sky-400 hover:bg-sky-600 font-semibold px-4 py-2 rounded"
-        >SAVE</button>
-
-        <button
-          v-if="editingId"
-          @click="cancelEdit"
-          type="button"
+        <button type="submit" class="bg-sky-400 hover:bg-sky-600 font-semibold px-4 py-2 rounded">SAVE</button>
+        <button v-if="editingId" @click="cancelEdit" type="button"
           class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded">
           CANCEL
         </button>
@@ -66,10 +63,7 @@
     <!-- Table -->
     <div class="bg-slate-50 dark:bg-slate-600 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 p-4 rounded shadow">
       <div class="flex justify-between items-center mb-4">
-        <button
-          @click="fetchProducts"
-          class="bg-sky-400 hover:bg-sky-600 px-2 py-1 rounded text-lg"
-        >
+        <button @click="fetchProducts" class="bg-sky-400 hover:bg-sky-600 px-2 py-1 rounded text-lg">
           <RefreshCw class="w-4 h-4" />
         </button>
       </div>
@@ -114,7 +108,6 @@
         No products found.
       </div>
     </div>
-
   </div>
 </template>
 
@@ -138,17 +131,26 @@ definePageMeta({
 
 const router = useRouter()
 
-// --- COMPUTED VAT FIELDS ---
-const vatSales = computed(() => (vatType.value === 'vatable' ? price.value : 0))
-const vatAmount = computed(() => (vatType.value === 'vatable' ? price.value * 0.12 : 0))
-const vatExempt = computed(() => (vatType.value === 'exempt' ? price.value : 0))
-const zeroRated = computed(() => (vatType.value === 'zero' ? price.value : 0))
-const total = computed(() => price.value + vatAmount.value)
+// --- COMPUTED VAT FIELDS (numeric-safe) ---
+const vatSales = computed(() => (vatType.value === 'vatable' ? Number(price.value) : 0))
+const vatAmount = computed(() => (vatType.value === 'vatable' ? Number(price.value) * 0.12 : 0))
+const vatExempt = computed(() => (vatType.value === 'exempt' ? Number(price.value) : 0))
+const zeroRated = computed(() => (vatType.value === 'zero' ? Number(price.value) : 0))
+const total = computed(() => Number(price.value) + Number(vatAmount.value))
 
 // --- FUNCTIONS ---
 async function fetchProducts() {
   try {
-    products.value = await window.electron.invoke('get-products')
+    const result = await window.electron.invoke('get-products')
+    products.value = result.map(p => ({
+      ...p,
+      price: Number(p.price),
+      vatSales: Number(p.vatSales),
+      vatAmount: Number(p.vatAmount),
+      vatExempt: Number(p.vatExempt),
+      zeroRated: Number(p.zeroRated),
+      total: Number(p.total)
+    }))
   } catch (err) {
     console.error('Error fetching products:', err)
   }
@@ -164,7 +166,7 @@ function clearForm() {
 function startEdit(product) {
   editingId.value = product.id
   productname.value = product.productname
-  price.value = product.price
+  price.value = Number(product.price)
   vatType.value = product.vatType
 }
 
@@ -175,13 +177,13 @@ function cancelEdit() {
 async function handleSubmit() {
   const payload = {
     productname: productname.value,
-    price: price.value,
+    price: Number(price.value),
     vatType: vatType.value,
-    vatSales: vatSales.value,
-    vatAmount: vatAmount.value,
-    vatExempt: vatExempt.value,
-    zeroRated: zeroRated.value,
-    total: total.value
+    vatSales: Number(vatSales.value),
+    vatAmount: Number(vatAmount.value),
+    vatExempt: Number(vatExempt.value),
+    zeroRated: Number(zeroRated.value),
+    total: Number(total.value)
   }
 
   if (editingId.value) {
