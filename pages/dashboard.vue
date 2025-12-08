@@ -1,180 +1,3 @@
-<template>
-  <div v-if="progress.active"
-      class="w-full h-2 bg-slate-300 dark:bg-slate-700 rounded-b">
-    <div class="h-full bg-sky-500 dark:bg-sky-400 transition-all"
-        :style="{ width: progress.value + '%' }"></div>
-  </div>
-
-  <div class="min-h-screen p-6 space-y-6 pb-32 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100">
-
-    <!-- Invoice Info -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-      <BaseInput
-        v-for="f in invoiceFields"
-        :key="f.key"
-        :label="f.label"
-        v-model="invoiceData[f.key]"
-        readonly
-        class="dark:bg-slate-800 border-gray-400 dark:text-slate-100"
-      />
-    </div>
-
-    <!-- Main grid -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-      <!-- PRODUCT CARD -->
-      <div class="p-4 rounded-xl shadow bg-slate-100 dark:bg-slate-600 border-slate-200 dark:border-slate-700 flex flex-col gap-4">
-        <input
-          type="text"
-          v-model="productSearch"
-          placeholder="Search products..."
-          class="w-full px-3 py-2 rounded-lg border border-gray-400 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-sky-400"
-        />
-
-        <div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 overflow-auto max-h-[420px]">
-          <button
-            v-for="p in filteredProducts"
-            :key="p.id"
-            @click="addProductToInvoice(p)"
-            class="p-3 rounded-lg shadow transition bg-slate-100 dark:bg-slate-800 hover:bg-sky-200 dark:hover:bg-sky-600 text-center text-sm text-slate-800 dark:text-slate-100 break-words"
-          >
-            {{ p.productname }}
-          </button>
-        </div>
-      </div>
-
-      <!-- CART CARD -->
-      <div class="p-4 rounded-xl shadow border overflow-auto bg-slate-100 dark:bg-slate-600 border-slate-200 dark:border-slate-700">
-        <table class="min-w-full text-sm border rounded-lg overflow-hidden text-slate-800 dark:text-slate-100 border-gray-400 dark:border-slate-700">
-          <thead class="bg-slate-100 dark:bg-slate-800">
-            <tr>
-              <th class="px-4 py-2 border-b text-slate-800 dark:text-slate-100 dark:border-slate-600">Product</th>
-              <th class="px-4 py-2 border-b text-center text-slate-800 dark:text-slate-100 dark:border-slate-600">Qty</th>
-              <th class="px-4 py-2 border-b text-right text-slate-800 dark:text-slate-100 dark:border-slate-600">Price</th>
-              <th class="px-4 py-2 border-b text-center text-slate-800 dark:text-slate-100 dark:border-slate-600">Action</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            <tr v-for="(p,index) in selectedProducts" :key="p.id" class="hover:bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 transition">
-              <td class="px-4 py-2 border-b text-slate-800 dark:text-slate-100 dark:border-slate-700">{{ p.productname }}</td>
-              <td class="px-4 py-2 border-b text-center text-slate-800 dark:text-slate-100 dark:border-slate-700">{{ p.quantity }}</td>
-              <td class="px-4 py-2 border-b text-right text-slate-800 dark:text-slate-100 dark:border-slate-700">₱{{ Number(p.total).toFixed(2) }}</td>
-              <td class="px-4 py-2 border-b dark:border-slate-700">
-                <div class="flex justify-center gap-2">
-                  <button @click="decreaseQuantity(index)" class="px-3 py-1 rounded-md font-bold bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-500">−</button>
-                  <button @click="increaseQuantity(index)" class="px-3 py-1 rounded-md font-bold bg-sky-300 dark:bg-sky-700 hover:bg-sky-400 dark:hover:bg-sky-600">+</button>
-                  <button @click="removeProduct(index)" class="px-3 py-1 rounded-md font-bold bg-red-400 dark:bg-red-700 hover:bg-red-500 dark:hover:bg-red-600">×</button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- TOTALS / DISCOUNT / CUSTOMER CARD -->
-      <div class="flex flex-col gap-4">
-
-        <!-- CUSTOMER -->
-<!-- CUSTOMER -->
-<div class="p-4 rounded-xl shadow border bg-slate-100 dark:bg-slate-700 border-slate-200 dark:border-slate-600 space-y-4">
-  <h2 class="font-semibold text-lg text-slate-800 dark:text-slate-100">Customer</h2>
-  
-  <input
-    v-model="customer.name"
-    placeholder="Customer Name (Optional)"
-    class="w-full text-sm px-3 py-2 rounded border bg-white dark:bg-slate-800 border-gray-400 text-gray-900 dark:text-gray-100"
-  />
-
-  <input
-    v-model="customer.tin"
-    placeholder="TIN (Optional)"
-    class="w-full text-sm px-3 py-2 rounded border bg-white dark:bg-slate-800 border-gray-400 text-gray-900 dark:text-gray-100"
-  />
-
-  <router-link
-    to="/customer"
-    class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded transition-colors duration-200"
-  >
-    Register Customer
-  </router-link>
-</div>
-
-
-        <!-- DISCOUNT -->
-        <div class="p-4 rounded-xl shadow border bg-slate-100 dark:bg-slate-700 border-slate-200 dark:border-slate-600 space-y-3">
-          <div class="flex justify-between items-center">
-            <h2 class="font-semibold text-lg text-slate-800 dark:text-slate-100">Discount Type</h2>
-            <select v-model="discount.type" class="px-2 py-1 rounded border text-sm bg-slate-50 dark:bg-slate-800 border-gray-400 text-gray-900 dark:text-gray-100">
-              <option value="">None</option>
-              <option value="SC">Senior Citizen (20%)</option>
-              <option value="PWD">PWD (20%)</option>
-              <option value="MANUAL">Manual Discount (₱ or %)</option>
-            </select>
-          </div>
-
-          <div v-if="discount.type === 'SC' || discount.type === 'PWD'" class="space-y-2 border-gray-400">
-            <input v-model="discount.name" placeholder="Name on ID" class="w-full text-sm px-3 py-2 rounded border bg-slate-50 dark:bg-slate-800 border-gray-400 text-gray-900 dark:text-gray-100" />
-            <input v-model="discount.id_no" placeholder="ID Number" class="w-full text-sm px-3 py-2 rounded border bg-slate-50 dark:bg-slate-800 border-gray-400 text-gray-900 dark:text-gray-100" />
-          </div>
-
-          <div v-if="discount.type === 'MANUAL'" class="flex justify-between items-center">
-            <span class="text-slate-700 dark:text-slate-200">Discount Amount</span>
-            <input v-model="discount.manual" placeholder="0 or 10%" @input="recalcTotalsInternal()" class="w-28 text-right px-2 py-1 rounded border text-sm bg-slate-50 dark:bg-slate-800 border-gray-400 text-gray-900 dark:text-gray-100" />
-          </div>
-
-          <!-- legacy percent discount -->
-          <div v-if="!discount.type" class="flex justify-between items-center">
-            <span class="text-slate-700 dark:text-slate-200">Discount %</span>
-            <input :value="totals.discount" @input="handleDiscountInput($event)" placeholder="0" class="w-28 text-right px-2 py-1 rounded border text-sm bg-slate-50 dark:bg-slate-800 border-gray-400 text-gray-900 dark:text-gray-100" />
-          </div>
-        </div>
-
-        <!-- VAT SUMMARY -->
-        <div class="p-4 rounded-xl shadow border bg-slate-100 dark:bg-slate-700 border-slate-200 dark:border-slate-600 space-y-2">
-          <h2 class="font-semibold text-lg text-slate-800 dark:text-slate-100">VAT Summary</h2>
-          <div class="flex justify-between text-sm"><p class="text-slate-700 dark:text-slate-200">VATable Sales</p><p>{{ formatCurrency(totals.vat_sales) }}</p></div>
-          <div class="flex justify-between text-sm"><p class="text-slate-700 dark:text-slate-200">VAT Amount (12%)</p><p>{{ formatCurrency(totals.vat_amount) }}</p></div>
-          <div class="flex justify-between text-sm"><p class="text-slate-700 dark:text-slate-200">VAT Exempt</p><p>{{ formatCurrency(totals.vat_exempt_sales) }}</p></div>
-          <div class="flex justify-between text-sm"><p class="text-slate-700 dark:text-slate-200">Zero-Rated</p><p>{{ formatCurrency(totals.zero_rated_sales) }}</p></div>
-        </div>
-
-        <!-- PAYMENT -->
-        <div class="p-4 rounded-xl shadow border bg-slate-100 dark:bg-slate-700 border-slate-200 dark:border-slate-600 space-y-3">
-          <div class="flex justify-between items-center">
-            <span class="text-lg text-slate-800 dark:text-slate-100">TENDERED</span>
-            <input type="text" v-model="tendered" @input="recalcTotalsInternal()" class="w-32 text-right border rounded px-2 py-1 bg-slate-50 dark:bg-slate-800 border-gray-400 text-gray-900 dark:text-gray-100" />
-          </div>
-          <div class="flex justify-between text-lg"><span class="text-slate-800 dark:text-slate-100">CHANGE</span><span class="font-semibold">{{ formatCurrency(change) }}</span></div>
-        </div>
-
-        <!-- GRAND TOTAL -->
-        <div class="p-4 rounded-xl shadow border flex justify-between items-center bg-sky-400 dark:bg-sky-800 border-slate-300 dark:border-slate-700">
-          <span class="text-xl font-semibold text-slate-900 dark:text-slate-100">TOTAL</span>
-          <span class="text-2xl font-bold text-slate-900 dark:text-slate-100">{{ formatCurrency(totals.total || 0) }}</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Receipt Preview Modal -->
-    <div v-if="showPreview" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div class="p-4 rounded-lg shadow-lg w-[320px] max-h-[90vh] overflow-auto bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100">
-        <h2 class="text-lg font-bold mb-3 text-center">Receipt Preview</h2>
-        <div ref="receipt">
-          <!-- receipt template content unchanged -->
-        </div>
-
-        <div class="flex justify-between mt-4">
-          <button @click="showPreview = false" class="w-1/2 mr-2 py-2 px-4 rounded shadow bg-red-500 hover:bg-red-600 text-slate-100">Cancel</button>
-
-          <button :disabled="isPrintDisabled" @click="if (canPrint) { printReceipt(); showPreview = false }" class="w-1/2 ml-2 py-2 px-4 rounded shadow bg-green-500 hover:bg-green-600 text-slate-100 disabled:opacity-40">Confirm</button>
-        </div>
-      </div>
-    </div>
-  </div>
-</template>
-
-
 <script setup>
 import { ref, reactive, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import BaseInput from '@/components/BaseInput.vue'
@@ -530,14 +353,35 @@ const discountAmount = computed(() => {
 const change = computed(() => Math.max(0, Number(tendered.value) - Number(totals.total || 0)))
 
 const formattedLines = computed(() =>
-  selectedProducts.value.map(p => formatLine(p.quantity, p.productname, p.total))
+  selectedProducts.value.flatMap(p =>
+    formatProductLines(p.quantity, p.productname, p.total)
+  )
 )
 
-function formatLine(qty, name, total) {
-  const qtyStr = String(qty).padEnd(4, ' ')
-  const nameStr = name.length > 18 ? name.slice(0, 18) : name.padEnd(18, ' ')
+function formatProductLines(qty, name, total) {
+  const maxNameLength = 18   // characters per line
+  const qtyStr = String(qty).padStart(2, ' ') + ' x'
   const totalStr = Number(total || 0).toFixed(2).padStart(10, ' ')
-  return `${qtyStr}${nameStr}${totalStr}`
+
+  if (name.length <= maxNameLength) {
+    return [`${qtyStr} ${name.padEnd(maxNameLength, ' ')}${totalStr}`]
+  }
+
+  // Split long name
+  const lines = []
+  const nameParts = []
+  for (let i = 0; i < name.length; i += maxNameLength) {
+    nameParts.push(name.slice(i, i + maxNameLength))
+  }
+
+  // First line includes quantity and price
+  lines.push(`${qtyStr} ${nameParts[0].padEnd(maxNameLength, ' ')}${totalStr}`)
+  // Additional lines are indented
+  for (let i = 1; i < nameParts.length; i++) {
+    lines.push(`   ${nameParts[i]}`)
+  }
+
+  return lines
 }
 
 //---VALIDATION AND ACTIONS---//
@@ -627,60 +471,56 @@ onMounted(() => {
   generateInvoiceNumber()
   recalcTotalsInternal()
 
-  const handlers = {
-    save: saveInvoice,
-    cancel: clearInvoice,
-    drawer: openCashDrawer,
-    checkPrinter,
-    preview: () => (showPreview.value = true)
-  }
+  // ---------- FOOTER EVENT HANDLERS ----------
+    const handlers = {
+      save: async () => {
+        await startProgress(800)
+        await saveInvoice()
+        await finishProgress()
+      },
+      cancel: async () => {
+        await startProgress(400)
+        clearInvoice()
+        await finishProgress()
+      },
+      drawer: async () => {
+        await startProgress(500)
+        await openCashDrawer()
+        await finishProgress()
+      },
+      checkPrinter: async () => {
+        await startProgress(600)
+        await checkPrinter()
+        await finishProgress()
+      },
+      preview: async () => {
+        if (!canPrint.value) return alert('Please enter tendered amount equal to or greater than total before previewing.')
+        await startProgress(300)
+        showPreview.value = true
+        await finishProgress()
+      }
+    }
 
-  window.addEventListener('footer-preview-receipt', async () => {
-  if (!canPrint.value) return alert('Please enter tendered amount equal to or greater than total before previewing.')
-  await startProgress(300)
-  showPreview.value = true
-  await finishProgress()
-})
+    // ---------- REGISTER EVENTS ----------
+    window.addEventListener('footer-save', handlers.save)
+    window.addEventListener('footer-cancel', handlers.cancel)
+    window.addEventListener('footer-open-drawer', handlers.drawer)
+    window.addEventListener('footer-check-printer', handlers.checkPrinter)
+    window.addEventListener('footer-preview-receipt', handlers.preview)
 
-  window.addEventListener('footer-save', async () => {
-    await startProgress(800)
-    await saveInvoice()
-    await finishProgress()
-  })
-
-  window.addEventListener('footer-cancel', async () => {
-    await startProgress(400)
-    clearInvoice()
-    await finishProgress()
-  })
-
-  window.addEventListener('footer-open-drawer', async () => {
-    await startProgress(500)
-    await openCashDrawer()
-    await finishProgress()
-  })
-
-  window.addEventListener('footer-check-printer', async () => {
-    await startProgress(600)
-    await checkPrinter()
-    await finishProgress()
-  })
-
-  window.addEventListener('footer-preview-receipt', async () => {
-    await startProgress(300)
-    showPreview.value = true
-    await finishProgress()
-  })
 
   onBeforeUnmount(() => {
-    clearInterval(clockInterval)
-    if (searchDebounceTimer) clearTimeout(searchDebounceTimer)
-    window.removeEventListener('footer-save', handlers.save)
-    window.removeEventListener('footer-cancel', handlers.cancel)
-    window.removeEventListener('footer-open-drawer', handlers.drawer)
-    window.removeEventListener('footer-check-printer', handlers.checkPrinter)
-    window.removeEventListener('footer-preview-receipt', handlers.preview)
-  })
+  clearInterval(clockInterval)
+  if (searchDebounceTimer) clearTimeout(searchDebounceTimer)
+  if (patientDebounceTimer) clearTimeout(patientDebounceTimer)
+
+  window.removeEventListener('footer-save', handlers.save)
+  window.removeEventListener('footer-cancel', handlers.cancel)
+  window.removeEventListener('footer-open-drawer', handlers.drawer)
+  window.removeEventListener('footer-check-printer', handlers.checkPrinter)
+  window.removeEventListener('footer-preview-receipt', handlers.preview)
+})
+
 })
 
 async function finishProgress() {
@@ -703,3 +543,283 @@ const invoiceFields = [
   { label: 'Time', key: 'invoiceTime' }
 ]
 </script>
+
+<template>
+  <div v-if="progress.active"
+      class="w-full h-2 bg-slate-300 dark:bg-slate-700 rounded-b">
+    <div class="h-full bg-sky-500 dark:bg-sky-400 transition-all"
+        :style="{ width: progress.value + '%' }"></div>
+  </div>
+
+  <div class="min-h-screen p-6 space-y-6 pb-32 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100">
+
+    <!-- Invoice Info -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <BaseInput
+        v-for="f in invoiceFields"
+        :key="f.key"
+        :label="f.label"
+        v-model="invoiceData[f.key]"
+        readonly
+        class="dark:bg-slate-800 border-gray-400 dark:text-slate-100"
+      />
+    </div>
+
+    <!-- Main grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+      <!-- PRODUCT CARD -->
+      <div class="p-4 rounded-xl shadow bg-slate-100 dark:bg-slate-600 border-slate-200 dark:border-slate-700 flex flex-col gap-4">
+        <input
+          type="text"
+          v-model="productSearch"
+          placeholder="Search products..."
+          class="w-full px-3 py-2 rounded-lg border border-gray-400 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-sky-400"
+        />
+
+        <div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 overflow-y-auto max-h-[420px]">
+          <button
+            v-for="p in filteredProducts"
+            :key="p.id"
+            @click="addProductToInvoice(p)"
+            class="w-full p-3 rounded-lg shadow transition bg-slate-100 dark:bg-slate-800 hover:bg-sky-200 dark:hover:bg-sky-600 text-center text-sm text-slate-800 dark:text-slate-100 break-words"
+          >
+            {{ p.productname }}
+          </button>
+        </div>
+      </div>
+
+      <!-- CART CARD -->
+      <div class="p-4 rounded-xl shadow border overflow-auto bg-slate-100 dark:bg-slate-600 border-slate-200 dark:border-slate-700">
+        <table class="min-w-full text-sm border rounded-lg overflow-hidden text-slate-800 dark:text-slate-100 border-gray-400 dark:border-slate-700">
+          <thead class="bg-slate-100 dark:bg-slate-800">
+            <tr>
+              <th class="px-4 py-2 border-b text-slate-800 dark:text-slate-100 dark:border-slate-600">Product</th>
+              <th class="px-4 py-2 border-b text-center text-slate-800 dark:text-slate-100 dark:border-slate-600">Qty</th>
+              <th class="px-4 py-2 border-b text-right text-slate-800 dark:text-slate-100 dark:border-slate-600">Price</th>
+              <th class="px-4 py-2 border-b text-center text-slate-800 dark:text-slate-100 dark:border-slate-600">Action</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr v-for="(p,index) in selectedProducts" :key="p.id" class="hover:bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 transition">
+              <td class="px-4 py-2 border-b text-slate-800 dark:text-slate-100 dark:border-slate-700">{{ p.productname }}</td>
+              <td class="px-4 py-2 border-b text-center text-slate-800 dark:text-slate-100 dark:border-slate-700">{{ p.quantity }}</td>
+              <td class="px-4 py-2 border-b text-right text-slate-800 dark:text-slate-100 dark:border-slate-700">₱{{ Number(p.total).toFixed(2) }}</td>
+              <td class="px-4 py-2 border-b dark:border-slate-700">
+                <div class="flex justify-center gap-2">
+                  <button @click="decreaseQuantity(index)" class="px-3 py-1 rounded-md font-bold bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-500">−</button>
+                  <button @click="increaseQuantity(index)" class="px-3 py-1 rounded-md font-bold bg-sky-300 dark:bg-sky-700 hover:bg-sky-400 dark:hover:bg-sky-600">+</button>
+                  <button @click="removeProduct(index)" class="px-3 py-1 rounded-md font-bold bg-red-400 dark:bg-red-700 hover:bg-red-500 dark:hover:bg-red-600">×</button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- TOTALS / DISCOUNT / CUSTOMER CARD -->
+      <div class="flex flex-col gap-4">
+        <!-- CUSTOMER -->
+        <div class="w-full p-4 rounded-xl shadow border bg-slate-100 dark:bg-slate-700 border-slate-200 dark:border-slate-600 space-y-4">
+          <h2 class="font-semibold text-lg text-slate-800 dark:text-slate-100">Customer</h2>
+          
+          <input
+            v-model="customer.name"
+            placeholder="Customer Name (Optional)"
+            class="w-full text-sm px-3 py-2 rounded border bg-white dark:bg-slate-800 border-gray-400 text-gray-900 dark:text-gray-100"/>
+
+          <input
+            v-model="customer.tin"
+            placeholder="TIN (Optional)"
+            class="w-full text-sm px-3 py-2 rounded border bg-white dark:bg-slate-800 border-gray-400 text-gray-900 dark:text-gray-100"/>
+
+          <router-link
+            to="/customer"
+            class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded transition-colors duration-200">
+            Register Customer
+          </router-link>
+        </div>
+        <!-- DISCOUNT -->
+        <div class="w-full p-4 rounded-xl shadow border bg-slate-100 dark:bg-slate-700 border-slate-200 dark:border-slate-600 space-y-3">
+          <div class="flex justify-between items-center">
+            <h2 class="font-semibold text-lg text-slate-800 dark:text-slate-100">Discount Type</h2>
+            <select v-model="discount.type" class="px-2 py-1 rounded border text-sm bg-slate-50 dark:bg-slate-800 border-gray-400 text-gray-900 dark:text-gray-100">
+              <option value="">None</option>
+              <option value="SC">Senior Citizen (20%)</option>
+              <option value="PWD">PWD (20%)</option>
+              <option value="MANUAL">Manual Discount (₱ or %)</option>
+            </select>
+          </div>
+
+          <div v-if="discount.type === 'SC' || discount.type === 'PWD'" class="space-y-2 border-gray-400">
+            <input v-model="discount.name" placeholder="Name on ID" class="w-full text-sm px-3 py-2 rounded border bg-slate-50 dark:bg-slate-800 border-gray-400 text-gray-900 dark:text-gray-100" />
+            <input v-model="discount.id_no" placeholder="ID Number" class="w-full text-sm px-3 py-2 rounded border bg-slate-50 dark:bg-slate-800 border-gray-400 text-gray-900 dark:text-gray-100" />
+          </div>
+
+          <div v-if="discount.type === 'MANUAL'" class="flex justify-between items-center">
+            <span class="text-slate-700 dark:text-slate-200">Discount Amount</span>
+            <input v-model="discount.manual" placeholder="0 or 10%" @input="recalcTotalsInternal()" class="w-28 text-right px-2 py-1 rounded border text-sm bg-slate-50 dark:bg-slate-800 border-gray-400 text-gray-900 dark:text-gray-100" />
+          </div>
+
+          <!-- legacy percent discount -->
+          <div v-if="!discount.type" class="flex justify-between items-center">
+            <span class="text-slate-700 dark:text-slate-200">Discount %</span>
+            <input :value="totals.discount" @input="handleDiscountInput($event)" placeholder="0" class="w-28 text-right px-2 py-1 rounded border text-sm bg-slate-50 dark:bg-slate-800 border-gray-400 text-gray-900 dark:text-gray-100" />
+          </div>
+        </div>
+
+        <!-- VAT SUMMARY -->
+        <div class="w-full p-4 rounded-xl shadow border bg-slate-100 dark:bg-slate-700 border-slate-200 dark:border-slate-600 space-y-2">
+          <h2 class="font-semibold text-lg text-slate-800 dark:text-slate-100">VAT Summary</h2>
+          <div class="flex justify-between text-sm"><p class="text-slate-700 dark:text-slate-200">VATable Sales</p><p>{{ formatCurrency(totals.vat_sales) }}</p></div>
+          <div class="flex justify-between text-sm"><p class="text-slate-700 dark:text-slate-200">VAT Amount (12%)</p><p>{{ formatCurrency(totals.vat_amount) }}</p></div>
+          <div class="flex justify-between text-sm"><p class="text-slate-700 dark:text-slate-200">VAT Exempt</p><p>{{ formatCurrency(totals.vat_exempt_sales) }}</p></div>
+          <div class="flex justify-between text-sm"><p class="text-slate-700 dark:text-slate-200">Zero-Rated</p><p>{{ formatCurrency(totals.zero_rated_sales) }}</p></div>
+        </div>
+
+        <!-- PAYMENT -->
+        <div class="w-full p-4 rounded-xl shadow border bg-slate-100 dark:bg-slate-700 border-slate-200 dark:border-slate-600 space-y-3">
+          <div class="flex justify-between items-center">
+            <span class="text-lg text-slate-800 dark:text-slate-100">TENDERED</span>
+            <input type="text" v-model="tendered" @input="recalcTotalsInternal()" class="w-32 text-right border rounded px-2 py-1 bg-slate-50 dark:bg-slate-800 border-gray-400 text-gray-900 dark:text-gray-100" />
+          </div>
+          <div class="flex justify-between text-lg"><span class="text-slate-800 dark:text-slate-100">CHANGE</span><span class="font-semibold">{{ formatCurrency(change) }}</span></div>
+        </div>
+
+        <!-- GRAND TOTAL -->
+        <div class="w-full p-4 rounded-xl shadow border flex justify-between items-center bg-sky-400 dark:bg-sky-800 border-slate-300 dark:border-slate-700">
+          <span class="text-xl font-semibold text-slate-900 dark:text-slate-100">TOTAL</span>
+          <span class="text-2xl font-bold text-slate-900 dark:text-slate-100">{{ formatCurrency(totals.total || 0) }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Receipt Preview Modal -->
+    <div v-if="showPreview" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
+      <div class="p-4 rounded-lg shadow-lg w-[320px] max-h-[90vh] overflow-auto bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100">
+        <h2 class="text-lg font-bold mb-3 text-center">Receipt Preview</h2>
+        <div ref="receipt">
+          <div ref="receipt" class="receipt-container font-mono">
+            <!-- HEADER -->
+            <div class="text-center mb-1">
+              <div class="text-base font-bold">MY COMPANY NAME</div>
+              <div>123 Sample St., Barangay, City</div>
+              <div>TIN: 123-456-789</div>
+              <div>Tel: 0912-345-6789</div>
+            </div>
+            <hr />
+            <!-- INVOICE INFO -->
+            <div class="flex justify-between mb-1">
+              <span>Invoice #: </span>
+              <span>{{ invoiceData.invoiceNumber }}</span>
+            </div>
+            <div class="flex justify-between mb-1">
+              <span>Date: </span>
+              <span>{{ invoiceData.invoiceDate }} {{ invoiceData.invoiceTime }}</span>
+            </div>
+            <div class="flex justify-between mb-1">
+              <span>Cashier: </span>
+              <span>{{ invoiceData.issuedBy }}</span>
+            </div>
+            <div v-if="customer.name" class="flex justify-between mb-1">
+              <span>Customer: </span>
+              <span>{{ customer.name }}</span>
+            </div>
+            <div v-if="customer.tin" class="flex justify-between mb-1">
+              <span>TIN: </span>
+              <span>{{ customer.tin }}</span>
+            </div>
+            <hr />
+            <!-- ITEMIZED PRODUCTS -->
+            <div v-for="line in formattedLines" :key="line" class="mb-1 font-mono">
+            {{ line }}
+            </div>
+            <hr />
+            <!-- DISCOUNT -->
+            <div v-if="totals._discountAmount > 0" class="flex justify-between mb-1">
+              <span>Discount</span>
+              <span>-₱{{ formatCurrency(totals._discountAmount) }}</span>
+            </div>
+            <!-- VAT SUMMARY -->
+            <div class="flex justify-between mb-1">
+              <span>VATable Sales</span>
+              <span>₱{{ formatCurrency(totals.vat_sales) }}</span>
+            </div>
+            <div class="flex justify-between mb-1">
+              <span>VAT (12%)</span>
+              <span>₱{{ formatCurrency(totals.vat_amount) }}</span>
+            </div>
+            <div class="flex justify-between mb-1">
+              <span>VAT-Exempt</span>
+              <span>₱{{ formatCurrency(totals.vat_exempt_sales) }}</span>
+            </div>
+            <div class="flex justify-between mb-1">
+              <span>Zero-Rated</span>
+              <span>₱{{ formatCurrency(totals.zero_rated_sales) }}</span>
+            </div>
+            <hr />
+            <!-- GRAND TOTAL & PAYMENT -->
+            <div class="flex justify-between mb-1 font-bold">
+              <span>Total</span>
+              <span>₱{{ formatCurrency(totals.total) }}</span>
+            </div>
+            <div class="flex justify-between mb-1">
+              <span>Tendered</span>
+              <span>₱{{ formatCurrency(tendered) }}</span>
+            </div>
+            <div class="flex justify-between mb-2 font-semibold">
+              <span>Change</span>
+              <span>₱{{ formatCurrency(change) }}</span>
+            </div>
+            <hr />
+            <!-- FOOTER -->
+            <div class="text-center mt-2">
+              <div>*** This serves as an official receipt ***</div>
+              <div>Thank you for your purchase!</div>
+            </div>
+          </div>
+        </div>
+        <div class="flex justify-between mt-4">
+          <button @click="showPreview = false" class="w-1/2 mr-2 py-2 px-4 rounded shadow bg-red-500 hover:bg-red-600 text-slate-100">Cancel</button>
+
+          <button :disabled="isPrintDisabled" @click="if (canPrint) { printReceipt(); showPreview = false }" class="w-1/2 ml-2 py-2 px-4 rounded shadow bg-green-500 hover:bg-green-600 text-slate-100 disabled:opacity-40">Confirm</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+.receipt-container {
+  width: 280px;           /* 80mm thermal printer width */
+  font-size: 11px;        /* small enough for receipt */
+  line-height: 1.2;
+  padding: 4px 8px;
+  font-family: monospace;
+}
+
+.flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+hr {
+  border: none;
+  border-top: 1px dashed black;
+  margin: 4px 0;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.mb-1 {
+  margin-bottom: 4px;
+}
+
+.mb-2 {
+  margin-bottom: 6px;
+}
+</style>
