@@ -32,9 +32,6 @@ const totals = reactive({
 
 const discount = reactive({
   type: '',   
-  name: '',
-  id_no: '',
-  manual: '',
   amount: 0,
   rate: 0,
   raw: ''
@@ -275,22 +272,6 @@ function calculateDiscount() {
     discount.amount = base * discount.rate
     return
   }
-
-  if (discount.type === 'MANUAL') {
-    const raw = String(discount.manual || '').trim()
-    if (raw.endsWith('%')) {
-      const num = parseFloat(raw.replace('%', ''))
-      if (!isNaN(num)) {
-        discount.rate = num / 100
-        discount.amount = subtotalVal * discount.rate
-      }
-    } else {
-      const num = parseFloat(raw)
-      if (!isNaN(num)) {
-        discount.amount = num
-      }
-    }
-  }
 }
 
 function recalcTotalsInternal() {
@@ -319,8 +300,6 @@ function recalcTotalsInternal() {
   if (discount.type === 'SC' || discount.type === 'PWD') {
     const base = vat_sales
     discountAmount = round(base * 0.20)
-  } else if (discount.type === 'MANUAL') {
-    discountAmount = round(parseManualDiscount(discount.manual, subtotalVal))
   } else {
     discountAmount = round(subtotalVal * (Number(totals.discount || 0) / 100))
   }
@@ -347,41 +326,19 @@ const subtotal = computed(() => selectedProducts.value.reduce((s, p) => s + Numb
 const discountAmount = computed(() => {
   const subtotalVal = subtotal.value
   if (discount.type === 'SC' || discount.type === 'PWD') return +(totals.vat_sales * 0.20)
-  if (discount.type === 'MANUAL') return parseManualDiscount(discount.manual, subtotalVal)
   return +(subtotalVal * (Number(totals.discount || 0) / 100))
 })
 const change = computed(() => Math.max(0, Number(tendered.value) - Number(totals.total || 0)))
 
 const formattedLines = computed(() =>
-  selectedProducts.value.flatMap(p =>
-    formatProductLines(p.quantity, p.productname, p.total)
-  )
+  selectedProducts.value.map(p => formatLine(p.quantity, p.productname, p.total))
 )
 
-function formatProductLines(qty, name, total) {
-  const maxNameLength = 18   // characters per line
-  const qtyStr = String(qty).padStart(2, ' ') + ' x'
+function formatLine(qty, name, total) {
+  const qtyStr = String(qty).padEnd(4, ' ')
+  const nameStr = name.length > 18 ? name.slice(0, 18) : name.padEnd(18, ' ')
   const totalStr = Number(total || 0).toFixed(2).padStart(10, ' ')
-
-  if (name.length <= maxNameLength) {
-    return [`${qtyStr} ${name.padEnd(maxNameLength, ' ')}${totalStr}`]
-  }
-
-  // Split long name
-  const lines = []
-  const nameParts = []
-  for (let i = 0; i < name.length; i += maxNameLength) {
-    nameParts.push(name.slice(i, i + maxNameLength))
-  }
-
-  // First line includes quantity and price
-  lines.push(`${qtyStr} ${nameParts[0].padEnd(maxNameLength, ' ')}${totalStr}`)
-  // Additional lines are indented
-  for (let i = 1; i < nameParts.length; i++) {
-    lines.push(`   ${nameParts[i]}`)
-  }
-
-  return lines
+  return `${qtyStr}${nameStr}${totalStr}`
 }
 
 //---VALIDATION AND ACTIONS---//
@@ -395,7 +352,6 @@ function clearInvoice() {
   selectedProducts.value = []
   totals.discount = 0
   discount.type = ''
-  discount.manual = ''
   tendered.value = 0
   customer.name = ''
   customer.tin = ''
@@ -577,12 +533,12 @@ const invoiceFields = [
           class="w-full px-3 py-2 rounded-lg border border-gray-400 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-sky-400"
         />
 
-        <div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 overflow-y-auto max-h-[420px]">
+        <div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 overflow-auto max-h-[420px]">
           <button
             v-for="p in filteredProducts"
             :key="p.id"
             @click="addProductToInvoice(p)"
-            class="w-full p-3 rounded-lg shadow transition bg-slate-100 dark:bg-slate-800 hover:bg-sky-200 dark:hover:bg-sky-600 text-center text-sm text-slate-800 dark:text-slate-100 break-words"
+            class="p-3 rounded-lg shadow transition bg-slate-100 dark:bg-slate-800 hover:bg-sky-200 dark:hover:bg-sky-600 text-center text-sm text-slate-800 dark:text-slate-100 break-words"
           >
             {{ p.productname }}
           </button>
@@ -621,56 +577,43 @@ const invoiceFields = [
       <!-- TOTALS / DISCOUNT / CUSTOMER CARD -->
       <div class="flex flex-col gap-4">
         <!-- CUSTOMER -->
-        <div class="w-full p-4 rounded-xl shadow border bg-slate-100 dark:bg-slate-700 border-slate-200 dark:border-slate-600 space-y-4">
+        <div class="p-4 rounded-xl shadow border bg-slate-100 dark:bg-slate-700 border-slate-200 dark:border-slate-600 space-y-4">
           <h2 class="font-semibold text-lg text-slate-800 dark:text-slate-100">Customer</h2>
           
           <input
             v-model="customer.name"
             placeholder="Customer Name (Optional)"
-            class="w-full text-sm px-3 py-2 rounded border bg-white dark:bg-slate-800 border-gray-400 text-gray-900 dark:text-gray-100"/>
+            class="w-full text-sm px-3 py-2 rounded border bg-white dark:bg-slate-800 border-gray-400 text-gray-900 dark:text-gray-100"
+          />
 
           <input
             v-model="customer.tin"
             placeholder="TIN (Optional)"
-            class="w-full text-sm px-3 py-2 rounded border bg-white dark:bg-slate-800 border-gray-400 text-gray-900 dark:text-gray-100"/>
+            class="w-full text-sm px-3 py-2 rounded border bg-white dark:bg-slate-800 border-gray-400 text-gray-900 dark:text-gray-100"
+          />
 
           <router-link
             to="/customer"
-            class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded transition-colors duration-200">
+            class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded transition-colors duration-200"
+          >
             Register Customer
           </router-link>
         </div>
         <!-- DISCOUNT -->
-        <div class="w-full p-4 rounded-xl shadow border bg-slate-100 dark:bg-slate-700 border-slate-200 dark:border-slate-600 space-y-3">
+        <div class="p-4 rounded-xl shadow border bg-slate-100 dark:bg-slate-700 border-slate-200 dark:border-slate-600 space-y-3">
           <div class="flex justify-between items-center">
             <h2 class="font-semibold text-lg text-slate-800 dark:text-slate-100">Discount Type</h2>
             <select v-model="discount.type" class="px-2 py-1 rounded border text-sm bg-slate-50 dark:bg-slate-800 border-gray-400 text-gray-900 dark:text-gray-100">
               <option value="">None</option>
               <option value="SC">Senior Citizen (20%)</option>
               <option value="PWD">PWD (20%)</option>
-              <option value="MANUAL">Manual Discount (₱ or %)</option>
             </select>
           </div>
-
-          <div v-if="discount.type === 'SC' || discount.type === 'PWD'" class="space-y-2 border-gray-400">
-            <input v-model="discount.name" placeholder="Name on ID" class="w-full text-sm px-3 py-2 rounded border bg-slate-50 dark:bg-slate-800 border-gray-400 text-gray-900 dark:text-gray-100" />
-            <input v-model="discount.id_no" placeholder="ID Number" class="w-full text-sm px-3 py-2 rounded border bg-slate-50 dark:bg-slate-800 border-gray-400 text-gray-900 dark:text-gray-100" />
-          </div>
-
-          <div v-if="discount.type === 'MANUAL'" class="flex justify-between items-center">
-            <span class="text-slate-700 dark:text-slate-200">Discount Amount</span>
-            <input v-model="discount.manual" placeholder="0 or 10%" @input="recalcTotalsInternal()" class="w-28 text-right px-2 py-1 rounded border text-sm bg-slate-50 dark:bg-slate-800 border-gray-400 text-gray-900 dark:text-gray-100" />
-          </div>
-
-          <!-- legacy percent discount -->
-          <div v-if="!discount.type" class="flex justify-between items-center">
-            <span class="text-slate-700 dark:text-slate-200">Discount %</span>
-            <input :value="totals.discount" @input="handleDiscountInput($event)" placeholder="0" class="w-28 text-right px-2 py-1 rounded border text-sm bg-slate-50 dark:bg-slate-800 border-gray-400 text-gray-900 dark:text-gray-100" />
-          </div>
+          <div v-if="discount.type === 'SC' || discount.type === 'PWD'" class="space-y-2 border-gray-400"></div>
         </div>
 
         <!-- VAT SUMMARY -->
-        <div class="w-full p-4 rounded-xl shadow border bg-slate-100 dark:bg-slate-700 border-slate-200 dark:border-slate-600 space-y-2">
+        <div class="p-4 rounded-xl shadow border bg-slate-100 dark:bg-slate-700 border-slate-200 dark:border-slate-600 space-y-2">
           <h2 class="font-semibold text-lg text-slate-800 dark:text-slate-100">VAT Summary</h2>
           <div class="flex justify-between text-sm"><p class="text-slate-700 dark:text-slate-200">VATable Sales</p><p>{{ formatCurrency(totals.vat_sales) }}</p></div>
           <div class="flex justify-between text-sm"><p class="text-slate-700 dark:text-slate-200">VAT Amount (12%)</p><p>{{ formatCurrency(totals.vat_amount) }}</p></div>
@@ -679,7 +622,7 @@ const invoiceFields = [
         </div>
 
         <!-- PAYMENT -->
-        <div class="w-full p-4 rounded-xl shadow border bg-slate-100 dark:bg-slate-700 border-slate-200 dark:border-slate-600 space-y-3">
+        <div class="p-4 rounded-xl shadow border bg-slate-100 dark:bg-slate-700 border-slate-200 dark:border-slate-600 space-y-3">
           <div class="flex justify-between items-center">
             <span class="text-lg text-slate-800 dark:text-slate-100">TENDERED</span>
             <input type="text" v-model="tendered" @input="recalcTotalsInternal()" class="w-32 text-right border rounded px-2 py-1 bg-slate-50 dark:bg-slate-800 border-gray-400 text-gray-900 dark:text-gray-100" />
@@ -688,7 +631,7 @@ const invoiceFields = [
         </div>
 
         <!-- GRAND TOTAL -->
-        <div class="w-full p-4 rounded-xl shadow border flex justify-between items-center bg-sky-400 dark:bg-sky-800 border-slate-300 dark:border-slate-700">
+        <div class="p-4 rounded-xl shadow border flex justify-between items-center bg-sky-400 dark:bg-sky-800 border-slate-300 dark:border-slate-700">
           <span class="text-xl font-semibold text-slate-900 dark:text-slate-100">TOTAL</span>
           <span class="text-2xl font-bold text-slate-900 dark:text-slate-100">{{ formatCurrency(totals.total || 0) }}</span>
         </div>
@@ -696,89 +639,103 @@ const invoiceFields = [
     </div>
 
     <!-- Receipt Preview Modal -->
-    <div v-if="showPreview" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
+    <div v-if="showPreview" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div class="p-4 rounded-lg shadow-lg w-[320px] max-h-[90vh] overflow-auto bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100">
         <h2 class="text-lg font-bold mb-3 text-center">Receipt Preview</h2>
         <div ref="receipt">
-          <div ref="receipt" class="receipt-container font-mono">
-            <!-- HEADER -->
-            <div class="text-center mb-1">
-              <div class="text-base font-bold">MY COMPANY NAME</div>
-              <div>123 Sample St., Barangay, City</div>
-              <div>TIN: 123-456-789</div>
-              <div>Tel: 0912-345-6789</div>
-            </div>
-            <hr />
-            <!-- INVOICE INFO -->
-            <div class="flex justify-between mb-1">
-              <span>Invoice #: </span>
-              <span>{{ invoiceData.invoiceNumber }}</span>
-            </div>
-            <div class="flex justify-between mb-1">
-              <span>Date: </span>
-              <span>{{ invoiceData.invoiceDate }} {{ invoiceData.invoiceTime }}</span>
-            </div>
-            <div class="flex justify-between mb-1">
-              <span>Cashier: </span>
-              <span>{{ invoiceData.issuedBy }}</span>
-            </div>
-            <div v-if="customer.name" class="flex justify-between mb-1">
-              <span>Customer: </span>
-              <span>{{ customer.name }}</span>
-            </div>
-            <div v-if="customer.tin" class="flex justify-between mb-1">
-              <span>TIN: </span>
-              <span>{{ customer.tin }}</span>
-            </div>
-            <hr />
-            <!-- ITEMIZED PRODUCTS -->
-            <div v-for="line in formattedLines" :key="line" class="mb-1 font-mono">
-            {{ line }}
-            </div>
-            <hr />
-            <!-- DISCOUNT -->
-            <div v-if="totals._discountAmount > 0" class="flex justify-between mb-1">
-              <span>Discount</span>
-              <span>-₱{{ formatCurrency(totals._discountAmount) }}</span>
-            </div>
-            <!-- VAT SUMMARY -->
-            <div class="flex justify-between mb-1">
-              <span>VATable Sales</span>
-              <span>₱{{ formatCurrency(totals.vat_sales) }}</span>
-            </div>
-            <div class="flex justify-between mb-1">
-              <span>VAT (12%)</span>
-              <span>₱{{ formatCurrency(totals.vat_amount) }}</span>
-            </div>
-            <div class="flex justify-between mb-1">
-              <span>VAT-Exempt</span>
-              <span>₱{{ formatCurrency(totals.vat_exempt_sales) }}</span>
-            </div>
-            <div class="flex justify-between mb-1">
-              <span>Zero-Rated</span>
-              <span>₱{{ formatCurrency(totals.zero_rated_sales) }}</span>
-            </div>
-            <hr />
-            <!-- GRAND TOTAL & PAYMENT -->
-            <div class="flex justify-between mb-1 font-bold">
-              <span>Total</span>
-              <span>₱{{ formatCurrency(totals.total) }}</span>
-            </div>
-            <div class="flex justify-between mb-1">
-              <span>Tendered</span>
-              <span>₱{{ formatCurrency(tendered) }}</span>
-            </div>
-            <div class="flex justify-between mb-2 font-semibold">
-              <span>Change</span>
-              <span>₱{{ formatCurrency(change) }}</span>
-            </div>
-            <hr />
-            <!-- FOOTER -->
-            <div class="text-center mt-2">
-              <div>*** This serves as an official receipt ***</div>
-              <div>Thank you for your purchase!</div>
-            </div>
+          <div ref="receipt" class="receipt-container">
+          <!-- HEADER -->
+          <div class="text-center mb-1">
+            <h3>FELTHEA STORE</h3>
+            <p>123 Sample St., Barangay, City</p>
+            <p>TIN: 123-456-789</p>
+            <p>Tel: 0912-345-6789</p>
           </div>
+
+          <hr />
+
+          <!-- INVOICE INFO -->
+          <div class="flex mb-1 justify-between">
+            <span>Invoice #: </span>
+            <span>{{ invoiceData.invoiceNumber }}</span>
+          </div>
+          <div class="flex mb-1 justify-between">
+            <span>Date: </span>
+            <span>{{ invoiceData.invoiceDate }} {{ invoiceData.invoiceTime }}</span>
+          </div>
+          <div class="flex mb-1 justify-between">
+            <span>Cashier: </span>
+            <span>{{ invoiceData.issuedBy }}</span>
+          </div>
+
+          <div v-if="customer.name" class="flex mb-1 justify-between">
+            <span>Customer: </span>
+            <span>{{ customer.name }}</span>
+          </div>
+          <div v-if="customer.tin" class="flex mb-1 justify-between">
+            <span>TIN: </span>
+            <span>{{ customer.tin }}</span>
+          </div>
+
+          <hr />
+
+          <!-- ITEMIZED PRODUCTS -->
+          <div v-for="p in selectedProducts" :key="p.id" class="flex justify-between mb-1">
+            <span>{{ p.quantity }} x {{ p.productname }}</span>
+            <span>{{ Number(p.total).toFixed(2) }}</span>
+          </div>
+
+          <hr />
+
+          <!-- DISCOUNT -->
+          <div v-if="totals._discountAmount > 0" class="flex justify-between mb-1">
+            <span>Discount</span>
+            <span>-{{ formatCurrency(totals._discountAmount) }}</span>
+          </div>
+
+          <!-- VAT SUMMARY -->
+          <div class="flex justify-between mb-1">
+            <span>VATable Sales</span>
+            <span>{{ formatCurrency(totals.vat_sales) }}</span>
+          </div>
+          <div class="flex justify-between mb-1">
+            <span>VAT (12%)</span>
+            <span>{{ formatCurrency(totals.vat_amount) }}</span>
+          </div>
+          <div class="flex justify-between mb-1">
+            <span>VAT-Exempt</span>
+            <span>{{ formatCurrency(totals.vat_exempt_sales) }}</span>
+          </div>
+          <div class="flex justify-between mb-1">
+            <span>Zero-Rated</span>
+            <span>{{ formatCurrency(totals.zero_rated_sales) }}</span>
+          </div>
+
+          <hr />
+
+          <!-- GRAND TOTAL & PAYMENT -->
+          <div class="flex justify-between mb-1 font-bold">
+            <span>Total</span>
+            <span>{{ formatCurrency(totals.total) }}</span>
+          </div>
+
+          <div class="flex justify-between mb-1">
+            <span>Tendered</span>
+            <span>{{ formatCurrency(tendered) }}</span>
+          </div>
+          <div class="flex justify-between mb-2 font-semibold">
+            <span>Change</span>
+            <span>{{ formatCurrency(change) }}</span>
+          </div>
+
+          <hr />
+
+          <!-- FOOTER -->
+          <div class="text-center mt-2">
+            <p>*** This serves as an official receipt ***</p>
+            <p>Thank you for your purchase!</p>
+          </div>
+        </div>
         </div>
         <div class="flex justify-between mt-4">
           <button @click="showPreview = false" class="w-1/2 mr-2 py-2 px-4 rounded shadow bg-red-500 hover:bg-red-600 text-slate-100">Cancel</button>
@@ -789,37 +746,3 @@ const invoiceFields = [
     </div>
   </div>
 </template>
-
-<style scoped>
-.receipt-container {
-  width: 280px;           /* 80mm thermal printer width */
-  font-size: 11px;        /* small enough for receipt */
-  line-height: 1.2;
-  padding: 4px 8px;
-  font-family: monospace;
-}
-
-.flex {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-}
-
-hr {
-  border: none;
-  border-top: 1px dashed black;
-  margin: 4px 0;
-}
-
-.text-center {
-  text-align: center;
-}
-
-.mb-1 {
-  margin-bottom: 4px;
-}
-
-.mb-2 {
-  margin-bottom: 6px;
-}
-</style>
