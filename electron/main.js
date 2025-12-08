@@ -27,7 +27,7 @@ function initDB() {
     fs.mkdirSync(dbDir, { recursive: true })
   }
 
-  const dbPath = path.join(dbDir, 'DBTrial.db')
+  const dbPath = path.join(dbDir, 'database.sqlite')
   const db = new Database(dbPath)
 
   console.log('🧭 Using DB at:', dbPath)
@@ -61,8 +61,7 @@ function initDB() {
       vatAmount REAL,
       vatExempt REAL,
       zeroRated REAL,
-      total REAL,
-      image TEXT
+      total REAL
     )
   `)
 
@@ -248,25 +247,42 @@ function registerIPCHandlers() {
 
   // ---------- PRODUCTS ----------
   ipcMain.handle('get-products', () => {
-    const rows = db.prepare('SELECT * FROM products').all()
-    return rows.map(p => {
-      let vatSales = 0, vatAmount = 0, vatExempt = 0, zeroRated = 0
-      if (p.vatType === 'vatable') { vatSales = p.price; vatAmount = p.price * 0.12 }
-      else if (p.vatType === 'exempt') vatExempt = p.price
-      else if (p.vatType === 'zero') zeroRated = p.price
-      return { ...p, vatSales, vatAmount, vatExempt, zeroRated, total: p.price + vatAmount }
-    })
+  const rows = db.prepare('SELECT * FROM products').all()
+  return rows.map(p => {
+    let vatSales = 0, vatAmount = 0, vatExempt = 0, zeroRated = 0
+    if (p.vatType === 'vatable') {
+      vatSales = p.price
+      vatAmount = p.price * 0.12
+    } else if (p.vatType === 'exempt') {
+      vatExempt = p.price
+    } else if (p.vatType === 'zero') {
+      zeroRated = p.price
+    }
+    return {
+      ...p,
+      vatSales,
+      vatAmount,
+      vatExempt,
+      zeroRated,
+      total: p.price + vatAmount
+    }
   })
-
+})
   ipcMain.handle('add-product', (_e, p) => {
     const stmt = db.prepare(`
       INSERT INTO products
-      (productname, price, vatType, vatSales, vatAmount, vatExempt, zeroRated, total, image)
+      (productname, price, vatType, vatSales, vatAmount, vatExempt, zeroRated, total)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `)
     const info = stmt.run(
-      p.productname, p.price, p.vatType, p.vatSales, p.vatAmount,
-      p.vatExempt, p.zeroRated, p.total, p.image
+      p.productname,
+      p.price,
+      p.vatType,
+      p.vatSales,
+      p.vatAmount,
+      p.vatExempt,
+      p.zeroRated,
+      p.total
     )
     return { success: true, id: info.lastInsertRowid }
   })
@@ -274,11 +290,18 @@ function registerIPCHandlers() {
   ipcMain.handle('update-product', (_e, p) => {
     db.prepare(`
       UPDATE products
-      SET productname=?, price=?, vatType=?, vatSales=?, vatAmount=?, vatExempt=?, zeroRated=?, total=?, image=?
+      SET productname=?, price=?, vatType=?, vatSales=?, vatAmount=?, vatExempt=?, zeroRated=?, total=?
       WHERE id=?
     `).run(
-      p.productname, p.price, p.vatType, p.vatSales, p.vatAmount,
-      p.vatExempt, p.zeroRated, p.total, p.image, p.id
+      p.productname,
+      p.price,
+      p.vatType,
+      p.vatSales,
+      p.vatAmount,
+      p.vatExempt,
+      p.zeroRated,
+      p.total,
+      p.id
     )
     return { success: true }
   })
@@ -287,7 +310,6 @@ function registerIPCHandlers() {
     db.prepare('DELETE FROM products WHERE id=?').run(id)
     return { success: true }
   })
-
   // ---------- INVOICES ----------
   ipcMain.handle('add-invoice', (_e, invoice) => {
     const lastInvoice = db.prepare('SELECT invoice_number FROM invoice ORDER BY id DESC LIMIT 1').get()
