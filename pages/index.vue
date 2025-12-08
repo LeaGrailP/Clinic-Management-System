@@ -180,11 +180,13 @@ async function handleForgotPassword() {
                    v-model="password" placeholder="Password"
                    class="w-full p-3 rounded bg-white/80 text-gray-900" />
 
-            <button type="button"
-                    @click="passwordVisible = !passwordVisible"
-                    class="absolute right-3 top-1/2 -translate-y-1/2">
-              {{ passwordVisible ? '🙈' : '👁' }}
-            </button>
+    <button 
+      type="button"
+      @click="passwordVisible = !passwordVisible"
+      class="absolute right-3 top-1/2 -translate-y-1/2"
+    >
+      <component :is="passwordVisible ? EyeOff : Eye" class="w-5 h-5 text-black" />
+    </button>
           </div>
 
           <button :disabled="loading"
