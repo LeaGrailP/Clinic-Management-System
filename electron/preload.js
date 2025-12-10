@@ -10,11 +10,12 @@ contextBridge.exposeInMainWorld('electron', {
 
 contextBridge.exposeInMainWorld('electronAPI', {
   checkAdmin: () => ipcRenderer.invoke('checkAdmin'),
-  createAdmin: (data) => ipcRenderer.invoke('createAdmin', data),
   register: (data) => ipcRenderer.invoke('auth:register', data),
   login: (data) => ipcRenderer.invoke('login', data),
-  resetPassword: (data) => ipcRenderer.invoke('reset-password', data),
   updateName: (data) => ipcRenderer.invoke('user:updateName', data),
+  resetPassword: (data) => ipcRenderer.invoke("reset-password", data),
+  createAdmin: (data) => ipcRenderer.invoke("createAdmin", data),
+
 });
 
 

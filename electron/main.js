@@ -27,7 +27,7 @@ function initDB() {
     fs.mkdirSync(dbDir, { recursive: true })
   }
 
-  const dbPath = path.join(dbDir, 'trialDB9.db')
+  const dbPath = path.join(dbDir, 'DB2.db')
   const db = new Database(dbPath)
 
   console.log('🧭 Using DB at:', dbPath)
@@ -46,9 +46,10 @@ function initDB() {
       role TEXT,
       newPassword TEXT,
       oldName TEXT,
-      newName TEXT
+      newName TEXT,
+      masterPin TEXT
     )
-  `)
+`)
 
   // Products table
   db.exec(`
@@ -172,16 +173,22 @@ function registerIPCHandlers() {
     }
   })
 
-  ipcMain.handle('createAdmin', (_event, { name, password }) => {
-    try {
-      const hash = bcrypt.hashSync(password, 10)
-      db.prepare("INSERT INTO users (name, password, role) VALUES (?, ?, 'admin')").run(name, hash)
-      return { success: true }
-    } catch (err) {
-      console.error('createAdmin error:', err)
-      return { success: false, error: err.message }
-    }
-  })
+ipcMain.handle('createAdmin', (_event, { name, password, pin }) => {
+  try {
+    const hash = bcrypt.hashSync(password, 10)
+    const pinHash = bcrypt.hashSync(pin, 10)
+
+    db.prepare(`
+      INSERT INTO users (name, password, role, masterPin)
+      VALUES (?, ?, 'admin', ?)
+    `).run(name, hash, pinHash)
+
+    return { success: true }
+  } catch (err) {
+    console.error('createAdmin error:', err)
+    return { success: false, error: err.message }
+  }
+})
 
   ipcMain.handle('login', (_event, { role, name, password }) => {
     try {
@@ -209,13 +216,32 @@ function registerIPCHandlers() {
 });
 
 
-  ipcMain.handle('reset-password', (event, { name, newPassword }) => {
-  const hashed = bcrypt.hashSync(newPassword, 10)
-  const stmt = db.prepare(`UPDATE users SET password = ? WHERE name = ?`)
-  const info = stmt.run(hashed, name)
+ipcMain.handle('reset-password', async (_event, { name, newPassword, pin }) => {
+  try {
+    const admin = db.prepare(`
+      SELECT masterPin FROM users
+      WHERE role = 'admin'
+      LIMIT 1
+    `).get()
 
-  return { success: info.changes > 0 }
+    if (!admin?.masterPin) {
+      return { success: false, error: "No master PIN found. Admin must set it up." }
+    }
+
+    const validPin = bcrypt.compareSync(pin, admin.masterPin)
+    if (!validPin) return { success: false, error: "Invalid master PIN." }
+
+    const hashed = bcrypt.hashSync(newPassword, 10)
+    const info = db.prepare(`UPDATE users SET password = ? WHERE name = ?`)
+      .run(hashed, name)
+
+    return { success: info.changes > 0 }
+  } catch (err) {
+    console.error("reset-password error:", err)
+    return { success: false, error: err.message }
+  }
 })
+
 
 
   // ---------- PATIENTS ----------
