@@ -29,14 +29,13 @@
             <th class="px-4 py-2 border">Zero-Rated Sales</th>
             <th class="px-4 py-2 border">Discount</th>
             <th class="px-4 py-2 border">Total</th>
+            <th class="px-4 py-2 border">Issued By</th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="invoice in filteredInvoices" :key="invoice.id">
   <td class="px-4 py-2 border">{{ invoice.invoice_number }}</td>
   <td class="px-4 py-2 border">{{ invoice.date }}</td>
-
-  <!-- ⭐ Patched Customer Column -->
   <td class="px-4 py-2 border">
     <template v-if="invoice.patient_id">
       <div class="font-medium">
@@ -51,16 +50,14 @@
       {{ invoice.customer_name }}
     </template>
   </td>
-  <!-- ⭐ End Patched Column -->
-
   <td class="px-4 py-2 border">{{ formatCurrency(invoice.vat_sales) }}</td>
   <td class="px-4 py-2 border">{{ formatCurrency(invoice.vat_amount) }}</td>
   <td class="px-4 py-2 border">{{ formatCurrency(invoice.vat_exempt_sales) }}</td>
   <td class="px-4 py-2 border">{{ formatCurrency(invoice.zero_rated_sales) }}</td>
   <td class="px-4 py-2 border">{{ formatCurrency(invoice.discount) }}</td>
   <td class="px-4 py-2 border">{{ formatCurrency(invoice.total) }}</td>
+  <td class="px-4 py-2 border">{{ invoice.issued_by }}</td>
 </tr>
-
         </tbody>
       </table>
     </div>
@@ -102,12 +99,12 @@ function clearFilter() {
 function saveAsFile() {
   const headers = [
     'Invoice #','Date','Customer','VAT Sales','VAT Amount',
-    'VAT-Exempt Sales','Zero-Rated Sales','Discount','Total'
+    'VAT-Exempt Sales','Zero-Rated Sales','Discount','Total', 'Issued By'
   ]
   const rows = filteredInvoices.value.map(inv => [
     inv.invoice_number, inv.date, inv.customer_name,
     inv.vat_sales, inv.vat_amount, inv.vat_exempt_sales,
-    inv.zero_rated_sales, inv.discount, inv.total
+    inv.zero_rated_sales, inv.discount, inv.total, inv.issued_by
   ])
 
   const csvContent = [headers, ...rows].map(e => e.join(',')).join('\n')
@@ -129,6 +126,7 @@ async function saveAsPDF() {
     const plainInvoices = filteredInvoices.value.map(inv => ({
       id: inv.id,
       invoice_number: inv.invoice_number,
+      issued_by: inv.issued_by,
       date: inv.date,
       customer_name: inv.customer_name,
       vat_sales: inv.vat_sales,

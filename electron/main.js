@@ -27,7 +27,7 @@ function initDB() {
     fs.mkdirSync(dbDir, { recursive: true })
   }
 
-  const dbPath = path.join(dbDir, 'trialDB8.db')
+  const dbPath = path.join(dbDir, 'trialDB9.db')
   const db = new Database(dbPath)
 
   console.log('🧭 Using DB at:', dbPath)
@@ -109,7 +109,8 @@ function initDB() {
     discount REAL,
     total REAL,
     items TEXT,
-    invoice_number TEXT UNIQUE
+    invoice_number TEXT UNIQUE,
+    issued_by Text
   )
 `)
   console.log('✅ Tables verified / created')
@@ -360,6 +361,7 @@ ipcMain.handle('add-invoice', (_e, inv) => {
       customer_name,
       customer_tin,
       patient_id,
+      issued_by,
       vat_sales,
       vat_amount,
       vat_exempt_sales,
@@ -368,12 +370,13 @@ ipcMain.handle('add-invoice', (_e, inv) => {
       total,
       items,
       invoice_number
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
     inv.date,
     inv.customer_name,
     inv.customer_tin,
-    inv.patient_id || null,       // ⭐ Added
+    inv.patient_id || null,
+    inv.issued_by,
     inv.vat_sales,
     inv.vat_amount,
     inv.vat_exempt_sales,

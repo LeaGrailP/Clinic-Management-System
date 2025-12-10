@@ -366,21 +366,20 @@ async function saveInvoice() {
     return alert('Tendered amount required')
 
   try {
-    // Build payload correctly
     const payload = {
-      date: invoiceData.invoiceDate,         // Correct field
+      date: invoiceData.invoiceDate,
       customer_name: customer.name || '',
       customer_tin: customer.tin || '',
       vat_sales: totals.vat_sales,
       vat_amount: totals.vat_amount,
       vat_exempt_sales: totals.vat_exempt_sales,
       zero_rated_sales: totals.zero_rated_sales,
-      discount: totals._discountAmount || 0, // Discount applied
+      discount: totals._discountAmount || 0,
       total: totals.total,
-      items: JSON.stringify(selectedProducts.value)
+      items: JSON.stringify(selectedProducts.value),
+      issued_by: invoiceData.issuedBy 
     }
 
-    // Save only ONCE
     const result = await window.electron.invoke('add-invoice', payload)
 
     alert(`Invoice saved! Number: ${result.invoice_number}`)
