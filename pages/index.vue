@@ -27,6 +27,10 @@ const forgotNewPassword = ref('')
 const forgotLoading = ref(false)
 const loading = ref(false)
 
+// Username change
+const changeName = ref(false)
+const forgotNewName = ref('')
+
 // UI mode
 const currentView = ref('checking')
 
@@ -52,7 +56,7 @@ function resetFields() {
 
 // =============== PIN VALIDATION ====================
 function pinIsValid(pin) {
-  return /^[0-9]{6}$/.test(pin)   // 6 digits only
+  return /^[0-9]{6}$/.test(pin)
 }
 
 // =============== SETUP ADMIN ========================
@@ -115,35 +119,63 @@ async function handleLogin() {
   }
 }
 
-// ================= RESET PASSWORD ===================
+// ================= FORGOT PASSWORD ===================
+// Modal state
+const pinModalOpen = ref(false)
+const pinInput = ref('')
+
+// Open modal
+function openPinModal() {
+  pinInput.value = forgotPin.value
+  pinModalOpen.value = true
+}
+
+// Confirm PIN modal and submit
+async function submitForgotPassword() {
+  forgotPin.value = pinInput.value
+  pinModalOpen.value = false
+  await handleForgotPassword()
+}
+
+// Main handler
 async function handleForgotPassword() {
-  if (!forgotName.value || !forgotNewPassword.value || !forgotPin.value)
-    return alert("Please fill in all fields.")
+  if (!forgotName.value || !forgotPin.value)
+    return alert("Please enter the username and master PIN.")
 
   if (!pinIsValid(forgotPin.value))
     return alert("Master PIN must be exactly 6 digits.")
 
-  // Prevent users from resetting someone else's password
+  // Prevent users from modifying themselves
   if (forgotName.value === user.value?.name)
-    return alert("You cannot reset your own password. Ask admin.")
+    return alert("You cannot modify your own credentials. Ask another admin.")
+
+  if (!forgotNewPassword.value)
+    return alert("Please enter the new password.")
+
+  if (changeName.value && !forgotNewName.value)
+    return alert("Please enter a new username.")
 
   forgotLoading.value = true
   try {
     const result = await window.electronAPI.resetPassword({
       name: forgotName.value,
       newPassword: forgotNewPassword.value,
+      newName: changeName.value ? forgotNewName.value : null,
       pin: forgotPin.value
     })
 
-    if (result?.success) {
-      alert('Password updated!')
-      forgotName.value = ''
-      forgotNewPassword.value = ''
-      forgotPin.value = ''
-      currentView.value = 'login'
-    } else {
-      alert(result?.error || 'Reset failed.')
-    }
+    if (!result?.success)
+      return alert(result.error || "Update failed.")
+
+    alert("Changes applied successfully!")
+
+    forgotName.value = ''
+    forgotNewPassword.value = ''
+    forgotNewName.value = ''
+    forgotPin.value = ''
+    changeName.value = false
+    currentView.value = 'login'
+
   } catch (err) {
     console.error(err)
     alert("An error occurred.")
@@ -195,7 +227,6 @@ async function handleForgotPassword() {
             </button>
           </div>
 
-          <!-- MASTER PIN -->
           <input v-model="masterPin" type="password" maxlength="6"
             placeholder="Master PIN (6 digits)"
             class="w-full p-3 rounded bg-white/80 text-gray-900" />
@@ -258,7 +289,7 @@ async function handleForgotPassword() {
           Reset Password
         </h2>
 
-        <form @submit.prevent="handleForgotPassword" class="space-y-4">
+        <form @submit.prevent="openPinModal" class="space-y-4">
 
           <input v-model="forgotName" type="text"
             placeholder="Existing Username"
@@ -268,14 +299,28 @@ async function handleForgotPassword() {
             placeholder="New Password"
             class="w-full p-3 rounded bg-white/80 text-gray-900" />
 
-          <!-- PIN -->
-          <input v-model="forgotPin" type="password" maxlength="6"
-            placeholder="Master PIN"
+          <!-- CHANGE USERNAME OPTION -->
+          <div class="flex items-center gap-2 text-white mt-2">
+            <input type="checkbox" v-model="changeName" />
+            <label>Change username?</label>
+          </div>
+
+          <input v-if="changeName"
+            v-model="forgotNewName"
+            type="text"
+            placeholder="New Username"
             class="w-full p-3 rounded bg-white/80 text-gray-900" />
+
+          <!-- PIN BUTTON -->
+          <button type="button"
+            class="w-full p-3 rounded bg-white/20 text-white hover:bg-white/30"
+            @click="openPinModal">
+            Enter Master PIN
+          </button>
 
           <button :disabled="forgotLoading"
             class="w-full bg-purple-600 text-white py-2 rounded hover:bg-purple-700 disabled:bg-gray-400">
-            {{ forgotLoading ? 'Updating...' : 'Reset Password' }}
+            {{ forgotLoading ? 'Updating...' : 'Save' }}
           </button>
 
           <p class="text-center text-white underline cursor-pointer"
@@ -287,5 +332,39 @@ async function handleForgotPassword() {
       </template>
 
     </div>
+
+    <!-- PIN POPUP MODAL -->
+    <div v-if="pinModalOpen"
+      class="fixed inset-0 bg-black/50 backdrop-blur-md flex items-center justify-center z-[999]">
+
+      <div class="bg-white/10 backdrop-blur-lg p-6 rounded-xl shadow-2xl w-[320px] text-white">
+        
+        <h3 class="text-xl font-semibold mb-4 text-center">
+          Enter Master PIN
+        </h3>
+
+        <input
+          v-model="pinInput"
+          type="password"
+          maxlength="6"
+          placeholder="6-digit PIN"
+          class="w-full p-3 mb-4 rounded bg-white/20 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-blue-400"
+        />
+
+        <div class="flex gap-3">
+          <button class="flex-1 bg-gray-500/50 hover:bg-gray-600/70 py-2 rounded text-white font-medium transition"
+            @click="pinModalOpen = false">
+            Cancel
+          </button>
+
+          <button class="flex-1 bg-blue-600 hover:bg-blue-700 py-2 rounded text-white font-medium transition"
+            @click="submitForgotPassword">
+            Confirm
+          </button>
+        </div>
+
+      </div>
+    </div>
+
   </div>
 </template>

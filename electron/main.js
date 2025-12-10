@@ -27,7 +27,7 @@ function initDB() {
     fs.mkdirSync(dbDir, { recursive: true })
   }
 
-  const dbPath = path.join(dbDir, 'DB2.db')
+  const dbPath = path.join(dbDir, 'DB3.db')
   const db = new Database(dbPath)
 
   console.log('🧭 Using DB at:', dbPath)
@@ -203,6 +203,7 @@ ipcMain.handle('createAdmin', (_event, { name, password, pin }) => {
     }
   })
 
+  
   ipcMain.handle('user:updateName', (_event, { oldName, newName }) => {
   try {
     const stmt = db.prepare("UPDATE users SET name = ? WHERE name = ?");
@@ -216,8 +217,9 @@ ipcMain.handle('createAdmin', (_event, { name, password, pin }) => {
 });
 
 
-ipcMain.handle('reset-password', async (_event, { name, newPassword, pin }) => {
+ipcMain.handle('reset-password', async (_event, { name, newName, newPassword, pin }) => {
   try {
+    // 1. Fetch admin master PIN
     const admin = db.prepare(`
       SELECT masterPin FROM users
       WHERE role = 'admin'
@@ -228,12 +230,28 @@ ipcMain.handle('reset-password', async (_event, { name, newPassword, pin }) => {
       return { success: false, error: "No master PIN found. Admin must set it up." }
     }
 
+    // 2. Validate PIN
     const validPin = bcrypt.compareSync(pin, admin.masterPin)
     if (!validPin) return { success: false, error: "Invalid master PIN." }
 
+    // 3. Prevent name conflicts
+    if (newName && newName !== name) {
+      const exists = db.prepare(`SELECT 1 FROM users WHERE name = ?`).get(newName)
+      if (exists) {
+        return { success: false, error: "This name is already in use." }
+      }
+    }
+
     const hashed = bcrypt.hashSync(newPassword, 10)
-    const info = db.prepare(`UPDATE users SET password = ? WHERE name = ?`)
-      .run(hashed, name)
+
+    // 4. Update both name + password safely
+    const stmt = db.prepare(`
+      UPDATE users
+      SET password = ?, name = COALESCE(?, name)
+      WHERE name = ?
+    `)
+
+    const info = stmt.run(hashed, newName || null, name)
 
     return { success: info.changes > 0 }
   } catch (err) {
@@ -241,7 +259,6 @@ ipcMain.handle('reset-password', async (_event, { name, newPassword, pin }) => {
     return { success: false, error: err.message }
   }
 })
-
 
 
   // ---------- PATIENTS ----------

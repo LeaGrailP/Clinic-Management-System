@@ -66,11 +66,10 @@ const goBack = () => {
       </NuxtLink>
 
       <!-- Logged-in User Name Display -->
-      <NuxtLink 
-      to="/profile" 
+      <h1
       class="px-3 py-1 text-slate-800 dark:text-slate-100 font-bold ">
         {{ userName }}
-      </NuxtLink>
+    </h1>
 
       <!-- Logout -->
       <button

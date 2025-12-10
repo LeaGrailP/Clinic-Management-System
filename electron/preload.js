@@ -13,10 +13,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
   register: (data) => ipcRenderer.invoke('auth:register', data),
   login: (data) => ipcRenderer.invoke('login', data),
   updateName: (data) => ipcRenderer.invoke('user:updateName', data),
+  updateUserName: (data) => ipcRenderer.invoke('user:updateName', data),
   resetPassword: (data) => ipcRenderer.invoke("reset-password", data),
   createAdmin: (data) => ipcRenderer.invoke("createAdmin", data),
-
 });
+
 
 
 contextBridge.exposeInMainWorld('patientAPI', {
