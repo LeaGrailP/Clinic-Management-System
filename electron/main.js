@@ -27,7 +27,7 @@ function initDB() {
     fs.mkdirSync(dbDir, { recursive: true })
   }
 
-  const dbPath = path.join(dbDir, 'database.sqlite.db')
+  const dbPath = path.join(dbDir, 'trialDB7.db')
   const db = new Database(dbPath)
 
   console.log('🧭 Using DB at:', dbPath)
@@ -94,16 +94,23 @@ function initDB() {
   `)
 
   // Invoice table
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS invoice (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      date TEXT,
-      total REAL,
-      items TEXT,
-      invoice_number TEXT UNIQUE
-    )
-  `)
 
+  db.exec(`
+  CREATE TABLE IF NOT EXISTS invoice (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    date TEXT,
+    customer_name TEXT,
+    customer_tin TEXT,
+    vat_sales REAL,
+    vat_amount REAL,
+    vat_exempt_sales REAL,
+    zero_rated_sales REAL,
+    discount REAL,
+    total REAL,
+    items TEXT,
+    invoice_number TEXT UNIQUE
+  )
+`)
   console.log('✅ Tables verified / created')
   return db
 }
@@ -245,6 +252,30 @@ function registerIPCHandlers() {
     return { success: true }
   })
 
+  // 🔍 Search Patients (Name + TIN)
+ipcMain.handle('search-patients', (_event, query) => {
+  try {
+    const stmt = db.prepare(`
+      SELECT id, firstName, middleName, lastName, tin
+      FROM clinicpatients
+      WHERE firstName LIKE ?
+         OR middleName LIKE ?
+         OR lastName LIKE ?
+         OR tin LIKE ?
+      LIMIT 20
+    `)
+
+    const like = `%${query}%`
+    const results = stmt.all(like, like, like, like)
+
+    return results
+  } catch (err) {
+    console.error('search-patients error:', err)
+    return []
+  }
+})
+
+
   // ---------- PRODUCTS ----------
   ipcMain.handle('get-products', () => {
   const rows = db.prepare('SELECT * FROM products').all()
@@ -311,17 +342,46 @@ function registerIPCHandlers() {
     return { success: true }
   })
   // ---------- INVOICES ----------
-  ipcMain.handle('add-invoice', (_e, invoice) => {
-    const lastInvoice = db.prepare('SELECT invoice_number FROM invoice ORDER BY id DESC LIMIT 1').get()
-    let nextInvoiceNumber = 'INV-000001'
-    if (lastInvoice?.invoice_number) {
-      const lastNumber = parseInt(lastInvoice.invoice_number.replace('INV-', ''))
-      nextInvoiceNumber = `INV-${(lastNumber + 1).toString().padStart(6, '0')}`
-    }
-    db.prepare('INSERT INTO invoice (date, total, items, invoice_number) VALUES (?, ?, ?, ?)')
-      .run(invoice.date, invoice.total, invoice.items, nextInvoiceNumber)
-    return { success: true, invoice_number: nextInvoiceNumber }
-  })
+ipcMain.handle('add-invoice', (_e, inv) => {
+  const last = db.prepare('SELECT invoice_number FROM invoice ORDER BY id DESC LIMIT 1').get()
+  let nextNumber = "INV-000001"
+
+  if (last?.invoice_number) {
+    const n = parseInt(last.invoice_number.replace("INV-", ""))
+    nextNumber = `INV-${String(n + 1).padStart(6, "0")}`
+  }
+
+  db.prepare(`
+    INSERT INTO invoice (
+      date,
+      customer_name,
+      customer_tin,
+      vat_sales,
+      vat_amount,
+      vat_exempt_sales,
+      zero_rated_sales,
+      discount,
+      total,
+      items,
+      invoice_number
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    inv.date,
+    inv.customer_name,
+    inv.customer_tin,
+    inv.vat_sales,
+    inv.vat_amount,
+    inv.vat_exempt_sales,
+    inv.zero_rated_sales,
+    inv.discount,
+    inv.total,
+    inv.items,
+    nextNumber
+  )
+
+  return { success: true, invoice_number: nextNumber }
+})
+
 
   ipcMain.handle('generate-invoice-number', () => {
     const lastInvoice = db.prepare('SELECT invoice_number FROM invoice ORDER BY id DESC LIMIT 1').get()

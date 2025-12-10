@@ -139,7 +139,7 @@ async function fetchPatientMatches(query) {
   }
 
   try {
-    const results = await window.electron.invoke('search-patients', query)
+    const results = await window.patientAPI.searchPatients(query)
     patientResults.value = Array.isArray(results) ? results : []
   } catch (err) {
     console.error('fetchPatientMatches:', err)
@@ -359,28 +359,40 @@ function clearInvoice() {
 }
 
 async function saveInvoice() {
-  if (!selectedProducts.value.length) return alert('No products added!')
-  if (!canPrint.value) return alert('Tendered amount required')
-  
-  const payload = {
-    date: invoiceData.invoiceDate,
-    total: totals.total,
-    discount_amount: discountAmount.value,
-    discount_type: discount.type || 'NONE',
-    vat_sales: totals.vat_sales,
-    vat_amount: totals.vat_amount,
-    vat_exempt_sales: totals.vat_exempt_sales,
-    zero_rated_sales: totals.zero_rated_sales,
-    customer_name: customer.name || invoiceData.issuedBy,
-    items: JSON.stringify(selectedProducts.value)
-  }
+  if (!selectedProducts.value.length)
+    return alert('No products added!')
+
+  if (!canPrint.value)
+    return alert('Tendered amount required')
+
   try {
+    // Build payload correctly
+    const payload = {
+      date: invoiceData.invoiceDate,         // Correct field
+      customer_name: customer.name || '',
+      customer_tin: customer.tin || '',
+      vat_sales: totals.vat_sales,
+      vat_amount: totals.vat_amount,
+      vat_exempt_sales: totals.vat_exempt_sales,
+      zero_rated_sales: totals.zero_rated_sales,
+      discount: totals._discountAmount || 0, // Discount applied
+      total: totals.total,
+      items: JSON.stringify(selectedProducts.value)
+    }
+
+    // Save only ONCE
     const result = await window.electron.invoke('add-invoice', payload)
+
     alert(`Invoice saved! Number: ${result.invoice_number}`)
+
     clearInvoice()
     generateInvoiceNumber()
-  } catch (err) { console.error('saveInvoice:', err) }
+  } catch (err) {
+    console.error('saveInvoice:', err)
+    alert('Failed to save invoice.')
+  }
 }
+
 
 async function checkPrinter() {
   try {
@@ -578,27 +590,49 @@ const invoiceFields = [
       <div class="flex flex-col gap-4">
         <!-- CUSTOMER -->
         <div class="p-4 rounded-xl shadow border bg-slate-100 dark:bg-slate-700 border-slate-200 dark:border-slate-600 space-y-4">
-          <h2 class="font-semibold text-lg text-slate-800 dark:text-slate-100">Customer</h2>
-          
-          <input
-            v-model="customer.name"
-            placeholder="Customer Name (Optional)"
-            class="w-full text-sm px-3 py-2 rounded border bg-white dark:bg-slate-800 border-gray-400 text-gray-900 dark:text-gray-100"
-          />
+  <h2 class="font-semibold text-lg text-slate-800 dark:text-slate-100">Customer</h2>
 
-          <input
-            v-model="customer.tin"
-            placeholder="TIN (Optional)"
-            class="w-full text-sm px-3 py-2 rounded border bg-white dark:bg-slate-800 border-gray-400 text-gray-900 dark:text-gray-100"
-          />
+  <!-- SEARCH PATIENT INPUT -->
+  <div class="relative">
+    <!-- DROPDOWN RESULTS -->
+<input
+    v-model="patientSearch"
+    placeholder="Search Customer..."
+    class="w-full text-sm px-3 py-2 rounded border bg-white dark:bg-slate-800 border-gray-400 text-gray-900 dark:text-gray-100"
+  />
 
-          <router-link
-            to="/customer"
-            class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded transition-colors duration-200"
-          >
-            Register Customer
-          </router-link>
-        </div>
+  <!-- RESULTS -->
+  <ul
+    v-if="patientResults.length > 0"
+    class="absolute z-20 w-full mt-1 bg-white dark:bg-slate-800 border border-gray-300 dark:border-gray-600 rounded shadow-lg max-h-40 overflow-y-auto"
+  >
+    <li
+      v-for="patient in patientResults"
+      :key="patient.id"
+      @click="selectPatient(patient)"
+      class="p-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700 border-b"
+    >
+      <p class="text-sm font-medium">{{ patient.lastName }}, {{ patient.firstName }} {{ patient.middleName }}</p>
+      <p class="text-xs text-gray-500">TIN: {{ patient.tin }}</p>
+    </li>
+  </ul>
+  </div>
+
+  <!-- SELECTED PATIENT FILLS THESE -->
+  <input
+    v-model="customer.tin"
+    placeholder="TIN"
+    class="w-full text-sm px-3 py-2 rounded border bg-white dark:bg-slate-800 border-gray-400 text-gray-900 dark:text-gray-100"
+  />
+
+  <router-link
+    to="/customer"
+    class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded transition-colors duration-200"
+  >
+    Register Customer
+  </router-link>
+</div>
+
         <!-- DISCOUNT -->
         <div class="p-4 rounded-xl shadow border bg-slate-100 dark:bg-slate-700 border-slate-200 dark:border-slate-600 space-y-3">
           <div class="flex justify-between items-center">
