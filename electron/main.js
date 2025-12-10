@@ -27,7 +27,7 @@ function initDB() {
     fs.mkdirSync(dbDir, { recursive: true })
   }
 
-  const dbPath = path.join(dbDir, 'trialDB7.db')
+  const dbPath = path.join(dbDir, 'trialDB8.db')
   const db = new Database(dbPath)
 
   console.log('🧭 Using DB at:', dbPath)
@@ -101,6 +101,7 @@ function initDB() {
     date TEXT,
     customer_name TEXT,
     customer_tin TEXT,
+    patient_id INTEGER,
     vat_sales REAL,
     vat_amount REAL,
     vat_exempt_sales REAL,
@@ -341,6 +342,8 @@ ipcMain.handle('search-patients', (_event, query) => {
     db.prepare('DELETE FROM products WHERE id=?').run(id)
     return { success: true }
   })
+
+
   // ---------- INVOICES ----------
 ipcMain.handle('add-invoice', (_e, inv) => {
   const last = db.prepare('SELECT invoice_number FROM invoice ORDER BY id DESC LIMIT 1').get()
@@ -356,6 +359,7 @@ ipcMain.handle('add-invoice', (_e, inv) => {
       date,
       customer_name,
       customer_tin,
+      patient_id,
       vat_sales,
       vat_amount,
       vat_exempt_sales,
@@ -364,11 +368,12 @@ ipcMain.handle('add-invoice', (_e, inv) => {
       total,
       items,
       invoice_number
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
     inv.date,
     inv.customer_name,
     inv.customer_tin,
+    inv.patient_id || null,       // ⭐ Added
     inv.vat_sales,
     inv.vat_amount,
     inv.vat_exempt_sales,
@@ -383,6 +388,7 @@ ipcMain.handle('add-invoice', (_e, inv) => {
 })
 
 
+
   ipcMain.handle('generate-invoice-number', () => {
     const lastInvoice = db.prepare('SELECT invoice_number FROM invoice ORDER BY id DESC LIMIT 1').get()
     let nextInvoiceNumber = 'INV-000001'
@@ -393,7 +399,28 @@ ipcMain.handle('add-invoice', (_e, inv) => {
     return nextInvoiceNumber
   })
 
-  ipcMain.handle('get-all-invoices', () => db.prepare('SELECT * FROM invoice').all())
+  ipcMain.handle('get-all-invoices', () => {
+  return db.prepare(`
+    SELECT 
+      invoice.*,
+      clinicpatients.firstName,
+      clinicpatients.lastName,
+      clinicpatients.middleName,
+      clinicpatients.address,
+      clinicpatients.phone,
+      clinicpatients.businessStyle,
+      clinicpatients.tin AS patient_tin,
+      clinicpatients.isSenior,
+      clinicpatients.seniorId,
+      clinicpatients.isPWD,
+      clinicpatients.pwdId
+    FROM invoice
+    LEFT JOIN clinicpatients 
+      ON clinicpatients.id = invoice.patient_id
+    ORDER BY invoice.id DESC
+  `).all()
+})
+
   ipcMain.handle('delete-invoice', (_e, id) => {
     db.prepare('DELETE FROM invoice WHERE id=?').run(id)
     return { success: true }

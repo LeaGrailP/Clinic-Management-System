@@ -33,19 +33,34 @@
         </thead>
         <tbody>
           <tr v-for="invoice in filteredInvoices" :key="invoice.id">
-            <td class="px-4 py-2 border">{{ invoice.invoice_number }}</td>
-            <td class="px-4 py-2 border">{{ invoice.date }}</td>
-            <td class="px-4 py-2 border">{{ invoice.customer_name }}</td>
-            <td class="px-4 py-2 border">{{ formatCurrency(invoice.vat_sales) }}</td>
-            <td class="px-4 py-2 border">{{ formatCurrency(invoice.vat_amount) }}</td>
-            <td class="px-4 py-2 border">{{ formatCurrency(invoice.vat_exempt_sales) }}</td>
-            <td class="px-4 py-2 border">{{ formatCurrency(invoice.zero_rated_sales) }}</td>
-            <td class="px-4 py-2 border">{{ formatCurrency(invoice.discount) }}</td>
-            <td class="px-4 py-2 border">{{ formatCurrency(invoice.total) }}</td>
-          </tr>
-          <tr v-if="filteredInvoices.length === 0">
-            <td class="px-4 py-2 border text-center text-gray-500" colspan="9">No invoices found</td>
-          </tr>
+  <td class="px-4 py-2 border">{{ invoice.invoice_number }}</td>
+  <td class="px-4 py-2 border">{{ invoice.date }}</td>
+
+  <!-- ⭐ Patched Customer Column -->
+  <td class="px-4 py-2 border">
+    <template v-if="invoice.patient_id">
+      <div class="font-medium">
+        {{ invoice.lastName }}, {{ invoice.firstName }} {{ invoice.middleName }}
+      </div>
+      <div class="text-xs text-gray-600 dark:text-gray-300">
+        TIN: {{ invoice.patient_tin }}
+      </div>
+    </template>
+
+    <template v-else>
+      {{ invoice.customer_name }}
+    </template>
+  </td>
+  <!-- ⭐ End Patched Column -->
+
+  <td class="px-4 py-2 border">{{ formatCurrency(invoice.vat_sales) }}</td>
+  <td class="px-4 py-2 border">{{ formatCurrency(invoice.vat_amount) }}</td>
+  <td class="px-4 py-2 border">{{ formatCurrency(invoice.vat_exempt_sales) }}</td>
+  <td class="px-4 py-2 border">{{ formatCurrency(invoice.zero_rated_sales) }}</td>
+  <td class="px-4 py-2 border">{{ formatCurrency(invoice.discount) }}</td>
+  <td class="px-4 py-2 border">{{ formatCurrency(invoice.total) }}</td>
+</tr>
+
         </tbody>
       </table>
     </div>
