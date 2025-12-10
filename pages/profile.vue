@@ -1,78 +1,209 @@
+
+
 <script setup>
-import { ref } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
-import { useState } from '#app'
+  // ----Register with edit----
+import { ref, onMounted } from 'vue'
 
-const router = useRouter()
+definePageMeta({
+  middleware: ['auth'],
+  requiresAdmin: true
+})
 
-// Get logged-in user
-const user = useState('user')
+// --- Form fields ---
+const name = ref('')
+const password = ref('')
 
-// Local ref for editing name
-const newName = ref(user.value?.name || '')
+// --- Accounts list ---
+const accounts = ref([])
+const loading = ref(false)
 
-// Loading state
-const saving = ref(false)
+// --- Edit state ---
+const editingId = ref(null)
+const editName = ref('')
+const editPassword = ref('')
 
-// Save new name function
-function saveName() {
-  if (!newName.value.trim()) {
-    alert('Name cannot be empty')
-    return
-  }
-
-  saving.value = true
+// ------------------- METHODS -------------------
+async function fetchAccounts() {
   try {
-    // Update global state
-    user.value.name = newName.value.trim()
-
-    // Optional: persist to localStorage
-    localStorage.setItem('name', newName.value.trim())
-
-    alert('Name updated successfully!')
+    accounts.value = await window.electronAPI.getAccounts()
   } catch (err) {
-    console.error('Failed to update name:', err)
-    alert('Failed to update name')
-  } finally {
-    saving.value = false
+    console.error('Failed to fetch accounts:', err)
   }
 }
 
-// Optional: go back button
-function goBack() {
-  if (window.history.length > 1) router.back()
-  else router.push('/dashboard')
+async function handleRegister() {
+  if (!name.value || !password.value) return alert('Enter name & password!')
+
+  loading.value = true
+  try {
+    const result = await window.electronAPI['auth:register']({
+      name: name.value,
+      password: password.value,
+      role: 'cashier'
+    })
+
+    if (result.success) {
+      alert('✅ Cashier registered successfully!')
+      name.value = ''
+      password.value = ''
+      fetchAccounts()
+    } else {
+      alert('❌ ' + result.error)
+    }
+  } catch (err) {
+    console.error(err)
+    alert('❌ Registration failed')
+  } finally {
+    loading.value = false
+  }
 }
+
+function startEdit(account) {
+  editingId.value = account.id
+  editName.value = account.name
+  editPassword.value = ''
+}
+
+async function saveEdit() {
+  if (!editName.value) return alert('Name cannot be empty!')
+
+  try {
+    const oldName = accounts.value.find(a => a.id === editingId.value).name
+
+    if (editName.value !== oldName) {
+      const res = await window.electronAPI['user:updateName']({
+        oldName,
+        newName: editName.value
+      })
+      if (!res.success) return alert('Failed to update name')
+    }
+
+    if (editPassword.value) {
+      const res = await window.electronAPI['auth:register']({
+        name: editName.value,
+        password: editPassword.value,
+        role: 'cashier'
+      })
+      if (!res.success) return alert('Failed to update password')
+    }
+
+    editingId.value = null
+    editName.value = ''
+    editPassword.value = ''
+    fetchAccounts()
+  } catch (err) {
+    console.error(err)
+    alert('❌ Update failed')
+  }
+}
+
+async function deleteAccount(id) {
+  if (!confirm('Are you sure you want to delete this account?')) return
+
+  try {
+    const res = await window.electronAPI.deleteAccount(id)
+    if (res.success) {
+      alert('Account deleted ✅')
+      fetchAccounts()
+    } else {
+      alert('Failed to delete account')
+    }
+  } catch (err) {
+    console.error(err)
+    alert('❌ Deletion failed')
+  }
+}
+
+// ------------------- LIFECYCLE -------------------
+onMounted(() => {
+  fetchAccounts()
+})
 </script>
 
 <template>
-  <div class="p-4 mt-16 max-w-md mx-auto">
-    <h1 class="text-2xl font-bold mb-4">Profile</h1>
+  <div class="min-h-screen bg-gray-50 dark:bg-gray-900 py-12 px-6 transition-colors duration-300">
+    <div class="max-w-xl mx-auto bg-white dark:bg-gray-800 shadow-lg rounded-lg p-8 text-gray-900 dark:text-gray-100 transition-colors duration-300">
+      
+      <h2 class="text-2xl font-bold mb-6 text-center">Register New Cashier</h2>
+      <form @submit.prevent="handleRegister" class="flex flex-col gap-4 mb-6">
+        <input 
+          v-model="name" 
+          type="text" 
+          placeholder="Name" 
+          class="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 p-2 rounded focus:outline-none focus:ring-2 focus:ring-sky-400 dark:focus:ring-sky-600 transition"
+          required 
+        />
+        <input 
+          v-model="password" 
+          type="password" 
+          placeholder="Password" 
+          class="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 p-2 rounded focus:outline-none focus:ring-2 focus:ring-sky-400 dark:focus:ring-sky-600 transition"
+          required 
+        />
+        <button 
+          type="submit" 
+          :disabled="loading" 
+          class="bg-sky-400 dark:bg-sky-600 text-white py-2 rounded hover:bg-sky-500 dark:hover:bg-sky-700 transition"
+        >
+          {{ loading ? 'Registering...' : 'Register Cashier' }}
+        </button>
+      </form>
 
-    <div class="mb-4">
-      <label class="block font-semibold mb-1">Name:</label>
-      <input
-        v-model="newName"
-        type="text"
-        class="border px-3 py-2 rounded w-full"
-        placeholder="Enter your name"
-      />
-    </div>
+      <h3 class="text-xl font-semibold mb-4">Accounts</h3>
+      <div class="space-y-2 max-h-96 overflow-y-auto">
+        <div 
+          v-for="account in accounts" 
+          :key="account.id" 
+          class="p-3 bg-gray-100 dark:bg-gray-700 rounded flex items-center justify-between transition-colors duration-300 hover:bg-gray-200 dark:hover:bg-gray-600"
+        >
+          
+          <div class="flex-1">
+            <div v-if="editingId !== account.id">
+              <strong>{{ account.name }}</strong> 
+              <span class="text-sm text-gray-600 dark:text-gray-300">({{ account.role }})</span>
+            </div>
 
-    <div class="mb-4">
-      <label class="block font-semibold mb-1">Role:</label>
-      <p class="px-3 py-2 bg-gray-100 rounded">{{ user.value?.role || 'N/A' }}</p>
-    </div>
+            <div v-else class="flex gap-2">
+              <input 
+                v-model="editName" 
+                type="text" 
+                placeholder="New Name" 
+                class="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 p-1 rounded w-24 focus:outline-none focus:ring-2 focus:ring-sky-400 dark:focus:ring-sky-600 transition"
+              />
+              <input 
+                v-model="editPassword" 
+                type="password" 
+                placeholder="New Password" 
+                class="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 p-1 rounded w-28 focus:outline-none focus:ring-2 focus:ring-sky-400 dark:focus:ring-sky-600 transition"
+              />
+            </div>
+          </div>
 
-    <div class="flex gap-2">
-      <button
-        @click="saveName"
-        :disabled="saving"
-        class="bg-blue-500 text-white px-4 py-2 rounded disabled:opacity-50"
-      >
-        {{ saving ? 'Saving...' : 'Save' }}
-      </button>
-      <button @click="goBack" class="bg-gray-300 px-4 py-2 rounded">Back</button>
+          <div class="flex gap-2">
+            <button 
+              v-if="editingId !== account.id" 
+              @click="startEdit(account)" 
+              class="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              Edit
+            </button>
+            <button 
+              v-else 
+              @click="saveEdit" 
+              class="text-green-600 dark:text-green-400 hover:underline"
+            >
+              Save
+            </button>
+            <button 
+              @click="deleteAccount(account.id)" 
+              class="text-red-600 dark:text-red-400 hover:underline"
+            >
+              Delete
+            </button>
+          </div>
+
+        </div>
+      </div>
     </div>
   </div>
 </template>

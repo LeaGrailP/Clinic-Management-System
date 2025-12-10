@@ -13,7 +13,7 @@ const menuItems = computed(() => {
     { label: "Transactions", icon: ArrowLeftRight, to: "/transactions" },
     { label: "Customer", icon: User, to: "/customer" },
     { label: "Products", icon: ShoppingCart, to: "/products" },
-    { label: "Create Account", icon: LogIn, to: "/register" },
+    { label: "Manage Account", icon: LogIn, to: "/register" },
     { label: "About", icon: Info, to: "/about" }
   ]
 

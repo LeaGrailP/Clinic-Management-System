@@ -219,7 +219,6 @@ ipcMain.handle('createAdmin', (_event, { name, password, pin }) => {
 
 ipcMain.handle('reset-password', async (_event, { name, newName, newPassword, pin }) => {
   try {
-    // 1. Fetch admin master PIN
     const admin = db.prepare(`
       SELECT masterPin FROM users
       WHERE role = 'admin'
@@ -230,11 +229,8 @@ ipcMain.handle('reset-password', async (_event, { name, newName, newPassword, pi
       return { success: false, error: "No master PIN found. Admin must set it up." }
     }
 
-    // 2. Validate PIN
     const validPin = bcrypt.compareSync(pin, admin.masterPin)
     if (!validPin) return { success: false, error: "Invalid master PIN." }
-
-    // 3. Prevent name conflicts
     if (newName && newName !== name) {
       const exists = db.prepare(`SELECT 1 FROM users WHERE name = ?`).get(newName)
       if (exists) {
@@ -243,8 +239,6 @@ ipcMain.handle('reset-password', async (_event, { name, newName, newPassword, pi
     }
 
     const hashed = bcrypt.hashSync(newPassword, 10)
-
-    // 4. Update both name + password safely
     const stmt = db.prepare(`
       UPDATE users
       SET password = ?, name = COALESCE(?, name)
@@ -259,6 +253,29 @@ ipcMain.handle('reset-password', async (_event, { name, newName, newPassword, pi
     return { success: false, error: err.message }
   }
 })
+ipcMain.handle('get-accounts', () => {
+  try {
+    return db.prepare('SELECT id, name, role FROM users ORDER BY id DESC').all()
+  } catch (err) {
+    console.error('get-accounts error:', err)
+    return []
+  }
+})
+
+ipcMain.handle('deleteAccount', (_e, { id, pin }) => {
+  try {
+    const admin = db.prepare("SELECT masterPin FROM users WHERE role='admin' LIMIT 1").get()
+    if (!admin) return { success: false, error: 'No admin found' }
+    if (!bcrypt.compareSync(pin, admin.masterPin)) return { success: false, error: 'Invalid master PIN' }
+
+    db.prepare('DELETE FROM users WHERE id=?').run(id)
+    return { success: true }
+  } catch (err) {
+    console.error('deleteAccount error:', err)
+    return { success: false, error: err.message }
+  }
+})
+
 
 
   // ---------- PATIENTS ----------
