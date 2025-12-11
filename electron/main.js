@@ -337,6 +337,31 @@ ipcMain.handle('search-patients', (_event, query) => {
   }
 })
 
+ipcMain.handle("secure-delete-patient", (_e, { id, pin }) => {
+  try {
+    const admin = db.prepare(`
+      SELECT masterPin FROM users 
+      WHERE role='admin' 
+      LIMIT 1
+    `).get()
+
+    if (!admin)
+      return { success: false, error: "Admin account not found." }
+
+    const valid = bcrypt.compareSync(pin, admin.masterPin)
+    if (!valid)
+      return { success: false, error: "Invalid master PIN." }
+
+    db.prepare("DELETE FROM clinicpatients WHERE id=?").run(id)
+
+    return { success: true }
+
+  } catch (err) {
+    console.error("secure-delete-patient error:", err)
+    return { success: false, error: err.message }
+  }
+})
+
 
   // ---------- PRODUCTS ----------
   ipcMain.handle('get-products', () => {

@@ -12,81 +12,80 @@
     <div class="bg-slate-50 dark:bg-slate-600 border border-gray-400 text-slate-800 dark:text-slate-100 p-4 rounded shadow">
       <table class="w-full">
         <thead class="bg-slate-400 border-gray-400">
-          <tr>
-            <th class="px-5 py-3 text-left font-medium">Name</th>
-            <th class="px-5 py-3 text-left font-medium">Phone</th>
-            <th class="px-5 py-3 text-left font-medium">Senior</th>
-            <th class="px-5 py-3 text-left font-medium">PWD</th>
-            <th class="px-5 py-3"></th>
-          </tr>
-        </thead>
+  <tr>
+    <th class="px-5 py-3 text-left font-medium">First Name</th>
+    <th class="px-5 py-3 text-left font-medium">Middle Name</th>
+    <th class="px-5 py-3 text-left font-medium">Last Name</th>
+    <th class="px-5 py-3 text-left font-medium">Phone</th>
+    <th class="px-5 py-3 text-left font-medium">Business Style</th>
+    <th class="px-5 py-3 text-left font-medium">TIN</th>
+    <th class="px-5 py-3 text-left font-medium">   </th>
+    <th class="px-5 py-3"></th>
+  </tr>
+</thead>
 
-        <tbody>
-          <template v-for="patient in clinicpatients" :key="patient.id">
-            <!-- Main Row -->
-            <tr
-              class="border-b hover:bg-sky-200 cursor-pointer transition"
-              @click="toggleExpand(patient.id)"
-              :aria-expanded="expandedPatients.has(patient.id)"
-            >
-              <td class="px-5 py-3 font-medium">
-                {{ patient.firstName }} {{ patient.lastName }}
-              </td>
-              <td class="px-5 py-3">{{ patient.phone }}</td>
-              <td class="px-5 py-3">{{ patient.isSenior ? "Yes" : "No" }}</td>
-              <td class="px-5 py-3">{{ patient.isPWD ? "Yes" : "No" }}</td>
-              <td class="px-5 py-3 text-right text-slate-400">
-                <span
-                  class="inline-block transition-transform"
-                  :class="{ 'rotate-180': expandedPatients.has(patient.id) }"
-                >
-                  ▼
-                </span>
-              </td>
-            </tr>
 
-            <!-- Expanded Row -->
-            <tr v-show="expandedPatients.has(patient.id)" class="bg-slate-50 dark:bg-slate-800">
-              <td colspan="5" class="px-6 py-5">
-                <div class="grid grid-cols-2 gap-4">
-                  <div>
-                    <p class="text-sm">Middle Name</p>
-                    <p class="font-medium">{{ patient.middleName || '-' }}</p>
-                  </div>
-                  <div>
-                    <p class="text-sm">Address</p>
-                    <p class="font-medium">{{ patient.address }}</p>
-                  </div>
-                  <div>
-                    <p class="text-sm">Business Style</p>
-                    <p class="font-medium">{{ patient.businessStyle || '-' }}</p>
-                  </div>
-                  <div>
-                    <p class="text-sm">TIN</p>
-                    <p class="font-medium">{{ patient.tin || '-' }}</p>
-                  </div>
-                  <div>
-                    <p class="text-sm">Senior ID</p>
-                    <p class="font-medium">
-                      {{ patient.isSenior ? patient.seniorId : '-' }}
-                    </p>
-                  </div>
-                  <div>
-                    <p class="text-sm">PWD ID</p>
-                    <p class="font-medium">
-                      {{ patient.isPWD ? patient.pwdId : '-' }}
-                    </p>
-                  </div>
-                </div>
-              </td>
-            </tr>
-          </template>
+       <tbody>
+  <template v-for="patient in clinicpatients" :key="patient.id">
+    <!-- MAIN ROW -->
+    <tr
+      class="border-b hover:bg-sky-200 cursor-pointer transition"
+      @click="toggleExpand(patient.id)"
+      :aria-expanded="expandedPatients.has(patient.id)"
+    >
+      <td class="px-5 py-3">{{ patient.firstName }}</td>
+      <td class="px-5 py-3">{{ patient.middleName || '-' }}</td>
+      <td class="px-5 py-3">{{ patient.lastName }}</td>
+      <td class="px-5 py-3">{{ patient.phone }}</td>
+      <td class="px-5 py-3">{{ patient.businessStyle || '-' }}</td>
+      <td class="px-5 py-3">{{ patient.tin || '-' }}</td>
 
-          <!-- Empty State -->
-          <tr v-if="clinicpatients.length === 0">
-            <td colspan="5" class="text-center py-6">No patient records yet.</td>
-          </tr>
-        </tbody>
+      <!-- ACTIONS -->
+      <td class="px-5 py-3 flex gap-2">
+        <button
+          @click.stop="confirmDelete(patient.id)"
+          class="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700">Delete
+        </button>
+      </td>
+
+      <!-- DROPDOWN ARROW -->
+      <td class="px-5 py-3 text-right text-slate-400">
+        <span
+          class="inline-block transition-transform"
+          :class="{ 'rotate-180': expandedPatients.has(patient.id) }"
+        >
+          ▼
+        </span>
+      </td>
+    </tr>
+
+    <!-- EXPANDED ROW -->
+    <tr v-show="expandedPatients.has(patient.id)" class="bg-slate-50 dark:bg-slate-800">
+      <td colspan="8" class="px-6 py-5">
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <p class="text-sm">Address</p>
+            <p class="font-medium">{{ patient.address }}</p>
+          </div>
+          <div>
+            <p class="text-sm">Senior ID</p>
+            <p class="font-medium">{{ patient.isSenior ? patient.seniorId : '-' }}</p>
+          </div>
+          <div>
+            <p class="text-sm">PWD ID</p>
+            <p class="font-medium">{{ patient.isPWD ? patient.pwdId : '-' }}</p>
+          </div>
+        </div>
+      </td>
+    </tr>
+  </template>
+
+  <!-- EMPTY STATE -->
+  <tr v-if="clinicpatients.length === 0">
+    <td colspan="8" class="text-center py-6">No patient records yet.</td>
+  </tr>
+</tbody>
+
       </table>
     </div>
 
@@ -188,6 +187,31 @@
         </form>
       </div>
     </div>
+    <!-- DELETE WITH MASTER PIN -->
+<div
+  v-if="showDeleteModal"
+  class="fixed inset-0 bg-black/50 flex items-center justify-center"
+>
+  <div class="bg-white p-6 rounded shadow w-80 relative">
+    <h2 class="text-lg font-semibold mb-4">Enter Master PIN</h2>
+
+    <input type="password" v-model="masterPinInput" maxlength="6"
+      class="input-field mb-4" placeholder="6-digit PIN"/>
+
+    <div class="flex justify-end space-x-2">
+      <button class="px-3 py-2 bg-gray-400 text-white rounded"
+        @click="showDeleteModal = false">
+        Cancel
+      </button>
+
+      <button class="px-3 py-2 bg-red-600 text-white rounded"
+        @click="deletePatient">
+        Confirm Delete
+      </button>
+    </div>
+  </div>
+</div>
+
   </div>
 </template>
 
@@ -214,6 +238,36 @@ const form = ref({ ...initialForm })
 
 const clinicpatients = ref([])
 const expandedPatients = ref(new Set())
+const showDeleteModal = ref(false)
+const patientToDelete = ref(null)
+const masterPinInput = ref("")
+
+
+function confirmDelete(id) {
+  patientToDelete.value = id
+  masterPinInput.value = ""
+  showDeleteModal.value = true
+}
+
+async function deletePatient() {
+  if (!/^[0-9]{6}$/.test(masterPinInput.value)) {
+    return alert("Master PIN must be 6 digits.")
+  }
+
+  const result = await window.electron.invoke("secure-delete-patient", {
+    id: patientToDelete.value,
+    pin: masterPinInput.value
+  })
+
+  if (!result.success) {
+    alert(result.error)
+    return
+  }
+
+  showDeleteModal.value = false
+  await fetchClinicpatients()
+}
+
 
 async function fetchClinicpatients() {
   clinicpatients.value = await window.electron.invoke('get-patients')
