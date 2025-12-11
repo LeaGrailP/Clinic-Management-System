@@ -31,11 +31,12 @@ async function handleRegister() {
   if (!name.value || !password.value) return alert('Enter name & password!')
   loading.value = true
   try {
-    const result = await window.electronAPI['auth:register']({
-      name: name.value,
-      password: password.value,
-      role: 'cashier'
-    })
+    const result = await window.electronAPI.register({
+  name: name.value,
+  password: password.value,
+  role: 'cashier'
+})
+
     if (result.success) {
       alert('✅ Cashier registered successfully!')
       name.value = ''
