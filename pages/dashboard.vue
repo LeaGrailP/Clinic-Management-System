@@ -34,14 +34,11 @@ const totals = reactive({
 })
 
 const discount = reactive({
-  type: '',   // '', 'SC', 'PWD', 'PERCENT', 'AMOUNT'
+  type: '',   // '', 'SC', 'PWD'
   amount: 0,  // fixed amount
-  rate: 0,    // percent number (eg 10 for 10%)
-  raw: ''     // raw user input if you prefer
 })
 
 const customer = reactive({ name: '', tin: '' })
-
 const progress = reactive({ active: false, value: 0 })
 const tendered = ref(0)
 const receipt = ref(null)
@@ -226,8 +223,6 @@ function removeProduct(i) {
 function getDiscountValueForCalculator() {
   if (!discount.type) return 0
   if (discount.type === 'SC' || discount.type === 'PWD') return 0 // calculator handles SC/PWD by type
-  if (discount.type === 'PERCENT') return Number(discount.rate || 0)
-  if (discount.type === 'AMOUNT') return Number(discount.amount || 0)
   // fallback: if user typed raw numeric
   const parsed = parseFloat(discount.raw)
   return isNaN(parsed) ? 0 : parsed
@@ -259,7 +254,6 @@ watch(tendered, recalcTotals)
 
 //---COMPUTED VALUES---//
 const change = computed(() => Math.max(0, Number(tendered.value) - Number(totals.total || 0)))
-
 const formattedLines = computed(() =>
   selectedProducts.value.map(p => formatLine(p.quantity, p.productname, p.total))
 )
@@ -284,8 +278,6 @@ function clearInvoice() {
   totals._discountAmount = 0
   discount.type = ''
   discount.amount = 0
-  discount.rate = 0
-  discount.raw = ''
   tendered.value = 0
   customer.name = ''
   customer.tin = ''
@@ -349,6 +341,14 @@ async function printReceipt() {
     isPrinting.value = false
   }
 }
+async function confirmReceipt() {
+  if (!canPrint.value) return alert("Cannot confirm: check tendered amount or empty cart.");
+  await startProgress(500);
+  await saveInvoice();         // Save invoice automatically
+  await printReceipt();        // Print after saving
+  showPreview.value = false;
+  await finishProgress();
+}
 
 function handleDiscountInput(e) {
   // keep totals.discount for backward compatibility but primary source is discount object
@@ -367,11 +367,6 @@ onMounted(() => {
   recalcTotals()
 
   handlers = {
-    save: async () => {
-      await startProgress(800)
-      await saveInvoice()
-      await finishProgress()
-    },
     cancel: async () => {
       await startProgress(400)
       clearInvoice()
@@ -396,7 +391,6 @@ onMounted(() => {
   }
 
   // register handlers
-  window.addEventListener('footer-save', handlers.save)
   window.addEventListener('footer-cancel', handlers.cancel)
   window.addEventListener('footer-open-drawer', handlers.drawer)
   window.addEventListener('footer-check-printer', handlers.checkPrinter)
@@ -409,7 +403,6 @@ onBeforeUnmount(() => {
   if (patientDebounceTimer) clearTimeout(patientDebounceTimer)
 
   // unregister handlers if present
-  if (handlers.save) window.removeEventListener('footer-save', handlers.save)
   if (handlers.cancel) window.removeEventListener('footer-cancel', handlers.cancel)
   if (handlers.drawer) window.removeEventListener('footer-open-drawer', handlers.drawer)
   if (handlers.checkPrinter) window.removeEventListener('footer-check-printer', handlers.checkPrinter)
@@ -542,25 +535,50 @@ const invoiceFields = [
         </div>
 
         <!-- DISCOUNT -->
-        <div class="p-4 rounded-xl shadow border bg-slate-100 dark:bg-slate-700 border-slate-200 dark:border-slate-600 space-y-3">
+        <div class="p-4 rounded-xl shadow border bg-slate-100 dark:bg-slate-700 space-y-2">
           <div class="flex justify-between items-center">
-            <h2 class="font-semibold text-lg text-slate-800 dark:text-slate-100">Discount Type</h2>
-            <select v-model="discount.type" class="px-2 py-1 rounded border text-sm bg-slate-50 dark:bg-slate-800 border-gray-400 text-gray-900 dark:text-gray-100">
+            <h2 class="font-semibold">Discount</h2>
+            <select v-model="discount.type" class="border rounded px-2 py-1">
               <option value="">None</option>
               <option value="SC">Senior Citizen</option>
               <option value="PWD">PWD</option>
             </select>
           </div>
-          <div v-if="discount.type === 'SC' || discount.type === 'PWD'" class="space-y-2 border-gray-400"></div>
+
+          <p class="text-sm text-slate-600 dark:text-slate-300">
+            <template v-if="discount.type === 'SC'">20% VAT-Exempt (SC)</template>
+            <template v-else-if="discount.type === 'PWD'">20% VAT-Exempt (PWD)</template>
+            <template v-else>No discount applied</template>
+          </p>
+
+          <div
+            v-if="totals._discountAmount > 0"
+            class="flex justify-between text-red-600 font-semibold"
+          >
+            <span>Discount</span>
+            <span>-{{ formatCurrency(totals._discountAmount) }}</span>
+          </div>
         </div>
 
         <!-- PAYMENT -->
-        <div class="p-4 rounded-xl shadow border bg-slate-100 dark:bg-slate-700 border-slate-200 dark:border-slate-600 space-y-3">
+        <div class="p-4 rounded-xl shadow border bg-slate-100 dark:bg-slate-700 space-y-2">
           <div class="flex justify-between items-center">
-            <span class="text-lg text-slate-800 dark:text-slate-100">TENDERED</span>
-            <input type="number" v-model="tendered" @input="recalcTotals()" class="w-32 text-right border rounded px-2 py-1 bg-slate-50 dark:bg-slate-800 border-gray-400 text-gray-900 dark:text-gray-100" />
+            <span class="font-semibold">Tendered</span>
+            <input
+              type="number"
+              v-model="tendered"
+              class="w-32 text-right border rounded px-2 py-1"
+            />
           </div>
-          <div class="flex justify-between text-lg"><span class="text-slate-800 dark:text-slate-100">CHANGE</span><span class="font-semibold">{{ formatCurrency(change) }}</span></div>
+
+          <p v-if="isInsufficientCash" class="text-xs text-red-500">
+            Insufficient amount
+          </p>
+
+          <div v-if="!isInsufficientCash" class="flex justify-between font-semibold">
+            <span>Change</span>
+            <span>{{ formatCurrency(change) }}</span>
+          </div>
         </div>
 
         <!-- GRAND TOTAL -->
@@ -572,110 +590,132 @@ const invoiceFields = [
     </div>
 
     <!-- Receipt Preview Modal -->
-    <div v-if="showPreview" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div class="p-4 rounded-lg shadow-lg w-[320px] max-h-[90vh] overflow-auto bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100">
-        <h2 class="text-lg font-bold mb-3 text-center">Receipt Preview</h2>
-        <div>
-          <div ref="receipt" class="receipt-container">
-          <!-- HEADER -->
-          <div class="text-center mb-1">
-            <h3>FELTHEA STORE</h3>
-            <p>123 Sample St., Barangay, City</p>
-            <p>TIN: 123-456-789</p>
-            <p>Tel: 0912-345-6789</p>
-          </div>
+    <!-- Receipt Preview Modal -->
+<div v-if="showPreview" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+  <div class="p-4 rounded-lg shadow-lg w-[320px] max-h-[90vh] flex flex-col bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100">
+    
+    <h2 class="text-lg font-bold mb-3 text-center">Receipt Preview</h2>
 
-          <hr />
+    <!-- Scrollable receipt content -->
+    <div ref="receipt" class="receipt-container overflow-auto max-h-[calc(90vh-80px)] pr-2">
+      <!-- STORE HEADER -->
+      <div class="text-center mb-2">
+        <h3 class="font-bold text-sm">FELTHEA STORE</h3>
+        <p>123 Sample St., Barangay, City</p>
+        <p>TIN: 123-456-789</p>
+        <p>Tel: 0912-345-6789</p>
+        <p>Business Style: Retail Trade</p>
+      </div>
 
-          <!-- INVOICE INFO -->
-          <div class="flex mb-1 justify-between">
-            <span>Invoice #: </span>
-            <span>{{ invoiceData.invoiceNumber }}</span>
-          </div>
-          <div class="flex mb-1 justify-between">
-            <span>Date: </span>
-            <span>{{ invoiceData.invoiceDate }} {{ invoiceData.invoiceTime }}</span>
-          </div>
-          <div class="flex mb-1 justify-between">
-            <span>Cashier: </span>
-            <span>{{ invoiceData.issuedBy }}</span>
-          </div>
+      <hr class="border-dashed my-1"/>
 
-          <div v-if="customer.name" class="flex mb-1 justify-between">
-            <span>Customer: </span>
-            <span>{{ customer.name }}</span>
-          </div>
-          <div v-if="customer.tin" class="flex mb-1 justify-between">
-            <span>TIN: </span>
-            <span>{{ customer.tin }}</span>
-          </div>
+      <!-- INVOICE & CASHIER INFO -->
+      <div class="flex justify-between mb-1">
+        <span>Invoice #:</span>
+        <span>{{ invoiceData.invoiceNumber || '—' }}</span>
+      </div>
+      <div class="flex justify-between mb-1">
+        <span>Date:</span>
+        <span>{{ invoiceData.invoiceDate }} {{ invoiceData.invoiceTime }}</span>
+      </div>
+      <div class="flex justify-between mb-1">
+        <span>Cashier:</span>
+        <span>{{ invoiceData.issuedBy || '—' }}</span>
+      </div>
 
-          <hr />
+      <hr class="border-dashed my-1"/>
 
-          <!-- ITEMIZED PRODUCTS -->
-          <div v-for="p in selectedProducts" :key="p.id" class="flex justify-between mb-1">
-            <span>{{ p.quantity }} x {{ p.productname }}</span>
-            <span>{{ Number(p.total).toFixed(2) }}</span>
-          </div>
+      <!-- ITEMIZED PRODUCTS HEADER -->
+      <div class="grid grid-cols-[25px_1fr_50px_60px] font-semibold mb-1">
+        <span>Qty</span>
+        <span>Description</span>
+        <span>Price</span>
+        <span>Amount</span>
+      </div>
 
-          <hr />
-
-          <!-- DISCOUNT -->
-          <div v-if="totals._discountAmount > 0" class="flex justify-between mb-1">
-            <span>Discount</span>
-            <span>-{{ formatCurrency(totals._discountAmount) }}</span>
-          </div>
-
-          <!-- VAT SUMMARY -->
-          <div class="flex justify-between mb-1">
-            <span>VATable Sales</span>
-            <span>{{ formatCurrency(totals.vat_sales) }}</span>
-          </div>
-          <div class="flex justify-between mb-1">
-            <span>VAT (12%)</span>
-            <span>{{ formatCurrency(totals.vat_amount) }}</span>
-          </div>
-          <div class="flex justify-between mb-1">
-            <span>VAT-Exempt</span>
-            <span>{{ formatCurrency(totals.vat_exempt_sales) }}</span>
-          </div>
-          <div class="flex justify-between mb-1">
-            <span>Zero-Rated</span>
-            <span>{{ formatCurrency(totals.zero_rated_sales) }}</span>
-          </div>
-
-          <hr />
-
-          <!-- GRAND TOTAL & PAYMENT -->
-          <div class="flex justify-between mb-1 font-bold">
-            <span>Total</span>
-            <span>{{ formatCurrency(totals.total) }}</span>
-          </div>
-
-          <div class="flex justify-between mb-1">
-            <span>Tendered</span>
-            <span>{{ formatCurrency(tendered) }}</span>
-          </div>
-          <div class="flex justify-between mb-2 font-semibold">
-            <span>Change</span>
-            <span>{{ formatCurrency(change) }}</span>
-          </div>
-
-          <hr />
-
-          <!-- FOOTER -->
-          <div class="text-center mt-2">
-            <p>*** This serves as an official receipt ***</p>
-            <p>Thank you for your purchase!</p>
-          </div>
-        </div>
-        </div>
-        <div class="flex justify-between mt-4">
-          <button @click="showPreview = false" class="w-1/2 mr-2 py-2 px-4 rounded shadow bg-red-500 hover:bg-red-600 text-slate-100">Cancel</button>
-
-          <button :disabled="isPrintDisabled" @click="if (canPrint) { printReceipt(); showPreview = false }" class="w-1/2 ml-2 py-2 px-4 rounded shadow bg-green-500 hover:bg-green-600 text-slate-100 disabled:opacity-40">Confirm</button>
+      <!-- ITEMIZED PRODUCTS LIST WITH WRAPPING -->
+      <div v-for="p in selectedProducts" :key="p.id" class="mb-1">
+        <div class="grid grid-cols-[25px_1fr_50px_60px]">
+          <span>{{ p.quantity }}</span>
+          <span class="whitespace-normal break-words">{{ p.productname }}</span>
+          <span>{{ formatCurrency(p.unitPrice) }}</span>
+          <span>{{ formatCurrency(p.total) }}</span>
         </div>
       </div>
+
+      <!-- DISCOUNT -->
+      <div v-if="totals._discountAmount > 0" class="flex justify-between font-semibold mb-1">
+        <span>Discount</span>
+        <span>-{{ formatCurrency(totals._discountAmount) }}</span>
+      </div>
+
+      <hr class="border-dashed my-1"/>
+
+      <!-- VAT SUMMARY -->
+      <div class="flex justify-between mb-1">
+        <span>VATable Sales</span>
+        <span>{{ formatCurrency(totals.vat_sales) }}</span>
+      </div>
+      <div class="flex justify-between mb-1">
+        <span>VAT (12%)</span>
+        <span>{{ formatCurrency(totals.vat_amount) }}</span>
+      </div>
+      <div class="flex justify-between mb-1">
+        <span>VAT-Exempt</span>
+        <span>{{ formatCurrency(totals.vat_exempt_sales) }}</span>
+      </div>
+      <div class="flex justify-between mb-1">
+        <span>Zero-Rated</span>
+        <span>{{ formatCurrency(totals.zero_rated_sales) }}</span>
+      </div>
+
+      <hr class="border-dashed my-1"/>
+
+      <!-- GRAND TOTAL & PAYMENT -->
+      <div class="flex justify-between font-bold mb-1">
+        <span>Total</span>
+        <span>{{ formatCurrency(totals.total) }}</span>
+      </div>
+      <div class="flex justify-between mb-1">
+        <span>Tendered</span>
+        <span>{{ formatCurrency(tendered) }}</span>
+      </div>
+      <div class="flex justify-between font-semibold mb-2">
+        <span>Change</span>
+        <span>{{ formatCurrency(change) }}</span>
+      </div>
+
+      <hr class="border-dashed my-1"/>
+
+      <!-- BUYER INFO (always visible) -->
+      <div class="mb-2">
+        <p><span class="font-semibold">Buyer:</span> {{ customer.name || '—' }}</p>
+        <p><span class="font-semibold">TIN:</span> {{ customer.tin || '—' }}</p>
+        <p><span class="font-semibold">Address:</span> {{ customer.address || '—' }}</p>
+        <p><span class="font-semibold">Business Style:</span> {{ customer.businessStyle || '—' }}</p>
+      </div>
+
+      <!-- POS PROVIDER INFO -->
+      <div class="text-center mb-1">
+        <p>POS Provider: FELTHEA POS SYSTEM v1.0</p>
+        <p>Website: www.feltheapos.com</p>
+        <p>*** This serves as an official receipt ***</p>
+      </div>
     </div>
+
+    <!-- Footer buttons (fixed below scrollable area) -->
+    <div class="flex justify-between mt-4 pt-2 border-t">
+      <button @click="showPreview = false" class="w-1/2 mr-2 py-2 px-4 rounded shadow bg-red-500 hover:bg-red-600 text-slate-100">
+        Cancel
+      </button>
+      <button 
+        :disabled="isPrintDisabled" 
+        @click="confirmReceipt"
+        class="w-1/2 ml-2 py-2 px-4 rounded shadow bg-green-500 hover:bg-green-600 text-slate-100 disabled:opacity-40">
+        Confirm
+      </button>
+    </div>
+  </div>
+</div>
   </div>
 </template>
