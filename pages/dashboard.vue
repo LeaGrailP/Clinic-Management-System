@@ -102,10 +102,10 @@ const user = {
 }
 
 async function openCashDrawer() {
-  if (user.role !== 'admin') return alert('❌ Only admins can open the cash drawer.')
+  if (user.role !== 'admin') return alert('Only admins can open the cash drawer.')
   try {
     await window.electron.invoke('open-cash-drawer')
-    alert('✅ Cash drawer opened!')
+    alert('Cash drawer opened!')
   } catch (err) {
     alert('Failed to open drawer: ' + (err?.message || err))
   }
@@ -254,9 +254,6 @@ watch(tendered, recalcTotals)
 
 //---COMPUTED VALUES---//
 const change = computed(() => Math.max(0, Number(tendered.value) - Number(totals.total || 0)))
-const formattedLines = computed(() =>
-  selectedProducts.value.map(p => formatLine(p.quantity, p.productname, p.total))
-)
 
 function formatLine(qty, name, total) {
   const qtyStr = String(qty).padEnd(4, ' ')
@@ -305,8 +302,6 @@ async function saveInvoice() {
 
     const result = await window.electron.invoke('add-invoice', payload)
     alert(`Invoice saved! Number: ${result.invoice_number}`)
-    clearInvoice()
-    generateInvoiceNumber()
   } catch (err) {
     console.error('saveInvoice:', err)
     alert('Failed to save invoice.')
@@ -316,7 +311,7 @@ async function saveInvoice() {
 async function checkPrinter() {
   try {
     const result = await window.electron.invoke('check-printer-status')
-    alert(result.connected ? '✅ Printer detected!' : '❌ Printer not detected.')
+    alert(result.connected ? 'Printer detected!' : 'Printer not detected.')
   } catch (err) { console.error('checkPrinter:', err) }
 }
 
@@ -328,11 +323,9 @@ async function printReceipt() {
     if (isPrinting.value) return
     isPrinting.value = true
     const result = await window.electron.invoke("print-receipt", { html, openDrawer: true })
-    if (!result.success) alert("❌ Print failed!")
+    if (!result.success) alert("Print failed!")
     else {
-      alert("🖨 Receipt printed successfully!")
-      clearInvoice()
-      generateInvoiceNumber()
+      alert("Receipt printed successfully!")
     }
   } catch (err) {
     console.error('printReceipt:', err)
@@ -342,19 +335,21 @@ async function printReceipt() {
   }
 }
 async function confirmReceipt() {
-  if (!canPrint.value) return alert("Cannot confirm: check tendered amount or empty cart.");
-  await startProgress(500);
-  await saveInvoice();         // Save invoice automatically
-  await printReceipt();        // Print after saving
-  showPreview.value = false;
-  await finishProgress();
-}
-
-function handleDiscountInput(e) {
-  // keep totals.discount for backward compatibility but primary source is discount object
-  const val = Number(String(e.target.value).trim())
-  totals.discount = isNaN(val) ? 0 : val
-  recalcTotals()
+  if (!canPrint.value)
+    return alert("Cannot confirm: check tendered amount or empty cart.");
+  try {
+    await startProgress(500);
+    await saveInvoice();
+    await printReceipt();
+    clearInvoice();
+    await generateInvoiceNumber();
+    showPreview.value = false;
+  } catch (err) {
+    console.error(err);
+    alert("Transaction failed.");
+  } finally {
+    await finishProgress();
+  }
 }
 
 //---LIFECYCLE---//
@@ -454,7 +449,7 @@ const invoiceFields = [
             v-for="p in filteredProducts"
             :key="p.id"
             @click="addProductToInvoice(p)"
-            class="w-full flex justify-between items-center px-3 py-3 text-left hover:bg-sky-200 dark:hover:bg-sky-600 transition">
+            class="w-full flex justify-between items-center px-3 py-3 text-left bg-sky-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 hover:bg-sky-200 dark:hover:bg-sky-600 transition">
             <div class="flex flex-col">
               <span class="font-medium text-sm">{{ p.productname }}</span>
             </div>
@@ -465,8 +460,8 @@ const invoiceFields = [
       <!-- CART CARD -->
       <div class="flex flex-col p-4 rounded-xl shadow border bg-slate-100 dark:bg-slate-600 border-slate-200 dark:border-slate-700">
         <!-- TABLE HEADER (FIXED) -->
-        <div class="border-b pb-2 mb-2">
-          <div class="grid grid-cols-4 text-sm font-semibold text-slate-700 dark:text-slate-200">
+        <div class="border-b pb-2 mb-2 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100">
+          <div class="grid grid-cols-4 text-sm font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200">
             <span>Product</span>
             <span class="text-center">Qty</span>
             <span class="text-right">Price</span>
@@ -479,7 +474,7 @@ const invoiceFields = [
             v-for="(p, index) in selectedProducts"
             :key="p.id"
             class="grid grid-cols-4 items-center text-sm py-2 border-b 
-                  hover:bg-slate-50 dark:hover:bg-slate-800 transition">
+                  bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 transition">
             <span class="truncate">{{ p.productname }}</span>
             <span class="text-center">{{ p.quantity }}</span>
             <span class="text-right">{{ formatCurrency(p.total) }}</span>
@@ -501,7 +496,7 @@ const invoiceFields = [
           <h2 class="font-semibold text-lg">Customer</h2>
           <router-link
             to="/customer"
-            class="flex items-center justify-center h-9 w-9 rounded-md bg-blue-600 hover:bg-blue-700 text-white transition"
+            class="flex items-center justify-center h-9 w-9 rounded-md bg-sky-600 hover:bg-sky-700 text-white transition"
             title="Register Customer">
             <UserRoundPlus class="w-4 h-4" />
           </router-link>
@@ -511,13 +506,13 @@ const invoiceFields = [
             <input
               v-model="patientSearch"
               placeholder="Search customer name or TIN…"
-              class="w-full text-sm px-3 py-2 rounded border bg-white dark:bg-slate-800 border-gray-400 text-gray-900 dark:text-gray-100"
+              class="w-full text-sm px-3 py-2 rounded border bg-slate-50 dark:bg-slate-800 border-gray-400 text-gray-900 dark:text-gray-100"
             />
 
             <!-- DROPDOWN -->
             <ul
               v-if="patientResults.length > 0"
-              class="absolute z-20 w-full mt-1 bg-white dark:bg-slate-800 
+              class="absolute z-20 w-full mt-1 bg-slate-50 dark:bg-slate-800 
                     border border-gray-300 dark:border-gray-600 rounded shadow-lg 
                     max-h-48 overflow-y-auto">
               <li
@@ -538,7 +533,7 @@ const invoiceFields = [
         <div class="p-4 rounded-xl shadow border bg-slate-100 dark:bg-slate-700 space-y-2">
           <div class="flex justify-between items-center">
             <h2 class="font-semibold">Discount</h2>
-            <select v-model="discount.type" class="border rounded px-2 py-1">
+            <select v-model="discount.type" class="bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-sky-400 border rounded px-2 py-1">
               <option value="">None</option>
               <option value="SC">Senior Citizen</option>
               <option value="PWD">PWD</option>
@@ -567,7 +562,7 @@ const invoiceFields = [
             <input
               type="number"
               v-model="tendered"
-              class="w-32 text-right border rounded px-2 py-1"
+              class="w-32 text-right border rounded px-2 py-1 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100"
             />
           </div>
 
@@ -589,7 +584,6 @@ const invoiceFields = [
       </div>
     </div>
 
-    <!-- Receipt Preview Modal -->
     <!-- Receipt Preview Modal -->
 <div v-if="showPreview" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
   <div class="p-4 rounded-lg shadow-lg w-[320px] max-h-[90vh] flex flex-col bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100">

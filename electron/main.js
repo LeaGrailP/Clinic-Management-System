@@ -7,6 +7,7 @@ const serveStatic = require('serve-static')
 const bcrypt = require('bcryptjs')
 const Database = require('better-sqlite3')
 const { setupPrinterHandlers } = require('./printer')
+const isDev = !app.isPackaged
 
 let db
 let win
@@ -120,30 +121,27 @@ function initDB() {
 
 // -------------------- ELECTRON WINDOW --------------------
 function createWindow() {
-  const nuxtDist = path.join(__dirname, "../.output/public");
-  const port = 3001;
+  win = new BrowserWindow({
+    width: 1200,
+    height: 800,
+    webPreferences: {
+      preload: path.join(__dirname, "preload.js"),
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: false
+    }
+  })
 
-  const server = express();
-  server.use(serveStatic(nuxtDist));
-
-  server.listen(port, () => {
-    console.log(`Serving Nuxt at http://localhost:${port}`);
-    
-   win = new BrowserWindow({
-  width: 1200,
-  height: 800,
-  webPreferences: {
-    preload: path.join(__dirname, "preload.js"),
-    contextIsolation: true,
-    nodeIntegration: false,
-    sandbox: false
-
+  if (isDev) {
+    // 🔥 DEV MODE: Nuxt Hot Reload
+    win.loadURL("http://localhost:3000")
+    win.webContents.openDevTools()
+    console.log("🚀 Running in DEV mode (Nuxt HMR)")
+  } else {
+    // 📦 PROD MODE: Static build
+    win.loadFile(path.join(__dirname, "../.output/public/index.html"))
+    console.log("📦 Running in PROD mode")
   }
-});
-
-
-    win.loadURL(`http://localhost:${port}`);
-  });
 }
 
 // -------------------- IPC HANDLERS --------------------

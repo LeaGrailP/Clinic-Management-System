@@ -6,12 +6,6 @@
 
     <div class="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-6 gap-4">
 
-      <button @click="emitEvent('footer-save')"
-        class="w-full py-2 px-4 rounded-lg shadow text-slate-100
-               bg-green-600 hover:bg-green-700">
-        Save
-      </button>
-
       <button @click="emitEvent('footer-cancel')"
         class="w-full py-2 px-4 rounded-lg shadow text-slate-100
                bg-red-600 hover:bg-red-700">
