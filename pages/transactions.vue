@@ -1,156 +1,221 @@
 <template>
   <div class="border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100">
+
     <!-- Date Filter -->
     <div class="flex gap-4 items-end mb-4">
       <div>
         <label class="block text-sm font-medium">From</label>
-        <input type="date" v-model="filterFrom" class="mt-1 border rounded px-2 py-1 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100" />
+        <input type="date" v-model="filterFrom"
+          class="mt-1 border rounded px-2 py-1 bg-slate-50 dark:bg-slate-800" />
       </div>
       <div>
         <label class="block text-sm font-medium">To</label>
-        <input type="date" v-model="filterTo" class="mt-1 border rounded px-2 py-1 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100" />
+        <input type="date" v-model="filterTo"
+          class="mt-1 border rounded px-2 py-1 bg-slate-50 dark:bg-slate-800" />
       </div>
+
       <button @click="clearFilter" class="px-4 py-2 bg-gray-400 rounded">Clear</button>
       <button @click="saveAsFile" class="px-4 py-2 bg-sky-400 text-white rounded">Save as CSV</button>
       <button @click="saveAsPDF" class="px-4 py-2 bg-orange-400 text-white rounded">Save as PDF</button>
     </div>
 
     <!-- Invoice Table -->
-    <div class="bg-slate-50 dark:bg-slate-600 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 p-4 rounded shadow mb-6 space-y-6">
-      <table class="min-w-full border-collapse">
-        <thead class="bg-slate-400">
-          <tr>
-            <th class="px-4 py-2 border">Invoice #</th>
-            <th class="px-4 py-2 border">Date</th>
-            <th class="px-4 py-2 border">Customer</th>
-            <th class="px-4 py-2 border">VAT Sales</th>
-            <th class="px-4 py-2 border">VAT Amount</th>
-            <th class="px-4 py-2 border">VAT-Exempt Sales</th>
-            <th class="px-4 py-2 border">Zero-Rated Sales</th>
-            <th class="px-4 py-2 border">Discount</th>
-            <th class="px-4 py-2 border">Total</th>
-            <th class="px-4 py-2 border">Issued By</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="invoice in filteredInvoices" :key="invoice.id">
-  <td class="px-4 py-2 border">{{ invoice.invoice_number }}</td>
-  <td class="px-4 py-2 border">{{ invoice.date }}</td>
-  <td class="px-4 py-2 border">
-    <template v-if="invoice.patient_id">
-      <div class="font-medium">
-        {{ invoice.lastName }}, {{ invoice.firstName }} {{ invoice.middleName }}
-      </div>
-      <div class="text-xs text-gray-600 dark:text-gray-300">
-        TIN: {{ invoice.patient_tin }}
-      </div>
-    </template>
+    <div class="bg-slate-50 dark:bg-slate-600 p-4 rounded shadow mb-6">
+<table class="min-w-full border border-slate-300 dark:border-slate-700 border-collapse">
+  <thead class="bg-slate-400">
+    <tr>
+      <th class="px-4 py-2 border border-slate-300 dark:border-slate-700">Invoice #</th>
+      <th class="px-4 py-2 border border-slate-300 dark:border-slate-700">Date</th>
+      <th class="px-4 py-2 border border-slate-300 dark:border-slate-700">Customer</th>
+      <th class="px-4 py-2 border border-slate-300 dark:border-slate-700">Product</th>
+      <th class="px-4 py-2 border border-slate-300 dark:border-slate-700">Quantity</th>
+      <th class="px-4 py-2 border border-slate-300 dark:border-slate-700">VAT from Product</th>
+      <th class="px-4 py-2 border border-slate-300 dark:border-slate-700">Total With VAT</th>
+      <th class="px-4 py-2 border border-slate-300 dark:border-slate-700">VAT Sales</th>
+      <th class="px-4 py-2 border border-slate-300 dark:border-slate-700">Discount</th>
+      <th class="px-4 py-2 border border-slate-300 dark:border-slate-700">Total</th>
+      <th class="px-4 py-2 border border-slate-300 dark:border-slate-700">Issued By</th>
+    </tr>
+  </thead>
 
-    <template v-else>
-      {{ invoice.customer_name }}
+  <tbody>
+    <template v-for="invoice in filteredInvoices" :key="invoice.id">
+      <tr
+        v-for="(item, idx) in invoice.items"
+        :key="`${invoice.id}-${idx}`"
+        @click="idx === 0 && toggleInvoice(invoice.id)"
+        :class="[
+          'cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700',
+          locked && 'opacity-60 cursor-not-allowed'
+        ]"
+      >
+        <td v-if="idx === 0" :rowspan="invoice.items.length" class="border border-slate-300 dark:border-slate-700 px-2 py-1">
+          {{ invoice.invoice_number }}
+        </td>
+        <td v-if="idx === 0" :rowspan="invoice.items.length" class="border border-slate-300 dark:border-slate-700 px-2 py-1">
+          {{ invoice.date }}
+        </td>
+        <td v-if="idx === 0" :rowspan="invoice.items.length" class="border border-slate-300 dark:border-slate-700 px-2 py-1">
+          {{ invoice.patient_id ? `${invoice.lastName}, ${invoice.firstName}` : invoice.customer_name }}
+        </td>
+
+        <td class="border border-slate-300 dark:border-slate-700 px-2 py-1">{{ item.productname }}</td>
+        <td class="border border-slate-300 dark:border-slate-700 px-2 py-1">{{ item.quantity }}</td>
+        <td class="border border-slate-300 dark:border-slate-700 px-2 py-1">{{ item.vat_amount }}</td>
+        <td class="border border-slate-300 dark:border-slate-700 px-2 py-1">{{ formatCurrency(item.total) }}</td>
+
+        <td v-if="idx === 0" :rowspan="invoice.items.length" class="border border-slate-300 dark:border-slate-700 px-2 py-1">
+          {{ formatCurrency(invoice.vat_sales) }}
+        </td>
+        <td v-if="idx === 0" :rowspan="invoice.items.length" class="border border-slate-300 dark:border-slate-700 px-2 py-1">
+          {{ formatCurrency(invoice.discount) }}
+        </td>
+        <td v-if="idx === 0" :rowspan="invoice.items.length" class="border border-slate-300 dark:border-slate-700 px-2 py-1">
+          {{ formatCurrency(invoice.total) }}
+        </td>
+        <td v-if="idx === 0" :rowspan="invoice.items.length" class="border border-slate-300 dark:border-slate-700 px-2 py-1">
+          {{ invoice.issued_by }}
+        </td>
+      </tr>
+
+      <tr v-if="expandedInvoice === invoice.id" class="bg-slate-100 dark:bg-slate-700">
+        <td colspan="11" class="border border-slate-300 dark:border-slate-700 px-2 py-1">
+          <!-- VAT Summary -->
+          <div class="grid grid-cols-2 gap-4 text-sm">
+            <div>VAT Sales: {{ formatCurrency(invoice.vat_sales) }}</div>
+            <div>VAT Amount: {{ formatCurrency(invoice.vat_amount) }}</div>
+            <div>VAT-Exempt: {{ formatCurrency(invoice.vat_exempt_sales) }}</div>
+            <div>Zero-Rated: {{ formatCurrency(invoice.zero_rated_sales) }}</div>
+          </div>
+        </td>
+      </tr>
     </template>
-  </td>
-  <td class="px-4 py-2 border">{{ formatCurrency(invoice.vat_sales) }}</td>
-  <td class="px-4 py-2 border">{{ formatCurrency(invoice.vat_amount) }}</td>
-  <td class="px-4 py-2 border">{{ formatCurrency(invoice.vat_exempt_sales) }}</td>
-  <td class="px-4 py-2 border">{{ formatCurrency(invoice.zero_rated_sales) }}</td>
-  <td class="px-4 py-2 border">{{ formatCurrency(invoice.discount) }}</td>
-  <td class="px-4 py-2 border">{{ formatCurrency(invoice.total) }}</td>
-  <td class="px-4 py-2 border">{{ invoice.issued_by }}</td>
-</tr>
-        </tbody>
-      </table>
+  </tbody>
+</table>
+
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 
 const invoices = ref([])
 const filterFrom = ref('')
 const filterTo = ref('')
+const expandedInvoice = ref(null)
+const locked = ref(false)
 
-// Format currency
-function formatCurrency(amount) {
-  return new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(amount || 0)
+function formatCurrency(v) {
+  return new Intl.NumberFormat('en-PH', {
+    style: 'currency',
+    currency: 'PHP'
+  }).format(v || 0)
 }
 
-// Filtered invoices based on date range
 const filteredInvoices = computed(() => {
   return invoices.value.filter(inv => {
-    const invDate = new Date(inv.date)
-    const from = filterFrom.value ? new Date(filterFrom.value) : null
-    const to = filterTo.value ? new Date(filterTo.value) : null
-
-    if (from && invDate < from) return false
-    if (to && invDate > to) return false
+    const d = new Date(inv.date)
+    if (filterFrom.value && d < new Date(filterFrom.value)) return false
+    if (filterTo.value && d > new Date(filterTo.value)) return false
     return true
   })
 })
 
-// Clear date filter
+watch(filteredInvoices, list => {
+  expandedInvoice.value = list.length ? list[0].id : null
+})
+
+function toggleInvoice(id) {
+  if (locked.value) return
+  expandedInvoice.value = expandedInvoice.value === id ? null : id
+}
+
+const vatTotals = computed(() => {
+  return filteredInvoices.value.reduce((t, i) => {
+    t.vat_sales += i.vat_sales || 0
+    t.vat_amount += i.vat_amount || 0
+    t.vat_exempt_sales += i.vat_exempt_sales || 0
+    t.zero_rated_sales += i.zero_rated_sales || 0
+    t.discount += i.discount || 0
+    t.total += i.total || 0
+    return t
+  }, {
+    vat_sales: 0,
+    vat_amount: 0,
+    vat_exempt_sales: 0,
+    zero_rated_sales: 0,
+    discount: 0,
+    total: 0
+  })
+})
+
 function clearFilter() {
   filterFrom.value = ''
   filterTo.value = ''
 }
 
-// ✅ Save filtered list as CSV
+/* CSV */
+/* CSV */
 function saveAsFile() {
+  locked.value = true
+
+  // CSV headers
   const headers = [
-    'Invoice #','Date','Customer','VAT Sales','VAT Amount',
-    'VAT-Exempt Sales','Zero-Rated Sales','Discount','Total', 'Issued By'
+    'Invoice #','Date','Customer','Product','Quantity','VAT-Amount','Total With VAT',
+    'VAT Sales','VAT Amount','Discount','Total','Issued By'
   ]
-  const rows = filteredInvoices.value.map(inv => [
-    inv.invoice_number, inv.date, inv.customer_name,
-    inv.vat_sales, inv.vat_amount, inv.vat_exempt_sales,
-    inv.zero_rated_sales, inv.discount, inv.total, inv.issued_by
-  ])
 
-  const csvContent = [headers, ...rows].map(e => e.join(',')).join('\n')
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-  const url = URL.createObjectURL(blob)
+  // Flatten invoices: one row per item
+  const rows = []
+  filteredInvoices.value.forEach(invoice => {
+    const customerName = invoice.patient_id
+      ? `${invoice.lastName}, ${invoice.firstName}`
+      : invoice.customer_name
 
-  const link = document.createElement('a')
-  link.href = url
-  link.download = `invoices_${Date.now()}.csv`
-  link.click()
+    invoice.items.forEach(item => {
+      rows.push([
+        invoice.invoice_number,
+        invoice.date,
+        customerName,
+        item.productname,
+        item.quantity,
+        item.vat_amount,
+        formatCurrency(item.total),
+        formatCurrency(invoice.vat_sales),
+        formatCurrency(invoice.vat_amount),
+        formatCurrency(invoice.discount),
+        formatCurrency(invoice.total),
+        invoice.issued_by
+      ])
+    })
+  })
 
-  URL.revokeObjectURL(url)
+  const blob = new Blob([[headers, ...rows].map(r => r.join(',')).join('\n')])
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(blob)
+  a.download = `invoices_${Date.now()}.csv`
+  a.click()
 }
 
-// ✅ Save filtered list as PDF (through Electron main process)
+
+
 async function saveAsPDF() {
-  try {
-    // ✅ force plain JSON copy
-    const plainInvoices = filteredInvoices.value.map(inv => ({
-      id: inv.id,
-      invoice_number: inv.invoice_number,
-      issued_by: inv.issued_by,
-      date: inv.date,
-      customer_name: inv.customer_name,
-      vat_sales: inv.vat_sales,
-      vat_amount: inv.vat_amount,
-      vat_exempt_sales: inv.vat_exempt_sales,
-      zero_rated_sales: inv.zero_rated_sales,
-      discount: inv.discount,
-      total: inv.total
-    }))
-
-    const filePath = await window.electron.invoke('export-invoices-pdf', plainInvoices)
-    alert(`PDF saved at: ${filePath}`)
-  } catch (err) {
-    console.error('Failed to save PDF:', err)
-    alert('Failed to generate PDF')
-  }
+  locked.value = true
+  const payload = filteredInvoices.value.map(i => ({
+    ...i,
+    items: i.items,
+    vat_breakdown: {
+      vat_sales: i.vat_sales,
+      vat_amount: i.vat_amount,
+      vat_exempt_sales: i.vat_exempt_sales,
+      zero_rated_sales: i.zero_rated_sales
+    }
+  }))
+  await window.electron.invoke('export-invoices-pdf', payload)
 }
 
-// ✅ Load invoices from Electron on mount
 onMounted(async () => {
-  try {
-    invoices.value = await window.electron.invoke('get-all-invoices')
-  } catch (err) {
-    console.error('Failed to fetch invoices:', err)
-  }
+  invoices.value = await window.electron.invoke('get-all-invoices')
 })
 </script>

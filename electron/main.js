@@ -487,8 +487,8 @@ ipcMain.handle('add-invoice', (_e, inv) => {
     return nextInvoiceNumber
   })
 
-  ipcMain.handle('get-all-invoices', () => {
-  return db.prepare(`
+ipcMain.handle('get-all-invoices', () => {
+  const rows = db.prepare(`
     SELECT 
       invoice.*,
       clinicpatients.firstName,
@@ -507,7 +507,13 @@ ipcMain.handle('add-invoice', (_e, inv) => {
       ON clinicpatients.id = invoice.patient_id
     ORDER BY invoice.id DESC
   `).all()
+
+  return rows.map(r => ({
+    ...r,
+    items: JSON.parse(r.items || '[]')
+  }))
 })
+
 
   ipcMain.handle('delete-invoice', (_e, id) => {
     db.prepare('DELETE FROM invoice WHERE id=?').run(id)

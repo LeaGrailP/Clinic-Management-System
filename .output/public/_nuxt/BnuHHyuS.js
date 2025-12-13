@@ -1,1 +1,0 @@
-import{G as t,H as a}from"./XTazs71Q.js";import{u}from"./BTIxD3jI.js";const s=t(e=>{const r=u("user");if(!r.value&&e.path!=="/login"&&e.path!=="/register")return a("/index");if(e.meta.requiresAdmin&&r.value?.role!=="admin")return a("/unauthorized");if(e.meta.requiresStaff&&r.value?.role!=="cashier")return a("/unauthorized")});export{s as default};
