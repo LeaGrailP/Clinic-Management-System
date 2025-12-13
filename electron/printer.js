@@ -88,11 +88,11 @@ function setupPrinterHandlers(ipcMain, BrowserWindow, app) {
           { silent: true, printBackground: true, deviceName: printerName },
           (success, failureReason) => {
             if (!success) {
-              console.error("⚠️ Print failed:", failureReason);
+              console.error("Print failed:", failureReason);
               resolve({ success: false, message: failureReason });
             } else {
-              console.log(`🎉 Receipt printed on ${printerName} successfully`);
-              if (openDrawer) console.log("💵 Cash drawer triggered automatically");
+              console.log(`Receipt printed on ${printerName} successfully`);
+              if (openDrawer) console.log("Cash drawer triggered automatically");
               resolve({ success: true });
             }
             setTimeout(() => win.close(), 1000);
@@ -102,10 +102,52 @@ function setupPrinterHandlers(ipcMain, BrowserWindow, app) {
 
       return { success: true, message: "Printed successfully" };
     } catch (err) {
-      console.error("❌ Print handler error:", err);
+      console.error("Print handler error:", err);
       return { success: false, message: err.message };
     }
   });
+  // ---------------- REPORTS ----------------
+  ipcMain.handle("z-reading:print", async (_e, totals) => {
+  const html = `
+    <div class="center"><b>Z-READING</b></div>
+    <div class="line"></div>
+    First Invoice: ${totals.first_inv}<br/>
+    Last Invoice: ${totals.last_inv}<br/>
+    VAT Sales: ${totals.vat_sales.toFixed(2)}<br/>
+    VAT Amount: ${totals.vat_amount.toFixed(2)}<br/>
+    VAT Exempt: ${totals.vat_exempt.toFixed(2)}<br/>
+    Zero Rated: ${totals.zero_rated.toFixed(2)}<br/>
+    Discount: ${totals.discount.toFixed(2)}
+    <div class="line"></div>
+    <b>TOTAL:</b> ${totals.total.toFixed(2)}
+  `
+
+  return await ipcMain.emit("print-receipt", null, {
+    html,
+    openDrawer: false
+  })
+})
+
+ipcMain.handle("receipt:reprint", async (_e, invoice) => {
+  const items = invoice.items.map(i =>
+    `${i.productname} x${i.quantity}  ${i.total.toFixed(2)}`
+  ).join("<br/>")
+
+  const html = `
+    <div class="center"><b>REPRINT</b></div>
+    <div>${invoice.invoice_number}</div>
+    <div class="line"></div>
+    ${items}
+    <div class="line"></div>
+    TOTAL: ${invoice.total.toFixed(2)}
+  `
+
+  return await ipcMain.emit("print-receipt", null, {
+    html,
+    openDrawer: false
+  })
+})
+
   // ---------------- OPEN CASH DRAWER ----------------
   ipcMain.handle("open-cash-drawer", async () => {
   try {
@@ -138,55 +180,8 @@ function setupPrinterHandlers(ipcMain, BrowserWindow, app) {
   }
   });
 
-  // ---------------- EXPORT INVOICES AS PDF ----------------
-  ipcMain.handle("export-invoices-pdf", async (event, invoices, paperWidth = 58) => {
-    const rows = invoices.map(inv => `
-      <div style="border-bottom:1px dashed #000; margin:6px 0; padding-bottom:4px;">
-        <div><strong>Invoice #:</strong> ${inv.invoice_number}</div>
-        <div><strong>Date:</strong> ${inv.date}</div>
-        <div><strong>Customer:</strong> ${inv.customer_name || "-"}</div>
-        <div><strong>VAT Sales:</strong> ₱${Number(inv.vat_sales).toFixed(2)}</div>
-        <div><strong>VAT Amount:</strong> ₱${Number(inv.vat_amount).toFixed(2)}</div>
-        <div><strong>Exempt Sales:</strong> ₱${Number(inv.vat_exempt_sales).toFixed(2)}</div>
-        <div><strong>Zero-Rated:</strong> ₱${Number(inv.zero_rated_sales).toFixed(2)}</div>
-        <div><strong>Discount:</strong> ₱${Number(inv.discount).toFixed(2)}</div>
-        <div><strong>Total:</strong> <strong>₱${Number(inv.total).toFixed(2)}</strong></div>
-      </div>
-    `).join("");
-
-    const htmlContent = `
-      <html>
-        <head>
-          <style>
-            body { font-family: monospace; font-size: 11px; margin: 0; padding: 8px; width: ${paperWidth}mm; }
-            h2 { text-align: center; margin-bottom: 8px; }
-          </style>
-        </head>
-        <body>
-          <h2>Invoice Report</h2>
-          ${rows}
-          <div style="border-top:1px dashed #000; margin-top:10px; text-align:center;">
-            Exported: ${new Date().toLocaleString()}
-          </div>
-        </body>
-      </html>
-    `;
-
-    const pdfWin = new BrowserWindow({ show: false });
-    await pdfWin.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`);
-    const pdfBuffer = await pdfWin.webContents.printToPDF({
-      marginsType: 1,
-      pageSize: { width: paperWidth === 80 ? 80000 : 58000, height: 2000000 },
-      printBackground: true
-    });
-
-    const filePath = path.join(app.getPath("documents"), `invoices_${Date.now()}.pdf`);
-    fs.writeFileSync(filePath, pdfBuffer);
-    pdfWin.close();
-
-    return filePath;
-  });
-
 }
 
-module.exports = { setupPrinterHandlers };
+module.exports = {
+  setupPrinterHandlers
+}

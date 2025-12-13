@@ -1,12 +1,12 @@
 
-const { app, BrowserWindow, ipcMain } = require('electron')
+const { app, dialog, BrowserWindow, ipcMain } = require('electron')
 const fs = require('fs')
 const path = require('path')
 const express = require('express')
 const serveStatic = require('serve-static')
 const bcrypt = require('bcryptjs')
 const Database = require('better-sqlite3')
-const { setupPrinterHandlers } = require('./printer')
+const { setupPrinterHandlers, printThermalReceipt, printThermalZReading } = require('./printer')
 const isDev = !app.isPackaged
 
 let db
@@ -31,7 +31,7 @@ function initDB() {
   const dbPath = path.join(dbDir, 'DB4.db')
   const db = new Database(dbPath)
 
-  console.log('🧭 Using DB at:', dbPath)
+  console.log('Using DB at:', dbPath)
 
   // Optimize SQLite
   db.pragma('journal_mode = WAL')
@@ -84,38 +84,36 @@ function initDB() {
       pwdId TEXT
     )
   `)
-
-  // Transactions table
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS transactions (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      date TEXT,
-      total REAL,
-      items TEXT
-    )
-  `)
-
   // Invoice table
 
   db.exec(`
-  CREATE TABLE IF NOT EXISTS invoice (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    date TEXT,
-    customer_name TEXT,
-    customer_tin TEXT,
-    patient_id INTEGER,
-    vat_sales REAL,
-    vat_amount REAL,
-    vat_exempt_sales REAL,
-    zero_rated_sales REAL,
-    discount REAL,
-    total REAL,
-    items TEXT,
-    invoice_number TEXT UNIQUE,
-    issued_by Text
-  )
-`)
-  console.log('✅ Tables verified / created')
+    CREATE TABLE IF NOT EXISTS invoice (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      date TEXT,
+      customer_name TEXT,
+      customer_tin TEXT,
+      patient_id INTEGER,
+      vat_sales REAL,
+      vat_amount REAL,
+      vat_exempt_sales REAL,
+      zero_rated_sales REAL,
+      discount REAL,
+      total REAL,
+      items TEXT,
+      invoice_number TEXT UNIQUE,
+      issued_by Text
+    )
+  `)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS z_readings (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      date TEXT UNIQUE,
+      totals_json TEXT,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `)
+
+  console.log('Tables verified / created')
   return db
 }
 
@@ -133,21 +131,19 @@ function createWindow() {
   })
 
   if (isDev) {
-    // 🔥 DEV MODE: Nuxt Hot Reload
+    // DEV MODE: Nuxt Hot Reload
     win.loadURL("http://localhost:3000")
     win.webContents.openDevTools()
-    console.log("🚀 Running in DEV mode (Nuxt HMR)")
+    console.log("Running in DEV mode (Nuxt HMR)")
   } else {
-    // 📦 PROD MODE: Static build
+    // PROD MODE: Static build
     win.loadFile(path.join(__dirname, "../.output/public/index.html"))
-    console.log("📦 Running in PROD mode")
+    console.log(" Running in PROD mode")
   }
 }
 
 // -------------------- IPC HANDLERS --------------------
 function registerIPCHandlers() {
-
-
   // ---------- USERS ----------
   ipcMain.handle('auth:register', async (_event, { name, password, role }) => {
     try {
@@ -171,7 +167,7 @@ function registerIPCHandlers() {
     }
   })
 
-ipcMain.handle('createAdmin', (_event, { name, password, pin }) => {
+  ipcMain.handle('createAdmin', (_event, { name, password, pin }) => {
   try {
     const hash = bcrypt.hashSync(password, 10)
     const pinHash = bcrypt.hashSync(pin, 10)
@@ -186,7 +182,7 @@ ipcMain.handle('createAdmin', (_event, { name, password, pin }) => {
     console.error('createAdmin error:', err)
     return { success: false, error: err.message }
   }
-})
+  })
 
   ipcMain.handle('login', (_event, { role, name, password }) => {
     try {
@@ -201,7 +197,6 @@ ipcMain.handle('createAdmin', (_event, { name, password, pin }) => {
     }
   })
 
-  
   ipcMain.handle('user:updateName', (_event, { oldName, newName }) => {
   try {
     const stmt = db.prepare("UPDATE users SET name = ? WHERE name = ?");
@@ -212,10 +207,9 @@ ipcMain.handle('createAdmin', (_event, { name, password, pin }) => {
     console.error("Update name error:", err);
     return { success: false, error: err.message };
   }
-});
+  });
 
-
-ipcMain.handle('reset-password', async (_event, { name, newName, newPassword, pin }) => {
+  ipcMain.handle('reset-password', async (_event, { name, newName, newPassword, pin }) => {
   try {
     const admin = db.prepare(`
       SELECT masterPin FROM users
@@ -250,17 +244,17 @@ ipcMain.handle('reset-password', async (_event, { name, newName, newPassword, pi
     console.error("reset-password error:", err)
     return { success: false, error: err.message }
   }
-})
-ipcMain.handle('get-accounts', () => {
+  })
+  ipcMain.handle('get-accounts', () => {
   try {
     return db.prepare('SELECT id, name, role FROM users ORDER BY id DESC').all()
   } catch (err) {
     console.error('get-accounts error:', err)
     return []
   }
-})
+  })
 
-ipcMain.handle('deleteAccount', (_e, { id, pin }) => {
+  ipcMain.handle('deleteAccount', (_e, { id, pin }) => {
   try {
     const admin = db.prepare("SELECT masterPin FROM users WHERE role='admin' LIMIT 1").get()
     if (!admin) return { success: false, error: 'No admin found' }
@@ -272,7 +266,7 @@ ipcMain.handle('deleteAccount', (_e, { id, pin }) => {
     console.error('deleteAccount error:', err)
     return { success: false, error: err.message }
   }
-})
+  })
 
 
 
@@ -312,8 +306,8 @@ ipcMain.handle('deleteAccount', (_e, { id, pin }) => {
     return { success: true }
   })
 
-  // 🔍 Search Patients (Name + TIN)
-ipcMain.handle('search-patients', (_event, query) => {
+  //  Search Patients (Name + TIN)
+  ipcMain.handle('search-patients', (_event, query) => {
   try {
     const stmt = db.prepare(`
       SELECT id, firstName, middleName, lastName, tin
@@ -333,9 +327,9 @@ ipcMain.handle('search-patients', (_event, query) => {
     console.error('search-patients error:', err)
     return []
   }
-})
+  })
 
-ipcMain.handle("secure-delete-patient", (_e, { id, pin }) => {
+  ipcMain.handle("secure-delete-patient", (_e, { id, pin }) => {
   try {
     const admin = db.prepare(`
       SELECT masterPin FROM users 
@@ -358,7 +352,7 @@ ipcMain.handle("secure-delete-patient", (_e, { id, pin }) => {
     console.error("secure-delete-patient error:", err)
     return { success: false, error: err.message }
   }
-})
+  })
 
 
   // ---------- PRODUCTS ----------
@@ -383,7 +377,7 @@ ipcMain.handle("secure-delete-patient", (_e, { id, pin }) => {
       total: p.price + vatAmount
     }
   })
-})
+  })
   ipcMain.handle('add-product', (_e, p) => {
     const stmt = db.prepare(`
       INSERT INTO products
@@ -429,7 +423,7 @@ ipcMain.handle("secure-delete-patient", (_e, { id, pin }) => {
 
 
   // ---------- INVOICES ----------
-ipcMain.handle('add-invoice', (_e, inv) => {
+  ipcMain.handle('add-invoice', (_e, inv) => {
   const last = db.prepare('SELECT invoice_number FROM invoice ORDER BY id DESC LIMIT 1').get()
   let nextNumber = "INV-000001"
 
@@ -471,7 +465,7 @@ ipcMain.handle('add-invoice', (_e, inv) => {
   )
 
   return { success: true, invoice_number: nextNumber }
-})
+  })
 
 
 
@@ -485,7 +479,7 @@ ipcMain.handle('add-invoice', (_e, inv) => {
     return nextInvoiceNumber
   })
 
-ipcMain.handle('get-all-invoices', () => {
+  ipcMain.handle('get-all-invoice', () => {
   const rows = db.prepare(`
     SELECT 
       invoice.*,
@@ -510,14 +504,84 @@ ipcMain.handle('get-all-invoices', () => {
     ...r,
     items: JSON.parse(r.items || '[]')
   }))
-})
-
+  })
 
   ipcMain.handle('delete-invoice', (_e, id) => {
     db.prepare('DELETE FROM invoice WHERE id=?').run(id)
     return { success: true }
   })
+// ---------- TRANSACTIONS ----------
+  ipcMain.handle('export-sales-journal', async (_, { from, to }) => {
+  const invoice = db.prepare(`
+    SELECT * FROM invoice
+    WHERE date BETWEEN ? AND ?
+    ORDER BY invoice_number
+  `).all(from, to)
 
+  const lines = invoice.map(i =>
+    [
+      i.invoice_number,
+      i.date,
+      i.vat_sales.toFixed(2),
+      i.vat_amount.toFixed(2),
+      i.vat_exempt_sales.toFixed(2),
+      i.zero_rated_sales.toFixed(2),
+      i.discount.toFixed(2),
+      i.total.toFixed(2),
+      i.issued_by
+    ].join('|')
+  )
+
+  const filePath = dialog.showSaveDialogSync({
+    defaultPath: `SALES_JOURNAL_${Date.now()}.txt`
+  })
+
+  if (filePath) {
+    fs.writeFileSync(filePath, lines.join('\n'))
+  }
+
+  return true
+  })
+  ipcMain.handle('z-reading:generate', async (_e, { date }) => {
+  const alreadyPrinted = db.prepare(
+    'SELECT 1 FROM z_readings WHERE date = ?'
+  ).get(date)
+
+  if (alreadyPrinted) {
+    return { success: false, error: 'Z-Reading already printed for this date' }
+  }
+
+  const totals = db.prepare(`
+    SELECT
+      MIN(invoice_number) first_inv,
+      MAX(invoice_number) last_inv,
+      SUM(vat_sales) vat_sales,
+      SUM(vat_amount) vat_amount,
+      SUM(vat_exempt_sales) vat_exempt,
+      SUM(zero_rated_sales) zero_rated,
+      SUM(discount) discount,
+      SUM(total) total
+    FROM invoice
+    WHERE date = ?
+  `).get(date)
+
+  db.prepare(`
+    INSERT INTO z_readings (date, totals_json)
+    VALUES (?, ?)
+  `).run(date, JSON.stringify(totals))
+
+  return { success: true, totals }
+  })
+  ipcMain.handle('receipt:get-for-reprint', (_e, invoice_id) => {
+    const invoice = db.prepare(
+      'SELECT * FROM invoice WHERE id = ?'
+    ).get(invoice_id)
+
+    return {
+      ...invoice,
+      items: JSON.parse(invoice.items || '[]')
+    }
+  })
   console.log('✅ All IPC handlers registered')
 }
 
