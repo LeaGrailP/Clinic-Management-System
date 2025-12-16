@@ -107,6 +107,7 @@
         </button>
 
         <h2 class="text-lg font-semibold mb-4">Add New Patient</h2>
+        <p v-if="errorMessage" class="text-red-600 font-medium mb-2">{{ errorMessage }}</p>
 
         <form @submit.prevent="submitForm" class="grid grid-cols-3 gap-4">
           <!-- Name Fields -->
@@ -211,14 +212,13 @@
     </div>
   </div>
 </div>
-
-  </div>
+</div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
 definePageMeta({ layout: 'default' })
-
+const errorMessage = ref('')
 const showModal = ref(false)
 
 const initialForm = {
@@ -283,12 +283,22 @@ function toggleExpand(id) {
 
 async function submitForm() {
   try {
-    await window.electron.invoke('add-patient', { ...form.value })
+    const result = await window.electron.invoke('add-patient', { ...form.value })
+
+    if (!result.success) {
+      // Show validation or DB error
+      errorMessage.value = result.error || 'Failed to add patient'
+      return
+    }
+
+    // Success
+    errorMessage.value = ''
     await fetchClinicpatients()
     form.value = { ...initialForm }
     showModal.value = false
   } catch (err) {
     console.error('Error adding patient:', err)
+    errorMessage.value = 'Unexpected error occurred'
   }
 }
 

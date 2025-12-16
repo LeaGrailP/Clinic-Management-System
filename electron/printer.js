@@ -1,187 +1,205 @@
-// printer.js
+// printer.js — PRODUCTION-SAFE, SIMPLIFIED, COPY-PASTE READY
+// Electron + Thermal POS printing with health check, cash drawer, and REPRINT support
+
+const { BrowserWindow } = require('electron')
 const fs = require('fs')
 const os = require('os')
 const path = require('path')
 
-function setupPrinterHandlers(ipcMain, BrowserWindow, app) {
+// ---------------- CONFIG ----------------
+const HEALTH_CACHE_TTL = 5000 // ms
 
-  /**
-   * Detect available POS printers (POS58, POS80)
-   * Returns the first available POS printer by type
-   */
-  async function detectPOSPrinter() {
-    const win = BrowserWindow.getAllWindows()[0];
-    if (!win) throw new Error("No active window");
+let printerHealthCache = {
+  printerName: null,
+  lastCheck: 0,
+  status: null
+}
 
-    const printers = await win.webContents.getPrintersAsync();
-    console.log("🖨 Installed printers:", printers.map(p => p.name));
+// In-memory print history (POS-safe)
+const printHistory = Object.create(null)
 
-    // Prefer POS80, then POS58
-    let posPrinter = printers.find(p => /POS80/i.test(p.name)) ||
-                     printers.find(p => /POS58/i.test(p.name)) ||
-                     printers[0]; // fallback to any printer
+function addToPrintHistory(entry) {
+  const id = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
+  printHistory[id] = { id, time: new Date().toISOString(), ...entry }
+  return id
+}
 
-    if (!posPrinter) throw new Error("No printers found");
-    return posPrinter.name;
-  }
+// ---------------- PRINTER DETECTION ----------------
+async function detectPOSPrinter() {
+  const win = BrowserWindow.getAllWindows()[0]
+  if (!win) throw new Error('No active window')
 
-  /**
-   * Generate receipt HTML with ESC/POS drawer command
-   */
-  function buildReceiptHTML(contentHTML, paperWidth = 58, openDrawer = true) {
-    const drawerPulse = String.fromCharCode(27, 112, 0, 25, 250);
-    const widthPx = paperWidth === 80 ? 80 : 58;
+  const printers = await win.webContents.getPrintersAsync()
+  if (!printers.length) throw new Error('No printers found')
 
-    return `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="UTF-8" />
-          <style>
-            @page { margin: 0; size: ${widthPx}mm auto; }
-            body { font-family: 'Courier New', monospace; font-size: 11px; width: ${widthPx}mm; padding: 4px; margin: 0; white-space: pre-wrap; line-height: 1.2; }
-            div, p, span { margin: 0; padding: 0; }
-            .center { text-align: center; }
-            .line { border-top: 1px dashed #000; margin: 4px 0; }
-            pre.drawer { display:none; }
-          </style>
-        </head>
-        <body>
-          ${contentHTML}
-          <div class="center line"></div>
-          <div class="center">*** END OF RECEIPT ***</div>
-          ${openDrawer ? `<pre class="drawer">${drawerPulse}</pre>` : ''}
-          <div style="height:40px;"></div>
-        </body>
-      </html>
-    `;
-  }
+  return (
+    printers.find(p => /POS80/i.test(p.name)) ||
+    printers.find(p => /POS58/i.test(p.name)) ||
+    printers.find(p => /thermal|receipt|pos/i.test(p.name)) ||
+    printers[0]
+  ).name
+}
 
-  // ---------------- CHECK PRINTER STATUS ----------------
-  ipcMain.handle("check-printer-status", async () => {
-    try {
-      const printerName = await detectPOSPrinter();
-      console.log("✅ POS printer detected:", printerName);
-      return { success: true, connected: true, printerName };
-    } catch (err) {
-      console.error("Printer detection error:", err);
-      return { success: false, connected: false, message: err.message };
-    }
-  });
-
-  // ---------------- PRINT RECEIPT ----------------
-  ipcMain.handle("print-receipt", async (event, { html, openDrawer = true }) => {
-    console.log("🧾 Received print request from renderer");
-
-    try {
-      const printerName = await detectPOSPrinter();
-      const win = new BrowserWindow({ width: 300, height: 600, show: false });
-
-      const styledHTML = buildReceiptHTML(html, /POS80/i.test(printerName) ? 80 : 58, openDrawer);
-      const tmpFile = path.join(os.tmpdir(), "receipt_preview.html");
-      fs.writeFileSync(tmpFile, styledHTML, "utf8");
-
-      await win.loadFile(tmpFile);
-
-      await new Promise((resolve) => {
-        win.webContents.print(
-          { silent: true, printBackground: true, deviceName: printerName },
-          (success, failureReason) => {
-            if (!success) {
-              console.error("Print failed:", failureReason);
-              resolve({ success: false, message: failureReason });
-            } else {
-              console.log(`Receipt printed on ${printerName} successfully`);
-              if (openDrawer) console.log("Cash drawer triggered automatically");
-              resolve({ success: true });
-            }
-            setTimeout(() => win.close(), 1000);
-          }
-        );
-      });
-
-      return { success: true, message: "Printed successfully" };
-    } catch (err) {
-      console.error("Print handler error:", err);
-      return { success: false, message: err.message };
-    }
-  });
-  // ---------------- REPORTS ----------------
-  ipcMain.handle("z-reading:print", async (_e, totals) => {
-  const html = `
-    <div class="center"><b>Z-READING</b></div>
-    <div class="line"></div>
-    First Invoice: ${totals.first_inv}<br/>
-    Last Invoice: ${totals.last_inv}<br/>
-    VAT Sales: ${totals.vat_sales.toFixed(2)}<br/>
-    VAT Amount: ${totals.vat_amount.toFixed(2)}<br/>
-    VAT Exempt: ${totals.vat_exempt.toFixed(2)}<br/>
-    Zero Rated: ${totals.zero_rated.toFixed(2)}<br/>
-    Discount: ${totals.discount.toFixed(2)}
-    <div class="line"></div>
-    <b>TOTAL:</b> ${totals.total.toFixed(2)}
-  `
-
-  return await ipcMain.emit("print-receipt", null, {
-    html,
-    openDrawer: false
-  })
-})
-
-ipcMain.handle("receipt:reprint", async (_e, invoice) => {
-  const items = invoice.items.map(i =>
-    `${i.productname} x${i.quantity}  ${i.total.toFixed(2)}`
-  ).join("<br/>")
-
-  const html = `
-    <div class="center"><b>REPRINT</b></div>
-    <div>${invoice.invoice_number}</div>
-    <div class="line"></div>
-    ${items}
-    <div class="line"></div>
-    TOTAL: ${invoice.total.toFixed(2)}
-  `
-
-  return await ipcMain.emit("print-receipt", null, {
-    html,
-    openDrawer: false
-  })
-})
-
-  // ---------------- OPEN CASH DRAWER ----------------
-  ipcMain.handle("open-cash-drawer", async () => {
+// ---------------- PRINTER HEALTH ----------------
+async function checkPrinterHealth(printerName) {
   try {
-    const printerName = await detectPOSPrinter();
-    const win = new BrowserWindow({ width: 10, height: 10, show: false });
+    const win = BrowserWindow.getAllWindows()[0]
+    const printers = await win.webContents.getPrintersAsync()
+    const printer = printers.find(p => p.name === printerName)
 
-    const drawerPulse = String.fromCharCode(27, 112, 0, 25, 250);
+    if (!printer) {
+      return { status: 'offline', connected: false, error: 'Printer not found' }
+    }
 
-    const html = `
-      <pre>${drawerPulse}</pre>
-    `;
+    let health = {
+      status: 'online',
+      connected: true,
+      printerName: printer.name,
+      description: printer.description || 'N/A',
+      isDefault: !!printer.isDefault
+    }
 
-    const tmp = path.join(os.tmpdir(), "drawer.html");
-    fs.writeFileSync(tmp, html, "utf8");
+    if (printer.status) {
+      const s = printer.status.toLowerCase()
+      if (s.includes('offline')) {
+        health = { ...health, status: 'offline', connected: false, error: 'Printer offline' }
+      } else if (s.includes('paper') || s.includes('jam')) {
+        health = { ...health, status: 'warning', warning: 'Paper issue detected' }
+      } else if (s.includes('error')) {
+        health = { ...health, status: 'error', error: 'Printer error detected' }
+      }
+    }
 
-    await win.loadFile(tmp);
-
-    await new Promise((resolve) => {
-      win.webContents.print(
-        { silent: true, printBackground: false, deviceName: printerName },
-        () => resolve()
-      );
-    });
-
-    setTimeout(() => win.close(), 500);
-
-    return { success: true }
+    return health
   } catch (err) {
-    return { success: false, message: err.message }
+    return { status: 'error', connected: false, error: err.message }
   }
-  });
-
 }
 
-module.exports = {
-  setupPrinterHandlers
+async function getPrinterHealth(printerName, force = false) {
+  const now = Date.now()
+
+  if (
+    !force &&
+    printerHealthCache.printerName === printerName &&
+    now - printerHealthCache.lastCheck < HEALTH_CACHE_TTL
+  ) {
+    return printerHealthCache.status
+  }
+
+  const health = await checkPrinterHealth(printerName)
+  printerHealthCache = { printerName, lastCheck: now, status: health }
+  return health
 }
+
+// ---------------- RECEIPT HTML ----------------
+function buildReceiptHTML(html, width = 58, openDrawer = true, isReprint = false) {
+  const drawerPulse = String.fromCharCode(27, 112, 0, 25, 250)
+
+  return `<!DOCTYPE html>
+<html><head><meta charset="utf-8">
+<style>
+@page { margin:0; size:${width}mm auto; }
+body{ font-family:Courier New, monospace; font-size:11px; margin:0; padding:4px; }
+.center{text-align:center}
+.line{border-top:1px dashed #000;margin:4px 0}
+pre{margin:0}
+</style></head>
+<body>
+${isReprint ? '<div class="center"><b>*** REPRINT ***</b></div>' : ''}
+${html}
+<div class="line"></div>
+<div class="center">*** END ***</div>
+${openDrawer ? `<pre>${drawerPulse}</pre>` : ''}
+</body></html>`
+}
+
+// ---------------- CORE PRINT ----------------
+async function printHTML(html, openDrawer = true, printerName = null, meta = {}) {
+  let win
+  let tmpFile
+
+  try {
+    const resolvedPrinter = printerName || await detectPOSPrinter()
+
+    const health = await getPrinterHealth(resolvedPrinter, meta.isReprint === true)
+    if (!health.connected) throw new Error(health.error || 'Printer not ready')
+
+    win = new BrowserWindow({ show: false })
+
+    const width = /POS80/i.test(resolvedPrinter) ? 80 : 58
+    const fullHTML = buildReceiptHTML(html, width, openDrawer, meta.isReprint)
+
+    tmpFile = path.join(os.tmpdir(), `print_${Date.now()}.html`)
+    fs.writeFileSync(tmpFile, fullHTML)
+
+    await win.loadFile(tmpFile)
+
+    await new Promise((resolve, reject) => {
+      win.webContents.print(
+        { silent: true, printBackground: true, deviceName: resolvedPrinter },
+        ok => (ok ? resolve() : reject(new Error('Print failed')))
+      )
+    })
+
+    const historyId = addToPrintHistory({
+      type: meta.type || 'print',
+      status: 'success',
+      printerName: resolvedPrinter,
+      html
+    })
+
+    return { success: true, historyId }
+
+  } catch (err) {
+    addToPrintHistory({
+      type: meta.type || 'print',
+      status: 'failed',
+      error: err.message
+    })
+    return { success: false, message: err.message }
+  } finally {
+    try {
+      if (win && !win.isDestroyed()) win.close()
+    } catch (_) {}
+    try {
+      if (tmpFile && fs.existsSync(tmpFile)) fs.unlinkSync(tmpFile)
+    } catch (_) {}
+  }
+}
+
+// ---------------- IPC SETUP ----------------
+function setupPrinterHandlers(ipcMain) {
+
+  ipcMain.handle('print-receipt', async (_e, { html, openDrawer = true }) => {
+    if (!html) return { success: false, message: 'No HTML provided' }
+    return printHTML(html, openDrawer, null, { type: 'receipt' })
+  })
+
+  ipcMain.handle('receipt:reprint', async (_e, historyId) => {
+    const entry = printHistory[historyId]
+    if (!entry || !entry.html) {
+      return { success: false, message: 'Invalid reprint reference' }
+    }
+
+    return printHTML(entry.html, false, entry.printerName || null, {
+      type: 'reprint',
+      isReprint: true
+    })
+  })
+
+  ipcMain.handle('open-cash-drawer', async () => {
+    return printHTML('<div></div>', true, null, { type: 'drawer' })
+  })
+
+  ipcMain.handle('check-printer-status', async () => {
+    try {
+      const printerName = await detectPOSPrinter()
+      return await getPrinterHealth(printerName, true)
+    } catch (err) {
+      return { status: 'error', connected: false, error: err.message }
+    }
+  })
+}
+
+module.exports = { setupPrinterHandlers }

@@ -20,9 +20,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   deleteAccount: (data) => ipcRenderer.invoke('deleteAccount', data),
 });
 
-
-
-
 contextBridge.exposeInMainWorld('patientAPI', {
   get: () => ipcRenderer.invoke('get-patients'),
   add: (data) => ipcRenderer.invoke('add-patient', data),
